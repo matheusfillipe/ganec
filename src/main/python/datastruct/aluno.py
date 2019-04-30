@@ -1,7 +1,7 @@
 import datetime
 
 class aluno():
-    def __init__(self, name: str, birthDate=None, address=None, cl=None, additional=""):
+    def __init__(self, name: str, birthDate=None, address=None, cl=None, additional="", nomePai="", nomeMae=""):
         self.name=name    
         self.birthDate=birthDate
         self.address=address

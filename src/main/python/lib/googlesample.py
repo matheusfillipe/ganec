@@ -300,7 +300,7 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
 if __name__ == '__main__':
     import sys
 
-    API_KEY = "YOUR_API_KEY_HERE"
+    API_KEY = "AIzaSyAq9Tv3JCBfwCis62PUfOXyXJNgYyNI6Vo"
 
     app = QtWidgets.QApplication(sys.argv)
     w = QGoogleMap(api_key=API_KEY)

@@ -138,57 +138,40 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionExportar">
    <property name="text">
-    <string>Exportar</string>
+    <string>&amp;Exportar</string>
    </property>
   </action>
   <action name="actionSalvar">
    <property name="text">
-    <string>Salvar</string>
+    <string>&amp;Salvar</string>
    </property>
   </action>
   <action name="actionSair">
    <property name="text">
-    <string>Sair</string>
+    <string>Sa&amp;ir</string>
    </property>
   </action>
   <action name="actionAlunos">
    <property name="text">
-    <string>Alunos</string>
+    <string>&amp;Alunos</string>
    </property>
   </action>
   <action name="actionEscolas">
    <property name="text">
-    <string>Escolas</string>
+    <string>&amp;Escolas</string>
    </property>
   </action>
   <action name="actionModalidades">
    <property name="text">
-    <string>Modalidades</string>
+    <string>&amp;Modalidades</string>
    </property>
   </action>
   <action name="actionMapa">
    <property name="text">
-    <string>Mapa</string>
+    <string>&amp;Mapa</string>
    </property>
   </action>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>pushButton_2</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>604</x>
-     <y>113</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>644</x>
-     <y>-5</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

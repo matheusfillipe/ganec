@@ -2,6 +2,7 @@
 
 from PyQt5 import QtWidgets, QtGui, uic, Qt
 from fbs_runtime.application_context import ApplicationContext
+from lib.osm import MapWidget
 
 import sys
 
@@ -20,7 +21,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.setupUi(self)
-        self.actionModalidades.triggered.connect(self.modalidadesDialog)
+        self.actionModalidades.triggered.connect(self.modalidadesDialog)       
+        w=MapWidget()
+        #self.stackedWidget.setCurrentWidget(w)
+        self.horizontalLayout_4.addWidget(w)
+        w.show()
+
+        w.show()
     
     def modalidadesDialog(self):
         dialog=ModalidadesDialog(self)

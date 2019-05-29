@@ -36,19 +36,19 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>500</width>
+          <width>600</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>600</width>
+          <width>500</width>
           <height>16777215</height>
          </size>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
          <property name="sizeConstraint">
-          <enum>QLayout::SetMaximumSize</enum>
+          <enum>QLayout::SetMinimumSize</enum>
          </property>
          <property name="rightMargin">
           <number>1</number>
@@ -91,29 +91,6 @@
           </widget>
          </item>
         </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QScrollArea" name="scrollArea">
-        <property name="minimumSize">
-         <size>
-          <width>600</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="scrollAreaWidgetContents_2">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>750</width>
-           <height>747</height>
-          </rect>
-         </property>
-        </widget>
        </widget>
       </item>
      </layout>

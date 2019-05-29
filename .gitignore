@@ -1,4 +1,4 @@
-src/main/python/hidden/
+src/main/python/lib/hidden/ 
 __pycache__
 venv/
-src/main/python/hidden/constants.py
+src/main/python/lib/hidden/constants.py

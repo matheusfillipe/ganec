@@ -2,7 +2,6 @@ import os
 import functools
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets, QtWebChannel
 
-
 class MapWidget(QtWidgets.QWidget):
     def __init__(self):
         super(MapWidget, self).__init__()

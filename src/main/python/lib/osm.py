@@ -8,7 +8,7 @@ class MapWidget(QtWidgets.QWidget):
         self.setupUi()
 
     def setupUi(self):
-        from lib.hidden import constants
+        from lib import constants
        # self.setFixedSize(800, 500)
         vbox = QtWidgets.QVBoxLayout()
         self.setLayout(vbox)

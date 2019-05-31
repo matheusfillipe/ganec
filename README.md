@@ -4,7 +4,6 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 
 <br>
 <br>
-<br>
 
 ## Cronograma
 
@@ -23,15 +22,15 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 | Conclusão |  |  |  |  |  X|
 
 <br>
-<br>
-<br>
-<br>
+
 
 ### Legenda
 
 * **X** represenda concluído <br>
 * X representa mês previso de término da atividade
 <br><br>
+<br>
+<br>
 
 
 ## Fotos

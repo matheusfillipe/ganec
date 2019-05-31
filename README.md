@@ -2,6 +2,10 @@
 
 Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefeitura de Carmo do Paranaíba, com o intuido de auxiliar na gestão e logística de distribuição dos alunos em função de seus respectivos endereços domiciliares, modalidade escolar e localização das escolas.
 
+<br>
+<br>
+<br>
+
 ## Cronograma
 
 | Atividades      |   Mai. |	Jun. |	Jul. | Ago. |	Set. |        
@@ -18,6 +22,9 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 | Correções |  |  |  |  |  X|
 | Conclusão |  |  |  |  |  X|
 
+<br>
+<br>
+<br>
 <br>
 
 ### Legenda

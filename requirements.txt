@@ -26,7 +26,6 @@ osmapi==1.2.2
 pefile==2019.4.18
 persistent==4.4.3
 Pillow==6.0.0
-pkg-resources==0.0.0
 pycodestyle==2.5.0
 pydocstyle==3.0.0
 pyflakes==2.1.1

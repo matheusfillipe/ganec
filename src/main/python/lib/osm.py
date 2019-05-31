@@ -1,14 +1,14 @@
 import os
 import functools
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets, QtWebChannel
+from pathlib import Path
 
 class MapWidget(QtWidgets.QWidget):
     def __init__(self):
         super(MapWidget, self).__init__()
         self.setupUi()
 
-    def setupUi(self):
-        from lib import constants
+    def setupUi(self):       
        # self.setFixedSize(800, 500)
         vbox = QtWidgets.QVBoxLayout()
         self.setLayout(vbox)
@@ -23,13 +23,13 @@ class MapWidget(QtWidgets.QWidget):
 
         channel.registerObject("MainWindow", self)
         view.page().setWebChannel(channel)
-        file = os.path.join(
-            os.path.dirname(os.path.realpath(__file__).split(constants.NAME)[0]),
-            constants.NAME,
-            "src/main/assets/map.html",
-        )
+
+        osmdir=Path(os.path.dirname(os.path.realpath(__file__)) )
+        file = osmdir / "../../../../src/main/assets/map.html"
+
         print(file)
-        self.view.setUrl(QtCore.QUrl.fromLocalFile(file))
+        self.view.setUrl(QtCore.QUrl.fromLocalFile(str(file.absolute())))
+        
 
         vbox.addWidget(view)
 
@@ -48,7 +48,6 @@ class MapWidget(QtWidgets.QWidget):
 
 
 def _test():
-    from hidden import constants
     import sys
     app = QtWidgets.QApplication(sys.argv)
     w = MapWidget()

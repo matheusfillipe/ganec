@@ -10,6 +10,7 @@ MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
 MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
 NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
 
+
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
     def __init__(self):
         QtWidgets.QWidget.__init__(self)

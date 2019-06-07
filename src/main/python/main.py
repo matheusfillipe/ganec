@@ -11,6 +11,8 @@ MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
 MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
 NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
 SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
+NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui")
+
 
 
 class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
@@ -29,6 +31,22 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def updateconfig(self):
         self.tmpConfig.map=self.comboBox.currentIndex()
     
+class NewAlunoDialog(QtWidgets.QDialog):
+    def __init__(self, iface):
+        super(NewAlunoDialog, self).__init__(None)
+        self.iface=iface
+        newAlunoWidget = NewAlunoWidget(self)
+        newAlunoWidget.show()
+      
+   
+
+
+class NewAlunoWidget(QtWidgets.QWidget, NEW_ALUNO_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_ALUNO_WIDGET.__init__(self)
+        self.setupUi(iface)
+     
 
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
     def __init__(self):
@@ -41,13 +59,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.setupUi(self)
-        self.actionModalidades.triggered.connect(self.modalidadesDialog)   
+        self.actionModalidades.triggered.connect(self.modalidadesDialog)
+        self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)    
         w=MapWidget()
         #self.stackedWidget.setCurrentWidget(w)
         self.horizontalLayout_4.addWidget(w)
         w.show()
-    
+
     def settingDialog(self):
         dialog=SettingsDialog(self)
         dialog.accepted.connect(lambda: self.saveConfig(dialog))
@@ -56,6 +75,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
        
         dialog.setModal(True)
         dialog.show()
+        dialog.exec_()
+    
+    def newAlunoDialog(self):
+        dialog=NewAlunoDialog(self)             
+        dialog.setModal(True)
+        
         dialog.exec_()
 
     def saveConfig(self, dialog):
@@ -76,7 +101,7 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
         QtWidgets.QDialog.__init__(self)
         MODALIDADES_DIALOD.__init__(self)
         self.setupUi(self)
-        
+
         #carregar da DB
         self.addToListWidget1()
         self.addToListWidget2()

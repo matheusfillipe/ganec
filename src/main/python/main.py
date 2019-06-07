@@ -3,13 +3,32 @@
 from PyQt5 import QtWidgets, QtGui, uic, Qt
 from fbs_runtime.application_context import ApplicationContext
 from lib.osm import MapWidget
+from data.config import config
 
 import sys
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
 MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
 NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
+SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
 
+
+class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
+    def __init__(self,iface):
+        QtWidgets.QWidget.__init__(self)
+        SETTINGS_DIALOG.__init__(self)
+        self.setupUi(self)
+        self.comboBox.addItem("Google")    
+        self.comboBox.addItem("OSM")
+        self.comboBox.currentIndexChanged.connect(self.updateconfig)
+        self.aplicarBtn.clicked.connect(self.updateconfig)
+        #load from db 
+        self.tmpConfig=config()
+        self.comboBox.setCurrentIndex(self.tmpConfig.map)
+
+    def updateconfig(self):
+        self.tmpConfig.map=self.comboBox.currentIndex()
+    
 
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
     def __init__(self):
@@ -22,19 +41,35 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.setupUi(self)
-        self.actionModalidades.triggered.connect(self.modalidadesDialog)       
+        self.actionModalidades.triggered.connect(self.modalidadesDialog)   
+        self.actionConfigura_es.triggered.connect(self.settingDialog)    
         w=MapWidget()
         #self.stackedWidget.setCurrentWidget(w)
         self.horizontalLayout_4.addWidget(w)
         w.show()
+    
+    def settingDialog(self):
+        dialog=SettingsDialog(self)
+        dialog.accepted.connect(lambda: self.saveConfig(dialog))
+        dialog.aplicarBtn.clicked.connect(lambda: self.saveConfig(dialog))
+        dialog.aplicarBtn.clicked.connect(self.loadConfig)
+       
+        dialog.setModal(True)
+        dialog.show()
+        dialog.exec_()
 
-        w.show()
+    def saveConfig(self, dialog):
+        print("config: "+str(dialog.tmpConfig.map))
+
+    def loadConfig(self):
+        print("Load from db")
     
     def modalidadesDialog(self):
         dialog=ModalidadesDialog(self)
         dialog.setModal(True)
         dialog.show()
-        dialog.exec_()
+        a=dialog.exec_()
+        print(a)
 
 class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
     def __init__(self, iface):

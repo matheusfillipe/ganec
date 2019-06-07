@@ -25,7 +25,7 @@ class MapWidget(QtWidgets.QWidget):
         view.page().setWebChannel(channel)
 
         osmdir=Path(os.path.dirname(os.path.realpath(__file__)) )
-        file = osmdir / "../../../../src/main/assets/map.html"
+        file = osmdir / "../../../../src/main/assets/hereMap.html"
 
         print(file)
         self.view.setUrl(QtCore.QUrl.fromLocalFile(str(file.absolute())))

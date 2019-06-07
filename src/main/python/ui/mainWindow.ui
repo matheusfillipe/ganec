@@ -128,9 +128,16 @@
     </property>
     <addaction name="actionMapa"/>
    </widget>
+   <widget class="QMenu" name="menuOp_es">
+    <property name="title">
+     <string>Op&amp;ções</string>
+    </property>
+    <addaction name="actionConfigura_es"/>
+   </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
    <addaction name="menuExibir"/>
+   <addaction name="menuOp_es"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionExportar">
@@ -166,6 +173,11 @@
   <action name="actionMapa">
    <property name="text">
     <string>&amp;Mapa</string>
+   </property>
+  </action>
+  <action name="actionConfigura_es">
+   <property name="text">
+    <string>Configurações</string>
    </property>
   </action>
  </widget>

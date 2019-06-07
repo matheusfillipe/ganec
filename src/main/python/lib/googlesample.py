@@ -1,6 +1,7 @@
 import json
 
 from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets, QtWebChannel, QtNetwork
+from hidden.constants import API_KEY
 
 HTML = '''
 <!DOCTYPE html>
@@ -299,8 +300,7 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
 
 if __name__ == '__main__':
     import sys
-
-    API_KEY = "AIzaSyAq9Tv3JCBfwCis62PUfOXyXJNgYyNI6Vo"
+    
 
     app = QtWidgets.QApplication(sys.argv)
     w = QGoogleMap(api_key=API_KEY)

@@ -12,9 +12,9 @@ class listaAlunos(persistent.Persistent):
 
 class dbHandler():
     def __init__(self, location:str):
-        pass
+        self.location=location 
 
-    def create():
+    def create(self):
         self.storage = ZODB.FileStorage.FileStorage(self.location)
         self.db = ZODB.DB(self.storage)
         self.connection = self.db.open()
@@ -24,3 +24,13 @@ class dbHandler():
     def save(self):
         self.root.accounts = BTrees.OOBTree.BTree()
         self.root.accounts['account-1'] = Account()
+
+#TEST
+if __name__ == "__main__":
+    from ..data import aluno, escola
+    a=aluno.aluno("test")
+    print(a.name)
+    l=listaAlunos([a])
+    db=dbHandler("test.db")
+    db.create()
+    db.save()

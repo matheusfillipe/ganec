@@ -1,37 +1,7 @@
 import json
 
 from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets, QtWebChannel, QtNetwork
-from hidden.constants import API_KEY
-
-HTML = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
-    <style type="text/css">
-        html {
-            height: 100%;
-        }
-        body {
-            height: 100%;
-            margin: 0;
-            padding: 0
-        }
-        #map_canvas {
-            height: 100%
-        }
-    </style>
-    <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
-    <script async defer
-            src="https://maps.googleapis.com/maps/api/js?key=API_KEY"
-            type="text/javascript"></script>
-    <script type="text/javascript" src="qgmap.js"></script>
-</head>
-<body onload="initialize()">
-<div id="map_canvas" style="width:100%; height:100%"></div>
-</body>
-</html>
-'''
+from lib.hidden.constants import API_KEY
 
 JS = '''
 // main var
@@ -115,7 +85,44 @@ function gmap_changeMarker(key, extras) {
     }
     markers[key].setOptions(extras);
 }
+
 '''
+
+HTML = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+    <style type="text/css">
+        html {
+            height: 100%;
+        }
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0
+        }
+        #map_canvas {
+            height: 100%
+        }
+    </style>
+    <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=API_KEY"
+            type="text/javascript"></script>
+    <script>
+    '''
+
+HTML2 = '''
+    </script>
+   
+</head>
+<body onload="initialize()">
+<div id="map_canvas" style="width:100%; height:100%"></div>
+</body>
+</html>
+'''
+HTML=HTML+JS+HTML2
 
 
 class GeoCoder(QtNetwork.QNetworkAccessManager):
@@ -157,6 +164,7 @@ class GeoCoder(QtNetwork.QNetworkAccessManager):
 
 
 class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
+
     mapMoved = QtCore.pyqtSignal(float, float)
     mapClicked = QtCore.pyqtSignal(float, float)
     mapRightClicked = QtCore.pyqtSignal(float, float)
@@ -167,24 +175,49 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     markerDoubleClicked = QtCore.pyqtSignal(str, float, float)
     markerRightClicked = QtCore.pyqtSignal(str, float, float)
 
-    def __init__(self, api_key, parent=None):
+    def __init__(self, api_key=API_KEY, parent=None):
         super(QGoogleMap, self).__init__(parent)
         self._api_key = api_key
         channel = QtWebChannel.QWebChannel(self)
         self.page().setWebChannel(channel)
         channel.registerObject("qGoogleMap", self)
-        self.page().runJavaScript(JS)
 
-        html = HTML.replace("API_KEY", "AIzaSyAq9Tv3JCBfwCis62PUfOXyXJNgYyNI6Vo")
+
+        html = HTML.replace("API_KEY", api_key)
         self.setHtml(html)
         self.loadFinished.connect(self.on_loadFinished)
         self.initialized = False
 
         self._manager = QtNetwork.QNetworkAccessManager(self)
+    
+    def show(self):
+        self.waitUntilReady()
+        self.setZoom(16)
+        lat, lng = self.centerAtAddress("Prefeitura de Carmo do Parnaíba - Praça Misael. Luiz de Carvalho - Centro, Carmo do Paranaíba - MG")
+        if lat is None and lng is None:
+            lng, lat = -46.30973, -19.00009 
+        self.centerAt(lat, lng)
+
+        self.addMarker("MyDragableMark", lat, lng, **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_red.png",
+            draggable=True,
+            title="Move me!"
+        ))
+
+        for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
+            self.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
+
+        self.mapMoved.connect(print)
+        self.mapClicked.connect(print)
+        self.mapRightClicked.connect(print)
+        self.mapDoubleClicked.connect(print)
+
+        return super().show()
 
     @QtCore.pyqtSlot()
     def on_loadFinished(self):
         self.initialized = True
+        self.page().runJavaScript(JS)
 
     def waitUntilReady(self):
         if not self.initialized:
@@ -297,21 +330,18 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
             "key={!r} "
             "); ".format(key))
 
-
-if __name__ == '__main__':
+def test():
     import sys
-    
-
     app = QtWidgets.QApplication(sys.argv)
     w = QGoogleMap(api_key=API_KEY)
     w.resize(640, 480)
     w.show()
     w.waitUntilReady()
-    w.setZoom(14)
-    lat, lng = w.centerAtAddress("Lima Peru")
+    w.setZoom(16)
+    lat, lng = w.centerAtAddress("Prefeitura de Carmo do Parnaíba - Praça Misael. Luiz de Carvalho - Centro, Carmo do Paranaíba - MG")
     if lat is None and lng is None:
-        lat, lng = -12.0463731, -77.042754
-        w.centerAt(lat, lng)
+        lng, lat = -46.30973, -19.00009 
+    w.centerAt(lat, lng)
 
     w.addMarker("MyDragableMark", lat, lng, **dict(
         icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_red.png",
@@ -327,3 +357,5 @@ if __name__ == '__main__':
     w.mapRightClicked.connect(print)
     w.mapDoubleClicked.connect(print)
     sys.exit(app.exec_())
+if __name__ == '__main__':
+    test()

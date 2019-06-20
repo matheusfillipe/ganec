@@ -5,6 +5,7 @@ from fbs_runtime.application_context import ApplicationContext
 from lib.osm import MapWidget
 from data.config import config
 
+from lib.gmaps import QGoogleMap 
 import sys
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
@@ -36,9 +37,7 @@ class NewAlunoDialog(QtWidgets.QDialog):
         super(NewAlunoDialog, self).__init__(None)
         self.iface=iface
         newAlunoWidget = NewAlunoWidget(self)
-        newAlunoWidget.show()
-      
-   
+        newAlunoWidget.show()      
 
 
 class NewAlunoWidget(QtWidgets.QWidget, NEW_ALUNO_WIDGET):
@@ -62,7 +61,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)    
-        w=MapWidget()
+        #w=MapWidget()
+        w=QGoogleMap()
         #self.stackedWidget.setCurrentWidget(w)
         self.horizontalLayout_4.addWidget(w)
         w.show()

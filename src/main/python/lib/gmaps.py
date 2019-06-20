@@ -211,6 +211,7 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         self.mapClicked.connect(print)
         self.mapRightClicked.connect(print)
         self.mapDoubleClicked.connect(print)
+        self.markerMoved.connect(print)
 
         return super().show()
 
@@ -356,6 +357,7 @@ def test():
     w.mapClicked.connect(print)
     w.mapRightClicked.connect(print)
     w.mapDoubleClicked.connect(print)
+    w.markerIsMoved.connect(print)
     sys.exit(app.exec_())
 if __name__ == '__main__':
     test()

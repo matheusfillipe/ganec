@@ -13,6 +13,8 @@ var qtWidget;
 function initialize() {
     var myOptions = {
         center: {lat: -34.397, lng: 150.644},
+        streetViewControl: false,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
         zoom: 8
     };
 

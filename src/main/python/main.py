@@ -1,12 +1,14 @@
 ''' GANEC = Gestor de Alunos Nas Escolas do Carmo '''
 
-from PyQt5 import QtWidgets, QtGui, uic, Qt
+from PyQt5 import QtWidgets, QtGui, uic, Qt, QtCore
 from fbs_runtime.application_context import ApplicationContext
 from lib.osm import MapWidget
 from data.config import config
 
 from lib.gmaps import QGoogleMap 
 import sys
+from lib.database import *
+
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
 MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
@@ -20,9 +22,12 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
         QtWidgets.QWidget.__init__(self)
         SETTINGS_DIALOG.__init__(self)
+        
         self.setupUi(self)
         self.comboBox.addItem("Google")    
         self.comboBox.addItem("OSM")
+        self.comboBox.addItem("Here")
+
         self.comboBox.currentIndexChanged.connect(self.updateconfig)
         self.aplicarBtn.clicked.connect(self.updateconfig)
         #load from db 
@@ -60,7 +65,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.setupUi(self)
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
-        self.actionConfigura_es.triggered.connect(self.settingDialog)    
+        self.actionConfigura_es.triggered.connect(self.settingDialog)               
+
         #w=MapWidget()
         w=QGoogleMap()
         #self.stackedWidget.setCurrentWidget(w)
@@ -71,8 +77,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog=SettingsDialog(self)
         dialog.accepted.connect(lambda: self.saveConfig(dialog))
         dialog.aplicarBtn.clicked.connect(lambda: self.saveConfig(dialog))
-        dialog.aplicarBtn.clicked.connect(self.loadConfig)
-       
+        dialog.aplicarBtn.clicked.connect(self.loadConfig)       
         dialog.setModal(True)
         dialog.show()
         dialog.exec_()
@@ -153,8 +158,7 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
         self.listWidget_2.setItemWidget(itemN, widget)
 
     def removeFromListWidget2(self, item):
-        return self.listWidget_2.takeItem(self.listWidget_2.row(item))
-   
+        return self.listWidget_2.takeItem(self.listWidget_2.row(item))   
 
     def setRemovableFromListWidget2(self, widget, itemN):
         while True:

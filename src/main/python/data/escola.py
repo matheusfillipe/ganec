@@ -1,3 +1,4 @@
+import persistent
 class escola():
     def __init__(self, nome:str, modalidades=[], endereco=None):
         self.nome=nome
@@ -28,3 +29,7 @@ class turma():
         self.nome=nome
         self.vagas=vagas
         
+class ListaEscolas(persistent.Persistent):
+    def __init__(self, item):
+        self.escolas=item
+ 

@@ -20,12 +20,12 @@ class escola():
 
 
 class modalidade():
-    def __init__(self, nome,turmas=[]):
+    def __init__(self, nome:str,turmas=[]):
         self.nome=nome
         self.turmas=turmas
 
 class turma():
-    def __init__(self, nome, vagas=-1):
+    def __init__(self, nome:str, vagas=0):
         self.nome=nome
         self.vagas=vagas
         

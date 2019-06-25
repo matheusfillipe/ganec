@@ -3,11 +3,12 @@
 from PyQt5 import QtWidgets, QtGui, uic, Qt, QtCore
 from fbs_runtime.application_context import ApplicationContext
 from lib.osm import MapWidget
-from data.config import config
+import os
+from data.config import Config
 
 from lib.gmaps import QGoogleMap 
 import sys
-from lib.database import *
+from lib.database import VariableManager, QInterface
 
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
@@ -22,20 +23,25 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
         QtWidgets.QWidget.__init__(self)
         SETTINGS_DIALOG.__init__(self)
-        
+        iface : MainWindow
+        self.iface=iface
         self.setupUi(self)
         self.comboBox.addItem("Google")    
         self.comboBox.addItem("OSM")
         self.comboBox.addItem("Here")
 
-        self.comboBox.currentIndexChanged.connect(self.updateconfig)
-        self.aplicarBtn.clicked.connect(self.updateconfig)
-        #load from db 
-        self.tmpConfig=config()
-        self.comboBox.setCurrentIndex(self.tmpConfig.map)
+        self.comboBox : QtWidgets.QComboBox
 
-    def updateconfig(self):
-        self.tmpConfig.map=self.comboBox.currentIndex()
+        iface.config.setup(self,
+        signals=[self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
+        slots=[lambda: 0, iface.saveConfig, self.reset],
+        properties=["map"],
+        interface=[self.comboBox.currentIndex],
+        writers=[self.comboBox.setCurrentIndex])
+        #TODO alert dialog on remove database and reset application
+    
+    def reset(self):
+        self.iface.varManager.removeDatabase()
     
 class NewAlunoDialog(QtWidgets.QDialog):
     def __init__(self, iface):
@@ -62,14 +68,26 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
+        self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
+
         self.setupUi(self)
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)               
+        self.config=self.varManager.read(Config(),"config")
+        self.addMap()
 
-        #w=MapWidget()
-        w=QGoogleMap()
-        #self.stackedWidget.setCurrentWidget(w)
+    def addMap(self):
+        if self.config.get().map==2:
+            #TODO implement here maps
+            w=QtWidgets.QLabel("Here Maps não está disponível, por favor mude para google ou osm nas configurações")
+        elif self.config.get().map==1:
+            w=MapWidget()
+        elif self.config.get().map==0:
+            w=QGoogleMap()
+        else:
+            w=QtWidgets.QLabel("Problema no banco de dados!")
+        self.mapWidget=w
         self.horizontalLayout_4.addWidget(w)
         w.show()
 
@@ -77,23 +95,21 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog=SettingsDialog(self)
         dialog.accepted.connect(lambda: self.saveConfig(dialog))
         dialog.aplicarBtn.clicked.connect(lambda: self.saveConfig(dialog))
-        dialog.aplicarBtn.clicked.connect(self.loadConfig)       
         dialog.setModal(True)
         dialog.show()
         dialog.exec_()
     
     def newAlunoDialog(self):
         dialog=NewAlunoDialog(self)             
-        dialog.setModal(True)
-        
+        dialog.setModal(True)        
         dialog.exec_()
 
-    def saveConfig(self, dialog):
-        print("config: "+str(dialog.tmpConfig.map))
-
-    def loadConfig(self):
-        print("Load from db")
-    
+    def saveConfig(self, dialog):        
+        self.config.save("config")
+        self.mapWidget.hide()
+        self.horizontalLayout_4.removeWidget(self.mapWidget)
+        self.addMap()
+        
     def modalidadesDialog(self):
         dialog=ModalidadesDialog(self)
         dialog.setModal(True)

@@ -1,5 +1,5 @@
 import persistent
-class escola():
+class escola(persistent.Persistent):
     def __init__(self, nome:str, modalidades=[], endereco=None):
         self.nome=nome
         self.modalidades=modalidades
@@ -19,12 +19,12 @@ class escola():
             return False
 
 
-class modalidade():
+class modalidade(persistent.Persistent):
     def __init__(self, nome:str,turmas=[]):
         self.nome=nome
         self.turmas=turmas
 
-class turma():
+class turma(persistent.Persistent):
     def __init__(self, nome:str, vagas=0):
         self.nome=nome
         self.vagas=vagas

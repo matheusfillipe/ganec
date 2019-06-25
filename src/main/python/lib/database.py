@@ -64,35 +64,40 @@ class QInterface(QObject):
         self.defined=False
         self.elements.append(data)
 
-    def setup(self, iface, signals=[], slots=[], properties=[], interface=[], writers=[]):
+    def setup(self, iface, signals=[], slots=[], properties=[], readers=[], writers=[]):
         '''
         signals: lista de pyqt signals com mesmo tamanho que slots, relacionados 1 a 1, para serem associados em ordem ex: button.pushed
 
         slots: lista de pyqt slots, ex: qualquer funcao
 
-        properties: lista de strings de nomes das propriedades relacionadas 1 a 1 a cada elemento da interface ex: "nome" para data.nome, "idade" para data.idade...
+        properties: lista de strings de nomes das propriedades relacionadas 1 a 1 a cada elemento da readers ex: "nome" para data.nome, "idade" para data.idade...
 
-        interface: lista de métodos (bound method), que não devem necessitar de argumentos, que retornam as propriedades ex: qlineedit.text (pode ser definida com lambda?)
+        readers: lista de métodos (bound method), que não devem necessitar de argumentos, que retornam as propriedades ex: qlineedit.text (pode ser definida com lambda?)
 
-        writers: lista de métodos (bound method), que devem necessitar de um único argumento, para setar pontos desejados da interface gráfica ex: qlinedit.setText
+        writers: lista de métodos (bound method), que devem necessitar de um único argumento, para setar pontos desejados da readers gráfica ex: qlinedit.setText
 
         Observe que os elementos de properties, interfaces e wrirters devem estar todos associados 1 a 1 entre si
-        properties, interface e writers são obrigatórias para definir a interface para que os métodos read e write funcionem
+        properties, readers e writers são obrigatórias para definir a readers para que os métodos read e write funcionem
         Não coloque parenteses nos writers e properties list!        
         '''
-        self.define(signals=signals,slots=slots,properties=properties,interface=interface,writers=writers)
+        self.define(signals=signals,slots=slots,properties=properties,readers=readers,writers=writers)
         self.bindUndoRedo(iface)
         self.write()  
 
-    def define(self, signals=[], slots=[], properties=[], interface=[], writers=[]):
+    def define(self, signals=[], slots=[], properties=[], readers=[], writers=[]):
         '''
         signals: lista de pyqt sinais com mesmo tamanho que slots, relacionados 1 a 1, para serem associados em ordem ex: button.pushed
+
         slots: lista de pyqt slots, ex: qualquer funcao
-        properties: lista de strings de nomes das propriedades relacionadas 1 a 1 a cada elemento da interface ex: "nome" para data.nome, "idade" para data.idade...
-        interface: lista de métodos (bound method), que não devem necessitar de argumentos, que retornam as propriedades ex: qlineedit.text (pode ser definida com lambda?)
-        writers: lista de métodos (bound method), que devem necessitar de um único argumento, para setar pontos desejados da interface gráfica ex: qlinedit.setText
+
+        properties: lista de strings de nomes das propriedades relacionadas 1 a 1 a cada elemento da readers ex: "nome" para data.nome, "idade" para data.idade...
+
+        readers: lista de métodos (bound method), que não devem necessitar de argumentos, que retornam as propriedades ex: qlineedit.text (pode ser definida com lambda?)
+
+        writers: lista de métodos (bound method), que devem necessitar de um único argumento, para setar pontos desejados da readers gráfica ex: qlinedit.setText
+
         Observe que os elementos de properties, interfaces e wrirters devem estar todos associados 1 a 1 entre si
-        properties, interface e writers são obrigatórias para definir a interface para que os métodos read e write funcionem
+        properties, readers e writers são obrigatórias para definir a readers para que os métodos read e write funcionem
         Não coloque parenteses nos writers e properties list!
         '''
         if signals and slots:
@@ -103,9 +108,9 @@ class QInterface(QObject):
                 signal.connect(slot)
                 signal.connect(self.update)
         if properties:                
-            assert len(properties) == len(interface) and len (interface) == len(writers), "Os tamanhos das listas devem ser os mesmos"
+            assert len(properties) == len(readers) and len (readers) == len(writers), "Os tamanhos das listas devem ser os mesmos"
             self.properties=properties
-            self.interfaces=interface
+            self.interfaces=readers
             self.writers=writers
             self.defined=True
 
@@ -118,15 +123,15 @@ class QInterface(QObject):
 
     def read(self):
         '''
-        Lê da interface se o método define já tiver sido usado com properties e interface não nulos
+        Lê da interface se o método define já tiver sido usado com properties e readers não nulos
         retorna se há mudanças e adiciona-as ao stack (elements)  
         Popula o stack (append) com o novo data
         '''
         if self.defined:
             data=deepcopy(self.get())
             different=False
-            for propertie, interface in zip(self.properties,self.interfaces):
-                setattr(data,propertie,interface())
+            for propertie, reader in zip(self.properties,self.interfaces):
+                setattr(data,propertie,reader())
                 if getattr(data,propertie)!=getattr(self.get(),propertie):
                     different=True 
             if different:
@@ -136,14 +141,14 @@ class QInterface(QObject):
 
     def write(self):
         '''
-        Lê a ultima data no stack e preenche a interface com ela
+        Lê a ultima data no stack e preenche a readers com ela
         retorna se há diferenças        
         '''
         if self.defined:
             data=self.get()
             different=False
-            for propertie, writer, interface in zip(self.properties,self.writers, self.interfaces):
-                if getattr(data,propertie)!=interface():
+            for propertie, writer, reader in zip(self.properties,self.writers, self.interfaces):
+                if getattr(data,propertie)!=reader():
                     writer.__self__.blockSignals(True)
                     writer(getattr(data,propertie))
                     different=True 
@@ -222,8 +227,19 @@ class QInterface(QObject):
         iface.undoShortcut.activated.connect(self.previous)
         iface.redoShortcut.activated.connect(self.next)
 
-       
-
+    def customSlot(self, method:str, *args):
+        '''
+        Used for binding signals to data slots for the most recent data on the stack (elements) or running methods on the last one
+        method: string name of the method
+        args: used to pass arguments
+        '''
+        func=getattr(self.get(), method)
+        assert callable(func), "string method should be a data object's callable!"
+        if len(args) == 0:
+            func()
+        else:
+            func(args)
+            
 
 class VariableManager():
     def __init__(self,cfgDir:str):
@@ -242,7 +258,11 @@ class VariableManager():
 
     def read(self, obj:object, key:str):
         if key in self.root.main:
-            return QInterface(self.root.main[key], self, key)
+            qinterface=QInterface(self.root.main[key], self, key)
+            for attr in obj.__dict__:
+                if not hasattr(qinterface.get(),attr):
+                    setattr(qinterface.get(),attr,getattr(obj,attr))
+            return qinterface
         else:
             self.root.main[key]=obj
             return QInterface(self.root.main[key], self, key)

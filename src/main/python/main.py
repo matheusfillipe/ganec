@@ -25,7 +25,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         QtWidgets.QWidget.__init__(self)
         SETTINGS_DIALOG.__init__(self)
         iface : MainWindow
-        self.iface=iface
+        self.iface=iface 
         self.setupUi(self)
         self.comboBox.addItem("Google")    
         self.comboBox.addItem("OSM")
@@ -33,17 +33,20 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
 
         self.comboBox : QtWidgets.QComboBox
         self.lineEdit : QtWidgets.QLineEdit
+        self.lineEdit_2 : QtWidgets.QLineEdit
+        self.buttonBox : QtWidgets.QDialogButtonBox
 
         iface.config.setup(self,
-        signals=[self.lineEdit.textChanged, self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
-        slots=[lambda: 0, lambda: 0, iface.saveConfig, self.reset],
-        properties=["map", "text"],
-        interface=[self.comboBox.currentIndex, self.lineEdit.text],
-        writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText])
+        signals=[self.buttonBox.accepted, self.lineEdit.textEdited, self.lineEdit_2.textEdited, self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
+        slots=[iface.saveConfig,            lambda: 0,               lambda: 0,                  lambda: 0,                         iface.saveConfig,           self.reset],
+        properties=["map", "text", "text2"],
+        readers=[self.comboBox.currentIndex, self.lineEdit.text, self.lineEdit_2.text],
+        writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText, self.lineEdit_2.setText])
         #TODO alert dialog on remove database and reset application
     
     def reset(self):
         self.iface.varManager.removeDatabase()
+
     
 class NewAlunoDialog(QtWidgets.QDialog):
     def __init__(self, iface):
@@ -66,6 +69,7 @@ class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
         NEW_MODALIDADE_WIDGET.__init__(self)
         self.setupUi(self)
 
+
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
@@ -73,11 +77,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         if RESET:
             self.varManager.removeDatabase()
+            self.close()
         self.setupUi(self)
+        self.actionSair.triggered.connect(self.close)
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)               
-        self.config=self.varManager.read(Config(),"config")
+        self.config=self.varManager.read(Config(),"config")   
+        self.config.changed.connect(lambda: self.config.customSlot("disclaim"))     
         self.addMap()
 
     def addMap(self):
@@ -89,15 +96,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         elif self.config.get().map==0:
             w=QGoogleMap()
         else:
-            w=QtWidgets.QLabel("Problema no banco de dados!")
+            w=QtWidgets.QLabel("Problema no banco de dados! Tente limpar as configurações")
         self.mapWidget=w
         self.horizontalLayout_4.addWidget(w)
         w.show()
 
     def settingDialog(self):
         dialog=SettingsDialog(self)
-        dialog.accepted.connect(lambda: self.saveConfig(dialog))
-        dialog.aplicarBtn.clicked.connect(lambda: self.saveConfig(dialog))
         dialog.setModal(True)
         dialog.show()
         dialog.exec_()
@@ -107,18 +112,22 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog.setModal(True)        
         dialog.exec_()
 
-    def saveConfig(self, dialog):        
-        self.config.save("config")
-        self.mapWidget.hide()
-        self.horizontalLayout_4.removeWidget(self.mapWidget)
-        self.addMap()
-        
+    def saveConfig(self):  
+        cfg=self.config.get()
+        if not cfg.isApplied:      
+            self.config.get().apply()
+            self.config.save("config")
+            self.mapWidget.hide()
+            self.horizontalLayout_4.removeWidget(self.mapWidget)
+            self.addMap()
+            
     def modalidadesDialog(self):
         dialog=ModalidadesDialog(self)
         dialog.setModal(True)
         dialog.show()
         a=dialog.exec_()
         print(a)
+
 
 class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
     def __init__(self, iface):

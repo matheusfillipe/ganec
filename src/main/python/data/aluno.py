@@ -1,7 +1,7 @@
 import datetime
 import persistent
 
-class aluno():
+class aluno(persistent.Persistent):
     def __init__(self, name: str, birthDate=None, endereco=None, cl=None, matricula="", additional="", nomePai="", nomeMae=""):
         self.name=name    
         self.birthDate=birthDate

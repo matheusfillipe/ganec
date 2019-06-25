@@ -17,7 +17,8 @@ NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalida
 SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
 NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui")
 
-
+#Resetar banco de dados
+RESET=0
 
 class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
@@ -31,13 +32,14 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.comboBox.addItem("Here")
 
         self.comboBox : QtWidgets.QComboBox
+        self.lineEdit : QtWidgets.QLineEdit
 
         iface.config.setup(self,
-        signals=[self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
-        slots=[lambda: 0, iface.saveConfig, self.reset],
-        properties=["map"],
-        interface=[self.comboBox.currentIndex],
-        writers=[self.comboBox.setCurrentIndex])
+        signals=[self.lineEdit.textChanged, self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
+        slots=[lambda: 0, lambda: 0, iface.saveConfig, self.reset],
+        properties=["map", "text"],
+        interface=[self.comboBox.currentIndex, self.lineEdit.text],
+        writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText])
         #TODO alert dialog on remove database and reset application
     
     def reset(self):
@@ -69,7 +71,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
-
+        if RESET:
+            self.varManager.removeDatabase()
         self.setupUi(self)
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    

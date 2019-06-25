@@ -20,6 +20,30 @@ NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui"
 #Resetar banco de dados
 RESET=0
 
+def messageDialog(iface, title="Concluído", info="", message=""):
+    msgBox = QtWidgets.QMessageBox(iface)
+    msgBox.setIcon(QtWidgets.QMessageBox.Question)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(message)
+    msgBox.setInformativeText(info)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+    msgBox.show()
+    return msgBox.exec_() == QtWidgets.QMessageBox.Ok
+
+
+def yesNoDialog(iface, title="Atenção", info="", message=""):
+    msgBox = QtWidgets.QMessageBox(iface)
+    msgBox.setIcon(QtWidgets.QMessageBox.Question)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(message)
+    msgBox.setInformativeText(info)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+    msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
+    msgBox.show()
+    return msgBox.exec_() == QtWidgets.QMessageBox.Yes
+
+
 class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
         QtWidgets.QWidget.__init__(self)
@@ -42,10 +66,14 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         properties=["map", "text", "text2"],
         readers=[self.comboBox.currentIndex, self.lineEdit.text, self.lineEdit_2.text],
         writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText, self.lineEdit_2.setText])
-        #TODO alert dialog on remove database and reset application
     
-    def reset(self):
-        self.iface.varManager.removeDatabase()
+    def reset(self):        
+        reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 
+        info="Esta operação irá remover todos os arquivos de configuração e de banco de dados. Isso não é reversível.")
+        if reply:
+            self.iface.varManager.removeDatabase()
+            messageDialog(self, message="O programa irá reiniciar")
+            self.iface.restartProgram()                
 
     
 class NewAlunoDialog(QtWidgets.QDialog):
@@ -71,7 +99,9 @@ class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
 
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
-    def __init__(self):
+    EXIT_CODE_REBOOT = 200
+
+    def __init__(self): 
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
@@ -87,6 +117,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.config.modified.connect(lambda: self.config.customSlot("disclaim"))   
         self.config.notModified.connect(lambda: self.config.customSlot("apply"))  
         self.addMap()
+
+    def restartProgram(self):
+        QtWidgets.qApp.exit(MainWindow.EXIT_CODE_REBOOT)
 
     def addMap(self):
         if self.config.get().map==2:
@@ -198,11 +231,18 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
 
 
 
+
 if __name__ == '__main__':
-    app = QtWidgets.QApplication(sys.argv)
-    win=MainWindow()
-    win.showMaximized()        
-    sys.exit(app.exec_())
+
+    currentExitCode = MainWindow.EXIT_CODE_REBOOT
+
+    while currentExitCode == MainWindow.EXIT_CODE_REBOOT:
+        app = QtWidgets.QApplication(sys.argv)
+        win=MainWindow()
+        win.showMaximized()        
+        currentExitCode=app.exec_()
+    
+    sys.exit(currentExitCode)
 
 
 

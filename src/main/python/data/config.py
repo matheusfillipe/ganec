@@ -10,3 +10,6 @@ class Config(persistent.Persistent):
         self.isApplied=True
     def disclaim(self):
         self.isApplied=False
+
+    def __eq__(self, value):        
+        return self.map==value.map and self.text==value.text and self.text2==value.text2

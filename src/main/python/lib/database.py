@@ -192,11 +192,19 @@ class QInterface(QObject):
         changed=self.read()
         if changed:
             self.changed.emit()
-        if self.get().__dict__ == self.varManager.read(self.data,self.name).get().__dict__ and self.defined:
-            self.notModified.emit()
-            self.wasModified=False
+        dbData=self.varManager.read(self.data,self.name).get()
+        if str(type(dbData.__eq__))=="<class 'method'>":
+            if self.get()==dbData:
+                self.notModified.emit()
+                self.wasModified=False
+            else:
+                self.wasModified=True               
         else:
-            self.wasModified=True
+            if self.get().__dict__ == dbData.__dict__ and self.defined:
+                self.notModified.emit()
+                self.wasModified=False
+            else:
+                self.wasModified=True
         if self.wasModified and changed:
             self.modified.emit()
         self.updated.emit()   

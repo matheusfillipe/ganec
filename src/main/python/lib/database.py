@@ -46,14 +46,23 @@ class DbHandler():
 
 class QInterface(QObject):
     
-    updated=pyqtSignal()   
-    changed=pyqtSignal() 
+    updated=pyqtSignal() #sinais   
+    changed=pyqtSignal() #em relação ao estado anterior da interface
+    notModified=pyqtSignal()#em relação ao banco de dados
+    modified=pyqtSignal()
 
     def __init__(self, data, varManager, name:str):
         '''
         data: Instância de uma subclasse de persistent.Persistent que funciona como primeiro valor no stack (elements)
         varManager:
+
         name: Key para zodb database, nomes iguais irão se sobreescrever!
+
+        sinais emitidos quando:
+            updated --> quando qualquer sinal definido em signals pelo método setup ou define é emitido
+            changed --> quando o estado da interface muda
+            notModified --> quando o estado da interface muda para um igual do que se encontra no banco de dados
+            modified --> interface mudou e é diferente do banco de dados
         '''
         QObject.__init__(self)
         self.data=data
@@ -63,6 +72,8 @@ class QInterface(QObject):
         self.elements=[]
         self.defined=False
         self.elements.append(data)
+        self.wasModified=False
+
 
     def setup(self, iface, signals=[], slots=[], properties=[], readers=[], writers=[]):
         '''
@@ -178,8 +189,16 @@ class QInterface(QObject):
 
     
     def update(self): 
-        if self.read():
+        changed=self.read()
+        if changed:
             self.changed.emit()
+        if self.get().__dict__ == self.varManager.read(self.data,self.name).get().__dict__ and self.defined:
+            self.notModified.emit()
+            self.wasModified=False
+        else:
+            self.wasModified=True
+        if self.wasModified and changed:
+            self.modified.emit()
         self.updated.emit()   
 
 
@@ -192,6 +211,7 @@ class QInterface(QObject):
 
     def next(self):
         '''
+        switches to next element on stack (elements)
         returns data
         '''
         self.index+=1 if self.index<len(self.elements)-1 else 0
@@ -200,11 +220,27 @@ class QInterface(QObject):
 
     def previous(self):
         '''
+        switches to previous element on stack (elements)
         returns data
         '''
         self.index-=1 if self.index > 0 else 0
         self.write()
         return self.get()
+
+    def getNext(self):
+        '''
+        returns next data
+        '''
+        i=self.index + (1 if self.index<len(self.elements)-1 else 0)
+        return self.get(i)
+
+    def getPrevious(self):
+        '''
+        returns previous data
+        '''
+        i=self.index - (1 if self.index > 0 else 0)
+        return self.get(i)
+
 
     def get(self,i=None):
         '''

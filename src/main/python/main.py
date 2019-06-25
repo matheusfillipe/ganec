@@ -84,7 +84,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)               
         self.config=self.varManager.read(Config(),"config")   
-        self.config.changed.connect(lambda: self.config.customSlot("disclaim"))     
+        self.config.modified.connect(lambda: self.config.customSlot("disclaim"))   
+        self.config.notModified.connect(lambda: self.config.customSlot("apply"))  
         self.addMap()
 
     def addMap(self):

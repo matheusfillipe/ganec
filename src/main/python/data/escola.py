@@ -41,7 +41,7 @@ class ListaModalidades(persistent.Persistent):
         self.modalidades.append(modalidade)
     def get(self,i):
         return self.modalidades[i]
-    def removebyIndex(self,i):
+    def removeByIndex(self,i):
         del self.modalidades[i]
         
 class ListaEscolas(persistent.Persistent):

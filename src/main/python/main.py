@@ -59,7 +59,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.comboBox.addItem("Here")
         self.comboBox.addItem("Arquivo")
 
-        self.comboBox : QtWidgets.QComboBox
+        self.comboBox : QtWidgets.QComboBox 
         self.lineEdit : QtWidgets.QLineEdit
         self.lineEdit_2 : QtWidgets.QLineEdit
         self.buttonBox : QtWidgets.QDialogButtonBox
@@ -67,9 +67,11 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         iface.config.setup(self,
         signals=[self.buttonBox.accepted, self.lineEdit.textEdited, self.lineEdit_2.textEdited, self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
         slots=[iface.saveConfig,            lambda: 0,               lambda: 0,                  lambda: 0,                         iface.saveConfig,           self.reset],
-        properties=["map", "text", "text2"],
+        properties=["map",                  "text",               "text2"],
         readers=[self.comboBox.currentIndex, self.lineEdit.text, self.lineEdit_2.text],
         writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText, self.lineEdit_2.setText])
+        
+        
     
     def reset(self):        
         reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 
@@ -125,56 +127,47 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
         self.listWidget_2:QtWidgets.QListWidget
         self.modalidades:QInterface
         self.buttonBox:QtWidgets.QDialogButtonBox
-        self.listaModalidades=[]        
 
+        self.iface=iface
         self.varManager:VariableManager = iface.varManager
-        self.modalidades=self.varManager.read(ListaModalidades(),DB_MODALIDADES_BASE)    
+        self.modalidades=self.iface.modalidades    
         self.listWidget.itemClicked.connect(self.modalidadeChanged)
+
         self.modalidades.setup(self,
-            signals =  [self.buttonBox.accepted],
-            slots   =  [self.modalidades.save], 
+            signals =  [],
+            slots   =  [], 
             properties=["modalidades"], 
             readers  = [self.read],
             writers  = [self.write]
-            )
+        )
 
     def read(self):
-        return self.listaModalidades
+        return []
 
     def write(self,modalidades:list):
-        for m in modalidades:            
-            self.addToListWidget1()
+        for i,m in enumerate(modalidades):   
+            self.addToListWidget1(m, removable=True if i<len(modalidades)-1 else False)
         
-    def addToListWidget1(self):
+    def addToListWidget1(self, modalidade:Modalidade, removable=False):
+
         itemN = QtWidgets.QListWidgetItem() 
         widget = NewModalidadeWidget(self)
         widget.label.setText("Modalidade Escolar: ")
         widget.horizontalLayout.addStretch()
         widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        itemN.setSizeHint(widget.sizeHint())    
-
+        itemN.setSizeHint(widget.sizeHint())  
         self.listWidget.addItem(itemN)
         self.listWidget.setItemWidget(itemN, widget)
-        
-        i=self.listWidget.row(itemN)
-        modalidade=self.modalidades.get()
-        modalidade=modalidade.modalidades[i]
-        modalidade=self.modalidades.getChild(modalidade)
-        modalidade.setup(widget,
-            signals =  [widget.lineEdit.textEdited],
-            slots   =  [lambda: 0],
-            properties=["nome"],
-            readers  = [widget.lineEdit.text],
-            writers  = [widget.lineEdit.setText]
-            )
-        self.listaModalidades.append(modalidade.get())
 
-        widget.pushButton.clicked.connect(lambda: self.modalidades.get().append(Modalidade(nome="",turmas=[Turma(nome="")])))
-        widget.pushButton.clicked.connect(modalidade.save)
-        widget.pushButton.clicked.connect(self.addToListWidget1)
-        widget.pushButton.clicked.connect(lambda: widget.pushButton.setText("Remover"))
+        i=self.listWidget.row(itemN)
+        widget.lineEdit.setText(modalidade.nome)                
+        widget.pushButton.clicked.connect(lambda: self.addToListWidget1(Modalidade()))
         widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))
- 
+
+        if removable:
+            self.setRemovableFromListWidget1(widget, itemN)
+
+
     def removeFromListWidget1(self, item):
         i=self.listWidget.row(item)
         self.listWidget.takeItem(i)
@@ -186,14 +179,16 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
             except Exception: break
         widget.lineEdit.setReadOnly(True)
         widget.pushButton.clicked.connect(lambda: self.removeFromListWidget1(itemN))
+        widget.pushButton.setText("Remover")
 
     def modalidadeChanged(self):
         item=self.listWidget.currentItem()
         self.listWidget_2.clear()  
-        for t in self.modalidades.get().modalidades[self.listWidget.row(item)].turmas:
-            self.addToListWidget2()
-      
-    def addToListWidget2(self):
+        lista=self.modalidades.get().modalidades[self.listWidget.row(item)].turmas
+        for i,t in enumerate(lista):
+            self.addToListWidget2(t,removable=True if i < len(lista)-1 else False)
+
+    def addToListWidget2(self, turma:Turma, removable=False):        
         item=self.listWidget.currentItem()
         itemN = QtWidgets.QListWidgetItem() 
         widget = NewTurmaWidget(self)
@@ -204,26 +199,18 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
 
         self.listWidget_2.addItem(itemN)
         self.listWidget_2.setItemWidget(itemN, widget)
-
-        turma=self.modalidades.getChild(self.modalidades.get().modalidades[self.listWidget.row(item)].turmas[self.listWidget_2.row(itemN)])
-        turma.setup(widget,
-            signals =  [widget.lineEdit.textEdited],
-            slots   =  [lambda: 0, ],
-            properties=["nome"],
-            readers  = [widget.lineEdit.text],
-            writers  = [widget.lineEdit.setText]
-            )
-        widget.pushButton.clicked.connect(lambda: self.modalidades.get().get(self.listWidget.row(item)).addTurma(Turma(nome="")))
-        widget.pushButton.clicked.connect(turma.save)
-        widget.pushButton.clicked.connect(self.addToListWidget2)
-        widget.pushButton.clicked.connect(lambda: widget.pushButton.setText("Remover"))
+        widget.pushButton.clicked.connect(lambda: self.addToListWidget2(Turma()))
         widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget2(widget, itemN))
- 
+
+        if removable:
+            self.setRemovableFromListWidget2(widget, itemN)
+
     def removeFromListWidget2(self, item):
         i=self.listWidget_2.row(item)
         item=self.listWidget.currentItem()       
         self.listWidget_2.takeItem(i)   
         self.modalidades.get().modalidades[self.listWidget.row(item)]
+        
 
     def setRemovableFromListWidget2(self, widget, itemN):
         while True:
@@ -231,6 +218,10 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
             except Exception: break
         widget.lineEdit.setReadOnly(True)
         widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
+        widget.pushButton.setText("Remover")
+
+
+
 
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
@@ -301,8 +292,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.addMap()
             
     def modalidadesDialog(self):
+        self.modalidades=self.varManager.read(ListaModalidades(),DB_MODALIDADES_BASE)    
         dialog=ModalidadesDialog(self)
         dialog.setModal(True)
+        dialog.accepted.connect(self.modalidades.save)
         dialog.show()
         dialog.exec_()
 

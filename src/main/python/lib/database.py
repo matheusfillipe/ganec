@@ -278,8 +278,15 @@ class QInterface(QObject):
         else:
             if name is None:
                 name=self.name                  
-            self.varManager.write(self.get(),self.name)                                             
+            self.varManager.write(self.get(),self.name)    
 
+    def clean(self):
+            '''
+            Limpa a string passada do banco de dados ou a instanciada
+            '''
+            self.get=self.dischart(0)
+            self.clean(self.name)
+                
 
     def next(self):
         '''
@@ -401,7 +408,10 @@ class VariableManager():
         self.root.main[key]=obj
         self.db.save()
 
-    def removeDatabase(self):
+    def clean(self, nome:str):
+        del self.root.main[nome]
+
+    def removeDataba4f7be4e0031d6a502946c71006750a63e086d15ase(self):
         self.db.clean()
         
 

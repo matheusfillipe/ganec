@@ -1,8 +1,8 @@
 import datetime
 import persistent
 
-class aluno(persistent.Persistent):
-    def __init__(self, name: str, birthDate=None, endereco=None, cl=None, matricula="", additional="", nomePai="", nomeMae=""):
+class Aluno(persistent.Persistent):
+    def __init__(self, name:str="", birthDate=None, endereco=None, cl=None, matricula="", additional="", nomePai="", nomeMae=""):
         self.name=name    
         self.birthDate=birthDate
         self.endereco=endereco
@@ -26,7 +26,10 @@ class aluno(persistent.Persistent):
         pass
  
 class ListaAlunos(persistent.Persistent):
-    def __init__(self, item):
+    def __init__(self, item=[]):
         self.alunos=item
+    def get(self,i):
+        return self.item[i]
+ 
 
        

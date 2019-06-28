@@ -177,13 +177,14 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     markerDoubleClicked = QtCore.pyqtSignal(str, float, float)
     markerRightClicked = QtCore.pyqtSignal(str, float, float)
 
-    def __init__(self, api_key=API_KEY, parent=None):
+    def __init__(self, api_key=API_KEY, parent=None, lat=None, lng=None):
         super(QGoogleMap, self).__init__(parent)
         self._api_key = api_key
         channel = QtWebChannel.QWebChannel(self)
         self.page().setWebChannel(channel)
         channel.registerObject("qGoogleMap", self)
-
+        self.lat=lat
+        self.lng=lng
 
         html = HTML.replace("API_KEY", api_key)
         self.setHtml(html)
@@ -195,24 +196,26 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     def show(self):
         self.waitUntilReady()
         self.setZoom(16)
-        lat, lng = self.centerAtAddress("Prefeitura de Carmo do Parnaíba - Praça Misael. Luiz de Carvalho - Centro, Carmo do Paranaíba - MG")
+        #lat, lng = self.centerAtAddress("Prefeitura de Carmo do Parnaíba - Praça Misael. Luiz de Carvalho - Centro, Carmo do Paranaíba - MG")
+        lat=self.lat
+        lng=self.lng
         if lat is None and lng is None:
             lng, lat = -46.30973, -19.00009 
         self.centerAt(lat, lng)
 
-        self.addMarker("MyDragableMark", lat, lng, **dict(
+        self.addMarker("Centro", lat, lng, **dict(
             icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_red.png",
             draggable=True,
-            title="Move me!"
+            title="Centro"
         ))
 
-        for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
-            self.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
+#        for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
+#            self.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
 
-        self.mapMoved.connect(print)
-        self.mapClicked.connect(print)
-        self.mapRightClicked.connect(print)
-        self.mapDoubleClicked.connect(print)
+    #    self.mapMoved.connect(print)
+    #    self.mapClicked.connect(print)
+    #    self.mapRightClicked.connect(print)
+    #    self.mapDoubleClicked.connect(print)
         self.markerMoved.connect(print)
 
         return super().show()

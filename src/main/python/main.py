@@ -2,13 +2,16 @@
 
 from PyQt5 import QtWidgets, QtGui, uic, Qt, QtCore
 from fbs_runtime.application_context import ApplicationContext
-from lib.osm import MapWidget
-import os
-from data.config import Config
+import os, sys
 
+from data.config import *
+from data.aluno import *
+from data.escola import *
+
+from lib.osm import MapWidget
 from lib.gmaps import QGoogleMap 
-import sys
 from lib.database import VariableManager, QInterface
+from lib.constants import *
 
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
@@ -54,6 +57,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.comboBox.addItem("Google")    
         self.comboBox.addItem("OSM")
         self.comboBox.addItem("Here")
+        self.comboBox.addItem("Arquivo")
 
         self.comboBox : QtWidgets.QComboBox
         self.lineEdit : QtWidgets.QLineEdit
@@ -73,6 +77,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         if reply:
             self.iface.varManager.removeDatabase()
             messageDialog(self, message="O programa irá reiniciar")
+            self.close()
             self.iface.restartProgram()                
 
     
@@ -92,18 +97,148 @@ class NewAlunoWidget(QtWidgets.QWidget, NEW_ALUNO_WIDGET):
      
 
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
-    def __init__(self):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_MODALIDADE_WIDGET.__init__(self)
+        self.setupUi(self)        
+        self.lineEdit:QtWidgets.QLineEdit
+        self.lineEdit.setPlaceholderText("Nome da Modalidade")
+
+class NewTurmaWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
+    def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
         NEW_MODALIDADE_WIDGET.__init__(self)
         self.setupUi(self)
+        self.lineEdit:QtWidgets.QLineEdit
+        self.lineEdit.setPlaceholderText("Turma/Série")
+
+class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
+    edited = QtCore.pyqtSignal()
+    def __init__(self, iface):
+        QtWidgets.QDialog.__init__(self)
+        MODALIDADES_DIALOD.__init__(self)
+        self.setupUi(self)
+
+        self.iface:MainWindow
+        self.varManager:VariableManager
+        self.listWidget:QtWidgets.QListWidget
+        self.listWidget_2:QtWidgets.QListWidget
+        self.modalidades:QInterface
+        self.buttonBox:QtWidgets.QDialogButtonBox
+        self.listaModalidades=[]        
+
+        self.varManager:VariableManager = iface.varManager
+        self.modalidades=self.varManager.read(ListaModalidades(),DB_MODALIDADES_BASE)    
+        self.listWidget.itemClicked.connect(self.modalidadeChanged)
+        self.modalidades.setup(self,
+            signals =  [self.buttonBox.accepted],
+            slots   =  [self.modalidades.save], 
+            properties=["modalidades"], 
+            readers  = [self.read],
+            writers  = [self.write]
+            )
+
+    def read(self):
+        return self.listaModalidades
+
+    def write(self,modalidades:list):
+        for m in modalidades:            
+            self.addToListWidget1()
+        
+    def addToListWidget1(self):
+        itemN = QtWidgets.QListWidgetItem() 
+        widget = NewModalidadeWidget(self)
+        widget.label.setText("Modalidade Escolar: ")
+        widget.horizontalLayout.addStretch()
+        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        itemN.setSizeHint(widget.sizeHint())    
+
+        self.listWidget.addItem(itemN)
+        self.listWidget.setItemWidget(itemN, widget)
+        
+        i=self.listWidget.row(itemN)
+        modalidade=self.modalidades.get()
+        modalidade=modalidade.modalidades[i]
+        modalidade=self.modalidades.getChild(modalidade)
+        modalidade.setup(widget,
+            signals =  [widget.lineEdit.textEdited],
+            slots   =  [lambda: 0],
+            properties=["nome"],
+            readers  = [widget.lineEdit.text],
+            writers  = [widget.lineEdit.setText]
+            )
+        self.listaModalidades.append(modalidade.get())
+
+        widget.pushButton.clicked.connect(lambda: self.modalidades.get().append(Modalidade(nome="",turmas=[Turma(nome="")])))
+        widget.pushButton.clicked.connect(modalidade.save)
+        widget.pushButton.clicked.connect(self.addToListWidget1)
+        widget.pushButton.clicked.connect(lambda: widget.pushButton.setText("Remover"))
+        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))
+ 
+    def removeFromListWidget1(self, item):
+        i=self.listWidget.row(item)
+        self.listWidget.takeItem(i)
+        self.modalidades.get().removeByIndex(i)
+
+    def setRemovableFromListWidget1(self, widget, itemN):
+        while True:
+            try: widget.pushButton.clicked.disconnect() 
+            except Exception: break
+        widget.lineEdit.setReadOnly(True)
+        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget1(itemN))
+
+    def modalidadeChanged(self):
+        item=self.listWidget.currentItem()
+        self.listWidget_2.clear()  
+        for t in self.modalidades.get().modalidades[self.listWidget.row(item)].turmas:
+            self.addToListWidget2()
+      
+    def addToListWidget2(self):
+        item=self.listWidget.currentItem()
+        itemN = QtWidgets.QListWidgetItem() 
+        widget = NewTurmaWidget(self)
+        widget.label.setText("Turma: ")
+        widget.horizontalLayout.addStretch()
+        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        itemN.setSizeHint(widget.sizeHint())    
+
+        self.listWidget_2.addItem(itemN)
+        self.listWidget_2.setItemWidget(itemN, widget)
+
+        turma=self.modalidades.getChild(self.modalidades.get().modalidades[self.listWidget.row(item)].turmas[self.listWidget_2.row(itemN)])
+        turma.setup(widget,
+            signals =  [widget.lineEdit.textEdited],
+            slots   =  [lambda: 0, ],
+            properties=["nome"],
+            readers  = [widget.lineEdit.text],
+            writers  = [widget.lineEdit.setText]
+            )
+        widget.pushButton.clicked.connect(lambda: self.modalidades.get().get(self.listWidget.row(item)).addTurma(Turma(nome="")))
+        widget.pushButton.clicked.connect(turma.save)
+        widget.pushButton.clicked.connect(self.addToListWidget2)
+        widget.pushButton.clicked.connect(lambda: widget.pushButton.setText("Remover"))
+        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget2(widget, itemN))
+ 
+    def removeFromListWidget2(self, item):
+        i=self.listWidget_2.row(item)
+        item=self.listWidget.currentItem()       
+        self.listWidget_2.takeItem(i)   
+        self.modalidades.get().modalidades[self.listWidget.row(item)]
+
+    def setRemovableFromListWidget2(self, widget, itemN):
+        while True:
+            try: widget.pushButton.clicked.disconnect() 
+            except Exception: break
+        widget.lineEdit.setReadOnly(True)
+        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
 
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
-    EXIT_CODE_REBOOT = 200
-
-    def __init__(self): 
+    def __init__(self, app):         
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
+        self.app : QtWidgets.QApplication
+        self.app=app 
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         if RESET:
             self.varManager.removeDatabase()
@@ -113,22 +248,31 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)               
-        self.config=self.varManager.read(Config(),"config")   
+        self.config=self.varManager.read(Config(),DB_CONFIG)   
         self.config.modified.connect(lambda: self.config.customSlot("disclaim"))   
         self.config.notModified.connect(lambda: self.config.customSlot("apply"))  
         self.addMap()
 
     def restartProgram(self):
-        QtWidgets.qApp.exit(MainWindow.EXIT_CODE_REBOOT)
-
+        self.app.restart=True
+        self.close()
+        self.app.quit()
+    
+    def updateCenter(self, key, lat, lng):
+        if key=="Centro":
+            self.config.get().setInitialPos(lat,lng)
+            self.config.save(DB_CONFIG)
     def addMap(self):
-        if self.config.get().map==2:
+        if self.config.get().map==3:
+            w=QtWidgets.QLabel("shapefile não está disponível, por favor mude para google ou osm nas configurações")
+        elif self.config.get().map==2:
             #TODO implement here maps
             w=QtWidgets.QLabel("Here Maps não está disponível, por favor mude para google ou osm nas configurações")
         elif self.config.get().map==1:
             w=MapWidget()
         elif self.config.get().map==0:
-            w=QGoogleMap()
+            w=QGoogleMap(lat=self.config.get().lat, lng=self.config.get().lng)
+            w.markerMoved.connect(self.updateCenter)
         else:
             w=QtWidgets.QLabel("Problema no banco de dados! Tente limpar as configurações")
         self.mapWidget=w
@@ -143,7 +287,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     
     def newAlunoDialog(self):
         dialog=NewAlunoDialog(self)             
-        dialog.setModal(True)        
+        dialog.setModal(True)    
+        dialog.show()    
         dialog.exec_()
 
     def saveConfig(self):  
@@ -159,89 +304,22 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog=ModalidadesDialog(self)
         dialog.setModal(True)
         dialog.show()
-        a=dialog.exec_()
-        print(a)
+        dialog.exec_()
 
 
-class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
-    def __init__(self, iface):
-        QtWidgets.QDialog.__init__(self)
-        MODALIDADES_DIALOD.__init__(self)
-        self.setupUi(self)
-
-        #carregar da DB
-        self.addToListWidget1()
-        self.addToListWidget2()
-        self.listWidget.itemClicked.connect(self.modalidadeChanged)
-
-
-    def addToListWidget1(self):
-        itemN = QtWidgets.QListWidgetItem() 
-        widget = NewModalidadeWidget()
-        widget.label.setText("Nome da Modalidade")
-        widget.pushButton.clicked.connect(self.addToListWidget1)
-        widget.pushButton.clicked.connect(lambda: widget.pushButton.setText("Remover"))
-        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))
-
-        widget.horizontalLayout.addStretch()
-        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        itemN.setSizeHint(widget.sizeHint())    
-        self.listWidget.addItem(itemN)
-        self.listWidget.setItemWidget(itemN, widget)
-
-    def removeFromListWidget1(self, item):
-        self.listWidget.takeItem(self.listWidget.row(item))   
-
-    def setRemovableFromListWidget1(self, widget, itemN):
-        while True:
-            try: widget.pushButton.clicked.disconnect() 
-            except Exception: break
-        widget.lineEdit.setReadOnly(True)
-        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget1(itemN))
-
-    def modalidadeChanged(self):
-        #item=self.listWidget.currentItem()
-        self.listWidget_2.clear()         
-        self.addToListWidget2()
-      
-    def addToListWidget2(self):
-        #load from DB
-        itemN = QtWidgets.QListWidgetItem() 
-        widget = NewModalidadeWidget()
-        widget.label.setText("Nome da Turma")
-        widget.pushButton.clicked.connect(self.addToListWidget2)
-        widget.pushButton.clicked.connect(lambda: widget.pushButton.setText("Remover"))
-        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget2(widget, itemN))
-
-        widget.horizontalLayout.addStretch()
-        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        itemN.setSizeHint(widget.sizeHint())    
-        self.listWidget_2.addItem(itemN)
-        self.listWidget_2.setItemWidget(itemN, widget)
-
-    def removeFromListWidget2(self, item):
-        return self.listWidget_2.takeItem(self.listWidget_2.row(item))   
-
-    def setRemovableFromListWidget2(self, widget, itemN):
-        while True:
-            try: widget.pushButton.clicked.disconnect() 
-            except Exception: break
-        widget.lineEdit.setReadOnly(True)
-        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
-
-
-
-
-if __name__ == '__main__':
-
-    currentExitCode = MainWindow.EXIT_CODE_REBOOT
-
-    while currentExitCode == MainWindow.EXIT_CODE_REBOOT:
-        app = QtWidgets.QApplication(sys.argv)
-        win=MainWindow()
+def main(*args):
+    while True:
+        app = QtWidgets.QApplication(*args)
+        app.restart=False
+        win=MainWindow(app)
         win.showMaximized()        
         currentExitCode=app.exec_()
-    
+        if not app.restart:
+            break        
+    return currentExitCode   
+
+if __name__ == '__main__':
+    currentExitCode=main(sys.argv)
     sys.exit(currentExitCode)
 
 

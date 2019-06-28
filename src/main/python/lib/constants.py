@@ -1,1 +1,8 @@
+#NOME DO PROJETO
 NAME="GANEC"
+
+
+#DATABASE STRINGS
+
+DB_CONFIG="config"
+DB_MODALIDADES_BASE="modalidades_base"

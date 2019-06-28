@@ -51,12 +51,15 @@ class QInterface(QObject):
     notModified=pyqtSignal()#em relação ao banco de dados
     modified=pyqtSignal()
 
-    def __init__(self, data, varManager, name:str):
+    def __init__(self, data, varManager, name:str, child=False):
         '''
         data: Instância de uma subclasse de persistent.Persistent que funciona como primeiro valor no stack (elements)
+        
         varManager:
 
         name: Key para zodb database, nomes iguais irão se sobreescrever!
+
+        child: Attributo
 
         sinais emitidos quando:
             updated --> quando qualquer sinal definido em signals pelo método setup ou define é emitido
@@ -65,6 +68,7 @@ class QInterface(QObject):
             modified --> interface mudou e é diferente do banco de dados
         '''
         QObject.__init__(self)
+        self.child=child
         self.data=data
         self.name=name
         self.varManager=varManager
@@ -89,7 +93,23 @@ class QInterface(QObject):
 
         Observe que os elementos de properties, interfaces e wrirters devem estar todos associados 1 a 1 entre si
         properties, readers e writers são obrigatórias para definir a readers para que os métodos read e write funcionem
-        Não coloque parenteses nos writers e properties list!        
+        Não coloque parenteses nos writers e properties list!  
+
+        SUGGESTED LAYOUT
+        
+           \t     self,  
+           \t     signals =  [],
+           \t     slots   =  [],
+           \t     properties=[],
+           \t     readers  = [],
+           \t     writers  = [] 
+
+           OR SIMPLY
+
+           \t     self,  
+           \t     properties=[],
+           \t     readers  = [],
+           \t     writers  = []               
         '''
         self.define(signals=signals,slots=slots,properties=properties,readers=readers,writers=writers)
         self.bindUndoRedo(iface)
@@ -110,6 +130,23 @@ class QInterface(QObject):
         Observe que os elementos de properties, interfaces e wrirters devem estar todos associados 1 a 1 entre si
         properties, readers e writers são obrigatórias para definir a readers para que os métodos read e write funcionem
         Não coloque parenteses nos writers e properties list!
+
+        SUGGESTED LAYOUT
+        
+           \t     self,  
+           \t     signals =  [],
+           \t     slots   =  [],
+           \t     properties=[],
+           \t     readers  = [],
+           \t     writers  = [] 
+
+           OR SIMPLY
+
+           \t     self,  
+           \t     properties=[],
+           \t     readers  = [],
+           \t     writers  = []               
+
         '''
         if signals and slots:
             assert len(signals) == len(slots), "Os tamanhos das listas devem ser os mesmos"
@@ -125,6 +162,27 @@ class QInterface(QObject):
             self.writers=writers
             self.defined=True
 
+    def addSignal(self, signal, slot):
+        '''
+        adds a signal and corresponding slot
+        The interface has to be defined        
+        '''
+        assert self.defined, "Interface deve ser definida pelo método setup ou define "
+        self.signals.append(signal)
+        self.slots.append(slots)
+        signal.connect(slot)
+        signal.connect(self.update)
+
+    def addProperty(self, propertie:str, reader, writer):
+        '''
+        adds a property
+        The interface has to be defined
+        '''
+        assert self.defined, "Interface deve ser definida pelo método setup ou define"       
+        self.properties.append(propertie)
+        self.interfaces.append(reader)
+        self.writers.append(writer)       
+    
 
     def disconectAll(self):
         if self.signals:
@@ -192,7 +250,7 @@ class QInterface(QObject):
         changed=self.read()
         if changed:
             self.changed.emit()
-        dbData=self.varManager.read(self.data,self.name).get()
+        dbData=self.varManager.read(self.data,self.name).get() if not self.child else self.data
         if str(type(dbData.__eq__))=="<class 'method'>":
             if self.get()==dbData:
                 self.notModified.emit()
@@ -210,11 +268,17 @@ class QInterface(QObject):
         self.updated.emit()   
 
 
-    def save(self, name:str):
+    def save(self, name:str=None):
         '''
         saves object to database
         '''
-        self.varManager.write(self.get(),self.name)                                             
+        if self.child and name is None:
+            self.data.__dict__=self.get().__dict__
+            self.varManager.db.save()            
+        else:
+            if name is None:
+                name=self.name                  
+            self.varManager.write(self.get(),self.name)                                             
 
 
     def next(self):
@@ -259,6 +323,13 @@ class QInterface(QObject):
             return self.elements[i]
         else:
             return self.elements[self.index]
+    
+    def getChild(self, data):
+        '''
+        returns the corresponding qinterface for a specific data's object attribute        
+        '''
+        assert self.child==False, "Childs só podem ser criados de interfaces primárias"
+        return QInterface(data, self.varManager, self.name, child=data)
 
 
     def bindUndoRedo(self, iface:QWidget):
@@ -270,6 +341,17 @@ class QInterface(QObject):
         iface.redoShortcut=QShortcut(QKeySequence("Ctrl+Shift+Z"), iface)
         iface.undoShortcut.activated.connect(self.previous)
         iface.redoShortcut.activated.connect(self.next)
+
+    def unBindUndoRedo(self, iface:QWidget):
+        '''
+        iface: parent QWidget
+        unbinds Ctrl+z e ctrl+shift+z (undo/redo)
+        '''
+        if hasattr(iface,"undoShortcut"):
+            iface.undoShortcut.activated.disconnect(self.previous)
+        if hasattr(iface,"redoShortcut"):
+            iface.redoShortcut.activated.disconnect(self.next)
+
 
     def customSlot(self, method:str, *args):
         '''
@@ -283,10 +365,14 @@ class QInterface(QObject):
             func()
         else:
             func(args)
-            
 
+     
+     
 class VariableManager():
     def __init__(self,cfgDir:str):
+        '''
+        arguments: Config folder path
+        '''
         dbFolder=Path(cfgDir+"/GANEC")
         db=DbHandler(dbFolder)
         self.db=db
@@ -301,7 +387,7 @@ class VariableManager():
 
 
     def read(self, obj:object, key:str):
-        if key in self.root.main:
+        if key in self.root.main and type(self.root.main[key])==type(obj):
             qinterface=QInterface(self.root.main[key], self, key)
             for attr in obj.__dict__:
                 if not hasattr(qinterface.get(),attr):
@@ -310,7 +396,7 @@ class VariableManager():
         else:
             self.root.main[key]=obj
             return QInterface(self.root.main[key], self, key)
-
+    
     def write(self, obj:object, key:str):
         self.root.main[key]=obj
         self.db.save()

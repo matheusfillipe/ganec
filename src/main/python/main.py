@@ -125,7 +125,7 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
 class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
-        NEW_ESCOLA_WIDGET.__init(self)
+        NEW_ESCOLA_WIDGET.__init__(self)
         self.setupUi(iface)
 
 #DIALOG ESCOLA
@@ -144,7 +144,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog) 
         self.actionConfigura_es.triggered.connect(self.settingDialog)
-        self.actionEscolas.triggered.connect(self.NewEscolaDialog)    
+        self.actionEscolas.triggered.connect(self.newEscolaDialog)    
         #w=MapWidget()
         w=QGoogleMap()
         #self.stackedWidget.setCurrentWidget(w)
@@ -180,8 +180,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         a=dialog.exec_()
         print(a)
 
-
-
+    def newEscolaDialog(self):
+        dialog=NewEscolaDialog(self)
+        dialog.setModal(True)
+        dialog.show()
+        e=dialog.exec_()
+        print(e)
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ class MapWidget(QtWidgets.QWidget):
     def __init__(self):
         super(MapWidget, self).__init__()
         self.setupUi()
-
+    
     def setupUi(self):       
        # self.setFixedSize(800, 500)
         vbox = QtWidgets.QVBoxLayout()

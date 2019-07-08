@@ -210,11 +210,13 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
 #        for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
 #            self.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
 
+
     #    self.mapMoved.connect(print)
     #    self.mapClicked.connect(print)
     #    self.mapRightClicked.connect(print)
     #    self.mapDoubleClicked.connect(print)
         self.markerMoved.connect(print)
+
 
         return super().show()
 
@@ -361,7 +363,9 @@ def test():
     w.mapClicked.connect(print)
     w.mapRightClicked.connect(print)
     w.mapDoubleClicked.connect(print)
+
     w.markerMoved.connect(print)
+
     sys.exit(app.exec_())
     
 if __name__ == '__main__':

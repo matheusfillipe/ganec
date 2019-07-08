@@ -285,8 +285,8 @@ class QInterface(QObject):
             Limpa a string passada do banco de dados ou a instanciada
             '''
             self.get=self.dischart(0)
-            self.clean(self.name)
-                
+            self.varManager.clean(self.name)
+            self.elements[0]=self.data
 
     def next(self):
         '''
@@ -356,8 +356,10 @@ class QInterface(QObject):
         '''
         if hasattr(iface,"undoShortcut"):
             iface.undoShortcut.activated.disconnect(self.previous)
+            del iface.undoShortcut
         if hasattr(iface,"redoShortcut"):
             iface.redoShortcut.activated.disconnect(self.next)
+            del iface.redoShortcut        
 
 
     def customSlot(self, method:str, *args):
@@ -367,7 +369,7 @@ class QInterface(QObject):
         args: used to pass arguments
         '''
         func=getattr(self.get(), method)
-        assert callable(func), "string method should be a data object's callable!"
+        assert callable(func), "string as method name should be a data object's callable!"
         if len(args) == 0:
             func()
         else:

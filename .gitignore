@@ -4,3 +4,4 @@ venv/
 venv/*
 src/main/python/lib/hidden/constants.py
 test*
+.env

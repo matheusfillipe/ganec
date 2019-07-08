@@ -2,28 +2,25 @@ import datetime
 import persistent
 
 class Aluno(persistent.Persistent):
-    def __init__(self, name:str="", birthDate=None, endereco=None, cl=None, matricula="", additional="", nomePai="", nomeMae=""):
+    def __init__(self, name="", birthDate=None, rua="", numero="", bairro="",complemento="", matricula="", additional="", nomePai="", nomeMae="", RG = "", CPF = "", telefone = "", escolas = [], series = []):
         self.name=name    
         self.birthDate=birthDate
-        self.endereco=endereco
-        self.cl=cl
-        self.additional=additional
+        self.rua=rua
+        self.numero = numero
+        self.bairro = bairro
+        self.complemento = complemento
+        self.RG=RG
+        self.CPF=CPF
+        self.telefone=telefone
+        self.complemento=complemento
         self.matricula=matricula
         self.nomePai=nomePai
         self.nomeMae=nomeMae
-        self.escolasDestino=[]
+        self.escolas=[]
+        self.series=[]
 
-    def addClass(self):
-        self.cl+=1
-    
-    def computeCoordenadas():
-        pass
-
-    def computeEscola(self):
-        pass
-    
-    def age(self):
-        pass
+    def escolherEscolaMaisProxima(self):
+        print("Escolher escola")
  
 class ListaAlunos(persistent.Persistent):
     def __init__(self, item=[]):

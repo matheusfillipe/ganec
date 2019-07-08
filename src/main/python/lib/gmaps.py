@@ -133,7 +133,6 @@ class GeoCoder(QtNetwork.QNetworkAccessManager):
 
     def geocode(self, location, api_key):
         url = QtCore.QUrl("https://maps.googleapis.com/maps/api/geocode/xml")
-
         query = QtCore.QUrlQuery()
         query.addQueryItem("key", api_key)
         query.addQueryItem("address", location)
@@ -195,8 +194,7 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     
     def show(self):
         self.waitUntilReady()
-        self.setZoom(16)
-        #lat, lng = self.centerAtAddress("Prefeitura de Carmo do Parnaíba - Praça Misael. Luiz de Carvalho - Centro, Carmo do Paranaíba - MG")
+        self.setZoom(16)       
         lat=self.lat
         lng=self.lng
         if lat is None and lng is None:
@@ -358,11 +356,13 @@ def test():
     for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
         w.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
 
+
     w.mapMoved.connect(print)
     w.mapClicked.connect(print)
     w.mapRightClicked.connect(print)
     w.mapDoubleClicked.connect(print)
-    w.markerIsMoved.connect(print)
+    w.markerMoved.connect(print)
     sys.exit(app.exec_())
+    
 if __name__ == '__main__':
     test()

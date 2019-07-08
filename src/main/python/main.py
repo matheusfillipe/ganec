@@ -12,14 +12,19 @@ from lib.osm import MapWidget
 from lib.gmaps import QGoogleMap 
 from lib.database import VariableManager, QInterface
 from lib.constants import *
+from customWidgets import *
 
 
-MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
-MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
-NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
-SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
-NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui")
+MAIN_WINDOW, _ = uic.loadUiType(UI_FILES_PATH+"/mainWindow.ui")
+MODALIDADES_DIALOD, _ = uic.loadUiType(UI_FILES_PATH+"/dialogs/modalidades.ui")
+NEW_MODALIDADE_WIDGET, _ = uic.loadUiType(UI_FILES_PATH+"/widgets/modalidadeForm.ui")
+SETTINGS_DIALOG,_ = uic.loadUiType(UI_FILES_PATH+"/dialogs/settingsDialog.ui")
+NEW_ALUNO_WIDGET, _ = uic.loadUiType(UI_FILES_PATH+"/widgets/alunoForm.ui")
+NEW_ESCOLA_WIDGET, _ = uic.loadUiType(UI_FILES_PATH+"/widgets/escolaForm.ui")
 
+FILTER_WIDGET,_ = uic.loadUiType(UI_FILES_PATH+"/widgets/filtroForm.ui")
+
+listaComOsDados = []
 #Resetar banco de dados
 RESET=0
 
@@ -70,9 +75,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         properties=["map",                  "text",               "text2"],
         readers=[self.comboBox.currentIndex, self.lineEdit.text, self.lineEdit_2.text],
         writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText, self.lineEdit_2.setText])
-        
-        
-    
+                   
     def reset(self):        
         reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 
         info="Esta operação irá remover todos os arquivos de configuração e de banco de dados. Isso não é reversível.")
@@ -82,15 +85,82 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             self.close()
             self.iface.restartProgram()                
 
-    
-class NewAlunoDialog(QtWidgets.QDialog):
+
+class FilterWidget(QtWidgets.QWidget, FILTER_WIDGET):
     def __init__(self, iface):
-        super(NewAlunoDialog, self).__init__(None)
-        self.iface=iface
-        newAlunoWidget = NewAlunoWidget(self)
-        newAlunoWidget.show()      
+        QtWidgets.QWidget.__init__(self)
+        FILTER_WIDGET.__init__(self)
+        self.setupUi(iface)
+        self.Form : QtWidgets.QWidget
+        self.comboBox : QtWidgets.QComboBox
+        self.comboBox_2 : QtWidgets.QComboBox 
+        self.lineEdit : QtWidgets.QLineEdit
+        self.pushButton : QtWidgets.QPushButton        
 
+class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_ALUNO_WIDGET.__init__(self)
+        iface : MainWindow
+        self.iface=iface 
+        self.setupUi(self)
 
+        self.aluno = self.iface.aluno
+
+        self.lineEditNome : QtWidgets.QLineEdit
+        self.lineEditRG : QtWidgets.QLineEdit
+        self.lineEditCPF : QtWidgets.QLineEdit
+        self.lineEditNomeDaMae : QtWidgets.QLineEdit
+        self.lineEditNomeDoPai : QtWidgets.QLineEdit
+        self.lineEditTelefone : QtWidgets.QLineEdit
+        self.lineEditRua : QtWidgets.QLineEdit
+        self.lineEditNumero : QtWidgets.QLineEdit
+        self.lineEditBairro : QtWidgets.QLineEdit
+        self.lineEditComplemento : QtWidgets.QLineEdit
+        self.lineEditMatricula : QtWidgets.QLineEdit
+        
+        self.comboBoxEscolas : QtWidgets.QComboBox
+        self.comboBoxSerie : QtWidgets.QComboBox
+
+        for i in listaDeEscolas:
+            self.comboBoxEscolas.addItem(i)
+        for i in listaDeSeries[0]:
+            self.comboBoxSerie.addItem(i)
+
+        iface.aluno.setup(self,
+        signals=[self.pushButtonAdiconar.clicked, self.lineEditNome.textEdited, self.lineEditRG.textEdited, self.lineEditCPF.textEdited, self.lineEditNomeDaMae.textEdited, self.lineEditNomeDoPai.textEdited, self.lineEditTelefone.textEdited, self.lineEditRua.textEdited, self.lineEditNumero.textEdited, self.lineEditBairro.textEdited, self.lineEditComplemento.textEdited, self.lineEditMatricula.textEdited, self.comboBoxEscolas.currentIndexChanged, self.comboBoxSerie.currentIndexChanged],
+        slots=[  iface.saveAluno,                 lambda: 0,                    lambda: 0,              lambda: 0,               lambda: 0,                     lambda: 0,                     lambda: 0,                    lambda: 0,               lambda: 0,                  lambda: 0,                  lambda: 0,                       lambda: 0,                     lambda: 0,                                lambda: 0],
+        properties=["name",                    "RG",                    "CPF",                    "nomeMae",                      "nomePai",                      "telefone",                    "rua",                    "numero",                    "bairro",                    "complemento",                    "matricula"],
+        readers =  [self.lineEditNome.text,    self.lineEditRG.text,    self.lineEditCPF.text,    self.lineEditNomeDaMae.text,    self.lineEditNomeDoPai.text,    self.lineEditTelefone.text,    self.lineEditRua.text,    self.lineEditNumero.text,    self.lineEditBairro.text,    self.lineEditComplemento.text,    self.lineEditMatricula.text],
+        writers =  [self.lineEditNome.setText, self.lineEditRG.setText, self.lineEditCPF.setText, self.lineEditNomeDaMae.setText, self.lineEditNomeDoPai.setText, self.lineEditTelefone.setText, self.lineEditRua.setText, self.lineEditNumero.setText, self.lineEditBairro.setText, self.lineEditComplemento.setText, self.lineEditMatricula.setText])
+        
+        self.pushButtonAdiconar.clicked.connect(self.salvarDados)
+        self.comboBoxEscolas.currentIndexChanged.connect(self.addSeries)
+
+    def salvarDados(self):
+        erro = 0
+
+        if (self.lineEditNome.text() != "") and (self.lineEditRG.text() != "") and (self.lineEditCPF.text() != "") and (self.lineEditRua.text() != "") and (self.lineEditNumero.text() != "") and (self.lineEditBairro.text() != "") and (self.lineEditMatricula.text() != ""):
+            endereco = [self.Aluno.rua, self.Aluno.numero, self.Aluno.bairro, self.Aluno.complemento]
+            dados = "Matrícula: " + self.Aluno.matricula + "\n\nNome: " + self.Aluno.nome + "\nRG: " + self.Aluno.RG + "\nCPF: " + self.Aluno.CPF + "\nMãe: " + self.Aluno.nomeDaMae + "\nPai: " + self.Aluno.nomeDoPai +  "\nTelefone: " + self.Aluno.telefone + "\nEndereço:\n\nRua: " + endereco[0] + ", " + endereco[1] + "\nBairro: " + endereco[2]
+            if endereco[3] != "":
+                dados = dados + "\nComplemento: " + endereco[3]
+            listaComOsDados.append(dados)
+            model = QtGui.QStandardItemModel()
+            self.listViewAlunos.setModel(model)
+            for i in listaComOsDados:
+                item = QtGui.QStandardItem(i)
+                model.appendRow(item)
+            erro = 1
+        if erro == 0:
+            #printar erro que todos os campos obrigatórios devem ser preenchidos 
+            print("Erro")                    
+ 
+    def addSeries(self):
+        self.comboBoxSerie.clear()
+        for i in listaDeSeries[self.comboBoxEscolas.currentIndex()]:
+            self.comboBoxSerie.addItem(i)  
+ 
 class NewAlunoWidget(QtWidgets.QWidget, NEW_ALUNO_WIDGET):
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
@@ -103,15 +173,26 @@ class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
         QtWidgets.QWidget.__init__(self)
         NEW_MODALIDADE_WIDGET.__init__(self)
         self.setupUi(self)        
-        self.lineEdit:QtWidgets.QLineEdit
+        self.widget : QtWidgets.QWidget
+        self.widget : QtWidgets.QWidget
+        self.label : QtWidgets.QLabel
+        self.lineEdit : QtWidgets.QLineEdit
+        self.pushButton : QtWidgets.QPushButton
+
         self.lineEdit.setPlaceholderText("Nome da Modalidade")
+
 
 class NewTurmaWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
         NEW_MODALIDADE_WIDGET.__init__(self)
         self.setupUi(self)
-        self.lineEdit:QtWidgets.QLineEdit
+        self.widget : QtWidgets.QWidget
+        self.widget : QtWidgets.QWidget
+        self.label : QtWidgets.QLabel
+        self.lineEdit : QtWidgets.QLineEdit
+        self.pushButton : QtWidgets.QPushButton
+        
         self.lineEdit.setPlaceholderText("Turma/Série")
 
 class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
@@ -123,10 +204,11 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
 
         self.iface:MainWindow
         self.varManager:VariableManager
-        self.listWidget:QtWidgets.QListWidget
-        self.listWidget_2:QtWidgets.QListWidget
         self.modalidades:QInterface
-        self.buttonBox:QtWidgets.QDialogButtonBox
+        self.Dialog : QtWidgets.QDialog
+        self.listWidget : QtWidgets.QListWidget
+        self.listWidget_2 : QtWidgets.QListWidget
+        self.buttonBox : QtWidgets.QDialogButtonBox
 
         self.iface=iface
         self.varManager:VariableManager = iface.varManager
@@ -152,7 +234,7 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
 
         itemN = QtWidgets.QListWidgetItem() 
         widget = NewModalidadeWidget(self)
-        widget.label.setText("Modalidade Escolar: ")
+        widget.label.setText("Modalidade Escolar: ")        
         widget.horizontalLayout.addStretch()
         widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         itemN.setSizeHint(widget.sizeHint())  
@@ -162,7 +244,7 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
         i=self.listWidget.row(itemN)
         widget.lineEdit.setText(modalidade.nome)                
         widget.pushButton.clicked.connect(lambda: self.addToListWidget1(Modalidade()))
-        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))
+        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))        
 
         if removable:
             self.setRemovableFromListWidget1(widget, itemN)
@@ -220,8 +302,13 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
         widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
         widget.pushButton.setText("Remover")
 
-
-
+class NewEscolaDialog(QtWidgets.QDialog, NEW_ESCOLA_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_ESCOLA_WIDGET.__init__(self)
+        iface : MainWindow
+        self.iface=iface 
+        self.setupUi(self)
 
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
@@ -229,21 +316,125 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.app : QtWidgets.QApplication
+        self.filterVLayout : QtWidgets.QVBoxLayout
+        self.MainWindow : QtWidgets.QMainWindow
+        self.centralwidget : QtWidgets.QWidget
+        self.leftPart : QtWidgets.QWidget
+        self.comboBox : QtWidgets.QComboBox
+        self.comboBox_2 : QtWidgets.QComboBox
+        self.comboBox_3 : QtWidgets.QComboBox
+        self.addFilterButton : QtWidgets.QPushButton
+        self.searchLine : QtWidgets.QLineEdit
+        self.searchButton : QtWidgets.QPushButton
+        self.listWidget_2 : QtWidgets.QListWidget
+        self.menubar : QtWidgets.QMenuBar
+        self.menuArquivo : QtWidgets.QMenu
+        self.menuCadastrar : QtWidgets.QMenu
+        self.menuExibir : QtWidgets.QMenu
+        self.menuMapas : QtWidgets.QMenu
+        self.menuOp_es : QtWidgets.QMenu
+        self.statusbar : QtWidgets.QStatusBar
+        self.scrollLayout : QtWidgets.QFormLayout
+
         self.app=app 
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         if RESET:
             self.varManager.removeDatabase()
             self.close()
+            self.app.quit()
         self.setupUi(self)
         self.actionSair.triggered.connect(self.close)
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
         self.actionAlunos.triggered.connect(self.newAlunoDialog)    
         self.actionConfigura_es.triggered.connect(self.settingDialog)               
+        self.actionEscolas.triggered.connect(self.newEscolaDialog)
         self.config=self.varManager.read(Config(),DB_CONFIG)   
         self.config.modified.connect(lambda: self.config.customSlot("disclaim"))   
         self.config.notModified.connect(lambda: self.config.customSlot("apply"))  
         self.addMap()
 
+        self.comboBox.addItems(UI_FILTER1)
+        self.comboBox.currentIndexChanged.connect(self.setComboBox_2)
+        self.comboBox_3.addItems(UI_ORDEM)
+        self.searchLine.editingFinished.connect(self.search)  
+        self.setComboBox_2()     
+        self.addFilterButton.clicked.connect(self.addFilter)
+
+        self.filterWidgets=[]
+        
+      #  # scroll area widget contents
+      #  self.scrollWidget = QtWidgets.QWidget()
+      #  self.scrollWidget.setLayout(self.scrollLayout)
+
+      #  # scroll area
+      #  self.scrollArea = QtWidgets.QScrollArea()
+      #  self.scrollArea.setWidgetResizable(True)
+      #  self.scrollArea.setWidget(self.scrollWidget)
+
+
+    def addFilter(self):
+        w=FilterWidget(self)
+        self.scrollLayout.addRow(w)
+        self.filterWidgets.append(w)        
+        w.pushButton.clicked.connect(lambda: self.removeFilter(len(self.filterWidgets)-1))
+        w.pushButton.clicked.connect(w.deleteLater)
+
+    def removeFilter(self, i):
+        for j in range(i,len(self.filterWidgets)):
+            self.filterVLayout.removeWidget(self.filterWidgets[j])
+            self.filterWidgets[j].deleteLater()
+            del self.filterWidgets[j]
+        
+    def setComboBox_2(self):
+        self.comboBox_2.clear()
+        if self.comboBox.currentIndex()==0:
+            self.comboBox_2.addItems(UI_FILTER2_ALUNO)
+        elif self.comboBox.currentIndex()==1:
+            self.comboBox_2.addItems(UI_FILTER2_ESCOLA)   
+
+    def search(self):
+        ordem=self.comboBox_3.currentIndex()
+        busca=self.searchLine.text()
+        n=self.comboBox_2.currentIndex()
+        w=QtWaitingSpinner(self.listWidget_2)
+
+
+        if self.comboBox.currentIndex()==0:  #Aluno
+            if n==1: #Buscar aluno google maps
+                self.listWidget_2.clear()
+                print("Searching location")
+                lat, lng=self.mapWidget.centerAtAddress(busca)     
+                self.mapWidget.addMarker("novoAluno", lat, lng, **dict(
+                icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_blue.png",
+                draggable=True,
+                title="Novo Aluno"
+                 ))     
+                print("search finished!!!!!!!!!!!!!")
+
+                w.stop()
+                itemN = QtWidgets.QListWidgetItem() 
+                widget = QtWidgets.QPushButton("Adicionar Novo aluno nessa posição")
+                itemN.setSizeHint(widget.sizeHint())                                  
+                self.listWidget_2.addItem(itemN)
+                self.listWidget_2.setItemWidget(itemN, widget)
+                
+                itemN2 = QtWidgets.QListWidgetItem()                
+                label = QtWidgets.QLabel("Sem resultados")
+                itemN2.setSizeHint(widget.sizeHint())                                  
+                self.listWidget_2.addItem(itemN2)
+                self.listWidget_2.setItemWidget(itemN2, label) 
+
+                widget.clicked.connect(self.newAlunoDialog)
+                widget.clicked.connect(self.listWidget_2.clear)
+
+        else: #Escola
+            pass     
+        QTimer.singleShot(500,w.stop)
+      
+    
+    def saveAluno(self):
+        self.aluno.save(DB_ADD_ALUNO)
+ 
     def restartProgram(self):
         self.app.restart=True
         self.close()
@@ -253,6 +444,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         if key=="Centro":
             self.config.get().setInitialPos(lat,lng)
             self.config.save(DB_CONFIG)
+
     def addMap(self):
         if self.config.get().map==3:
             w=QtWidgets.QLabel("shapefile não está disponível, por favor mude para google ou osm nas configurações")
@@ -270,23 +462,30 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.horizontalLayout_4.addWidget(w)
         w.show()
 
+    def newAlunoDialog(self): 
+        self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
+        dialog=NewAlunoDialog(self)             
+        dialog.setModal(True)
+        dialog.show()
+        dialog.exec_()
+
+    def newEscolaDialog(self):  
+        dialog=NewEscolaDialog(self)             
+        dialog.setModal(True)
+        dialog.show()
+        dialog.exec_()
+
     def settingDialog(self):
         dialog=SettingsDialog(self)
         dialog.setModal(True)
         dialog.show()
         dialog.exec_()
-    
-    def newAlunoDialog(self):
-        dialog=NewAlunoDialog(self)             
-        dialog.setModal(True)    
-        dialog.show()    
-        dialog.exec_()
-
+ 
     def saveConfig(self):  
         cfg=self.config.get()
         if not cfg.isApplied:      
             self.config.get().apply()
-            self.config.save("config")
+            self.config.save(DB_CONFIG)
             self.mapWidget.hide()
             self.horizontalLayout_4.removeWidget(self.mapWidget)
             self.addMap()

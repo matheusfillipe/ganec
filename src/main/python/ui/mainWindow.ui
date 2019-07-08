@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -46,7 +49,7 @@
           <height>16777215</height>
          </size>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
          <property name="sizeConstraint">
           <enum>QLayout::SetMinimumSize</enum>
          </property>
@@ -56,26 +59,46 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
-            <widget class="QComboBox" name="comboBox_2"/>
+            <widget class="QComboBox" name="comboBox"/>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox"/>
+            <widget class="QComboBox" name="comboBox_2"/>
            </item>
            <item>
             <widget class="QComboBox" name="comboBox_3"/>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_4"/>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="addFilterButton">
+             <property name="text">
+              <string>Adicionar FIltro</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
          <item>
+          <layout class="QFormLayout" name="scrollLayout"/>
+         </item>
+         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QLineEdit" name="lineEdit_2"/>
+            <widget class="QLineEdit" name="searchLine"/>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton_2">
+            <widget class="QPushButton" name="searchButton">
              <property name="text">
               <string>Busca</string>
              </property>
@@ -84,7 +107,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QListView" name="listView_2">
+          <widget class="QListWidget" name="listWidget_2">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -113,6 +136,7 @@
     <addaction name="actionExportar"/>
     <addaction name="actionSalvar"/>
     <addaction name="actionSair"/>
+    <addaction name="actionSair_2"/>
    </widget>
    <widget class="QMenu" name="menuCadastrar">
     <property name="title">
@@ -128,7 +152,7 @@
     </property>
     <widget class="QMenu" name="menuMapas">
      <property name="title">
-      <string>Mapas</string>
+      <string>&amp;Mapas</string>
      </property>
      <addaction name="actionAluno_para_Escola"/>
     </widget>
@@ -161,7 +185,7 @@
   </action>
   <action name="actionSair">
    <property name="text">
-    <string>Sa&amp;ir</string>
+    <string>&amp;Fazer Backup</string>
    </property>
   </action>
   <action name="actionAlunos">
@@ -186,22 +210,27 @@
   </action>
   <action name="actionAjuda">
    <property name="text">
-    <string>Ajuda</string>
+    <string>&amp;Ajuda</string>
    </property>
   </action>
   <action name="actionSobre">
    <property name="text">
-    <string>Sobre</string>
+    <string>&amp;Sobre</string>
    </property>
   </action>
   <action name="actionAlunos_2">
    <property name="text">
-    <string>Alunos</string>
+    <string>&amp;Alunos</string>
    </property>
   </action>
   <action name="actionAluno_para_Escola">
    <property name="text">
-    <string>Aluno para Escola</string>
+    <string>&amp;Aluno para Escola</string>
+   </property>
+  </action>
+  <action name="actionSair_2">
+   <property name="text">
+    <string>Sa&amp;ir</string>
    </property>
   </action>
  </widget>

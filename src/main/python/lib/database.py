@@ -413,7 +413,9 @@ class VariableManager():
     def clean(self, nome:str):
         del self.root.main[nome]
 
-    def removeDataba4f7be4e0031d6a502946c71006750a63e086d15ase(self):
+    def removeDatabase(self):        
         self.db.clean()
         
+
+
 

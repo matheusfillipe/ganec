@@ -11,6 +11,8 @@ var qtWidget;
 
 // main init function
 function initialize() {
+    var paths=[];
+
     var myOptions = {
         center: {lat: -34.397, lng: 150.644},
         streetViewControl: false,
@@ -40,6 +42,18 @@ function initialize() {
     });
 }
 // custom functions
+function gmap_addPath(filepath) {    
+    paths.push(map.data.loadGeoJson(filepath));
+}
+function gmap_clearPaths(){} {
+    for (var i = 0; i < paths.length; i++){
+        features=paths[i];
+        for (var i = 0; i < features.length; i++)
+            map.data.remove(features[i]);
+    }
+    paths=[]
+}
+
 function gmap_setCenter(lat, lng) {
     map.setCenter(new google.maps.LatLng(lat, lng));
 }
@@ -249,6 +263,9 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         except GeoCoder.NotFoundError:
             return None
         return self.addMarker(location, latitude, longitude, **extra)
+    
+    def addPath(self, parts):
+        map.data.loadGeoJson('westcampus.json');
 
     @QtCore.pyqtSlot(float, float)
     def mapIsMoved(self, lat, lng):
@@ -291,6 +308,12 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
 
     def centerAt(self, latitude, longitude):
         self.runScript("gmap_setCenter({},{})".format(latitude, longitude))
+
+    def addPath(self, filepath):
+        self.runScript("gmap_addPath({})".format(filepath))
+    
+    def clearPaths(self):
+        self.runScript("gmap_clearPaths()")
 
     def center(self):
         self._center = {}

@@ -2,9 +2,6 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
-  <property name="windowModality">
-   <enum>Qt::WindowModal</enum>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -49,7 +46,7 @@
           <height>16777215</height>
          </size>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
          <property name="sizeConstraint">
           <enum>QLayout::SetMinimumSize</enum>
          </property>
@@ -59,46 +56,26 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
-            <widget class="QComboBox" name="comboBox"/>
+            <widget class="QComboBox" name="comboBox_2"/>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_2"/>
+            <widget class="QComboBox" name="comboBox"/>
            </item>
            <item>
             <widget class="QComboBox" name="comboBox_3"/>
            </item>
            <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="addFilterButton">
-             <property name="text">
-              <string>Adicionar FIltro</string>
-             </property>
-            </widget>
+            <widget class="QComboBox" name="comboBox_4"/>
            </item>
           </layout>
          </item>
          <item>
-          <layout class="QFormLayout" name="scrollLayout"/>
-         </item>
-         <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QLineEdit" name="searchLine"/>
+            <widget class="QLineEdit" name="lineEditAluno"/>
            </item>
            <item>
-            <widget class="QPushButton" name="searchButton">
+            <widget class="QPushButton" name="pushButtonBusca">
              <property name="text">
               <string>Busca</string>
              </property>
@@ -107,11 +84,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QListWidget" name="listWidget_2">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-          </widget>
+          <widget class="QListView" name="listViewBusca"/>
          </item>
         </layout>
        </widget>
@@ -126,7 +99,7 @@
      <x>0</x>
      <y>0</y>
      <width>1274</width>
-     <height>39</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuArquivo">
@@ -136,14 +109,13 @@
     <addaction name="actionExportar"/>
     <addaction name="actionSalvar"/>
     <addaction name="actionSair"/>
-    <addaction name="actionSair_2"/>
    </widget>
    <widget class="QMenu" name="menuCadastrar">
     <property name="title">
      <string>&amp;Cadastrar</string>
     </property>
-    <addaction name="actionAlunos"/>
     <addaction name="actionEscolas"/>
+    <addaction name="actionAlunos"/>
     <addaction name="actionModalidades"/>
    </widget>
    <widget class="QMenu" name="menuExibir">
@@ -152,12 +124,11 @@
     </property>
     <widget class="QMenu" name="menuMapas">
      <property name="title">
-      <string>&amp;Mapas</string>
+      <string>Mapas</string>
      </property>
      <addaction name="actionAluno_para_Escola"/>
     </widget>
     <addaction name="menuMapas"/>
-    <addaction name="actionAlunos_2"/>
    </widget>
    <widget class="QMenu" name="menuOp_es">
     <property name="title">
@@ -166,6 +137,7 @@
     <addaction name="actionConfigura_es"/>
     <addaction name="actionAjuda"/>
     <addaction name="actionSobre"/>
+    <addaction name="separator"/>
    </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
@@ -185,12 +157,12 @@
   </action>
   <action name="actionSair">
    <property name="text">
-    <string>&amp;Fazer Backup</string>
+    <string>Sa&amp;ir</string>
    </property>
   </action>
   <action name="actionAlunos">
    <property name="text">
-    <string>&amp;Alunos</string>
+    <string>Alunos </string>
    </property>
   </action>
   <action name="actionEscolas">
@@ -210,27 +182,32 @@
   </action>
   <action name="actionAjuda">
    <property name="text">
-    <string>&amp;Ajuda</string>
+    <string>Ajuda</string>
    </property>
   </action>
   <action name="actionSobre">
    <property name="text">
-    <string>&amp;Sobre</string>
+    <string>Sobre</string>
    </property>
   </action>
   <action name="actionAlunos_2">
    <property name="text">
-    <string>&amp;Alunos</string>
+    <string>Alunos</string>
    </property>
   </action>
   <action name="actionAluno_para_Escola">
    <property name="text">
-    <string>&amp;Aluno para Escola</string>
+    <string>Aluno para Escola</string>
    </property>
   </action>
-  <action name="actionSair_2">
+  <action name="actionEditar_alunos">
    <property name="text">
-    <string>Sa&amp;ir</string>
+    <string>Editar alunos</string>
+   </property>
+  </action>
+  <action name="actionEditar_Alunos">
+   <property name="text">
+    <string>Editar Alunos</string>
    </property>
   </action>
  </widget>

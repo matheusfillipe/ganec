@@ -2,10 +2,9 @@ import persistent
 class Config(persistent.Persistent):
     def __init__(self):
         self.map=0
-        self.text="what?"
-        self.text2="whatwhat?"
         self.isApplied=False
         self.lng, self.lat = -46.30973, -19.00009 
+        self.osmPath=''
 
     def apply(self):
         self.isApplied=True

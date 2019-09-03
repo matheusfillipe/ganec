@@ -32,6 +32,8 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 <br>
 <br>
 
+https://www.openstreetmap.org/export#map=14/-19.0032/-46.2906
+
 
 ## Fotos
 
@@ -42,3 +44,5 @@ Protótipo de Layout da janela principal:
 
  
 <br><br>
+
+

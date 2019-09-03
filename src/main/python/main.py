@@ -406,12 +406,25 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
 
 #mudei até aqui!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+        NEW_ALUNO_WIDGET.__init__(self)
+        self.setupUi(iface)   
+
+
+
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
         NEW_MODALIDADE_WIDGET.__init__(self)
-        self.setupUi(self)        
+        self.setupUi(self)      
+
         self.lineEdit:QtWidgets.QLineEdit
+
+        self.widget : QtWidgets.QWidget
+        self.widget : QtWidgets.QWidget
+        self.label : QtWidgets.QLabel
+        self.lineEdit : QtWidgets.QLineEdit
+        self.pushButton : QtWidgets.QPushButton
+
         self.lineEdit.setPlaceholderText("Nome da Modalidade")
 
 class NewTurmaWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
@@ -421,6 +434,7 @@ class NewTurmaWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
         self.setupUi(self)
         self.lineEdit:QtWidgets.QLineEdit
         self.lineEdit.setPlaceholderText("Turma/Série")
+
 
 class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
     edited = QtCore.pyqtSignal()
@@ -706,6 +720,67 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
+
+#WIDGET ESCOLA
+class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_ESCOLA_WIDGET.__init(self)
+        self.setupUi(iface)
+
+#DIALOG ESCOLA
+class NewEscolaDialog(QtWidgets.QDialog):
+    def __init__(self, iface):
+        super(NewEscolaDialog, self).__init__(None)
+        self.iface=iface
+        newEscolaWidget = NewEscolaWidget(self)
+        newEscolaWidget.show()
+
+class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self)
+        MAIN_WINDOW.__init__(self)
+        self.setupUi(self)
+        self.actionModalidades.triggered.connect(self.modalidadesDialog)
+        self.actionAlunos.triggered.connect(self.newAlunoDialog) 
+        self.actionConfigura_es.triggered.connect(self.settingDialog)
+        self.actionEscolas.triggered.connect(self.NewEscolaDialog)    
+        #w=MapWidget()
+        w=QGoogleMap()
+        #self.stackedWidget.setCurrentWidget(w)
+        self.horizontalLayout_4.addWidget(w)
+        w.show()
+
+    def settingDialog(self):
+        dialog=SettingsDialog(self)
+        dialog.accepted.connect(lambda: self.saveConfig(dialog))
+        dialog.aplicarBtn.clicked.connect(lambda: self.saveConfig(dialog))
+        dialog.aplicarBtn.clicked.connect(self.loadConfig)
+       
+        dialog.setModal(True)
+        dialog.show()
+        dialog.exec_()
+    
+    def newAlunoDialog(self):
+        dialog=NewAlunoDialog(self)             
+        dialog.setModal(True)
+        
+        dialog.exec_()
+
+    def saveConfig(self, dialog):
+        print("config: "+str(dialog.tmpConfig.map))
+
+    def loadConfig(self):
+        print("Load from db")
+    
+    def modalidadesDialog(self):
+        dialog=ModalidadesDialog(self)
+        dialog.setModal(True)
+        dialog.show()
+        a=dialog.exec_()
+        print(a)
+
+
 
 
 def main(*args):

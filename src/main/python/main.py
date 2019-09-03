@@ -23,7 +23,7 @@ MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades
 NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
 SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
 NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui")
-NEW_ESCOLA_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaForm.ui")
+NEW_ESCOLA_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaForm2.ui")
 EDITAR_ALUNO, _ = uic.loadUiType("./src/main/python/ui/widgets/editarOuExcluir.ui")
 
 #usado para definir todas as séries que existem. E assim alocar cada aluno numa escola em que a série que ele está existe;
@@ -42,6 +42,12 @@ listaDeSeries  = ["Educação infantil - N1",
                   "Ensino Médio - 1° Ano", 
                   "Ensino Médio - 2° Ano", 
                   "Ensino Médio - 3° Ano"]
+
+
+listaDeModalidades  = ["Ensino Infantil",
+                        "Ensino Fundamental", 
+                        "Ensino Médio",  
+                        "INDEFINIDO"]
 
 cidade = "Carmo Do Paranaíba"
 
@@ -90,12 +96,11 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.comboBox.addItem("Arquivo")
 
         iface.config.setup(self,
-        signals=[self.buttonBox.accepted, self.lineEdit.textEdited, self.lineEdit_2.textEdited, self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
-        slots=[iface.saveConfig,            lambda: 0,               lambda: 0,                  lambda: 0,                         iface.saveConfig,           self.reset],
-        properties=["map",                  "text",               "text2"],
-        readers=[self.comboBox.currentIndex, self.lineEdit.text, self.lineEdit_2.text],
-        writers=[self.comboBox.setCurrentIndex, self.lineEdit.setText, self.lineEdit_2.setText])
-        
+        signals=[self.buttonBox.accepted, self.comboBox.currentIndexChanged, self.aplicarBtn.clicked, self.cleanDbButton.clicked],
+        slots=[iface.saveConfig,                lambda: 0,                         iface.saveConfig,           self.reset],
+        properties=["map"],
+        readers=[self.comboBox.currentIndex],
+        writers=[self.comboBox.setCurrentIndex])        
         
     
     def reset(self):        
@@ -188,9 +193,19 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
             endereco_ = endereco_ + ", " + cidade
 
             dadosAluno = [matricula, nome, dataNasc, RG, CPF, nomeDaMae, nomeDoPai, telefone, endereco_, serie]
+            dE=definirEscola(dadosAluno)
+            l, coordenada = dE.salvarDados(dadosAluno)
             
             erro = 1
+            deuCerto=coordenada[0]
 
+            if deuCerto:
+                messageDialog(self, "Editado", "", "Aluno encontrado com sucesso!")
+            else:
+                x,y=coordenada
+                messageDialog(self, "ERRO", "", "Favor posicione o aluno manualmente")
+                self.iface.w.addMarker(nome,x,y)
+                
             nome = self.lineEditNome.setText("") 
             nomeDaMae = self.lineEditNomeDaMae.setText("")
             nomeDoPai = self.lineEditNomeDoPai.setText("")
@@ -205,26 +220,24 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
 
         if erro == 0:
             yesNoDialog(self, "Atenção", "", "Todos os campos Obrigatórios devem estar preenchidos.")
-    
+
+         
     def editarAluno(self):
-        dialog=editarAlunoDialog(self)             
-        dialog.setModal(True)
+        dialog=editarAlunoDialog(self.iface)             
+        #dialog.setModal(True)
         dialog.show()
+        self.iface.dialog.append(dialog)
         dialog.exec_()
 
+
+
 #classe para escolher entre editar ou excluir um aluno
-class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
+class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):   
 
-    dadosSalvos = sqlite3.connect("dadosAlunos.db")
-    cursor = dadosSalvos.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS dados (matricula text, nome text, dataNasc text, RG text, CPF text, nomeDaMae text, nomeDoPai text, telefone text, endereco text, serie int, escola int, lat doble, long doble, Id int)""")
-
-    nomeAns = ""
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
         EDITAR_ALUNO.__init__(self)
         self.setupUi(self)
-
         self.addTodosOsAlunos()
 
         #quando clicar no botao de buscas executar a funcao de procurar alunos
@@ -264,9 +277,12 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
     
     def setarAluno(self):
 
+        #caso um aluno seja removido isso aqui vai dar errado! Porque listView não vai saber o indixe que está no banco de dados
+        #Equando que no banco de dados o indice se mantem o mesmo
+
         var = manipularDB(self.listViewAlunos.currentItem().text())
         lista = var.setarAluno()
-        print(lista)
+        #print(lista)
 
         self.lineEditNome.setText(lista[0])
         self.lineEditMatricula.setText(lista[1])
@@ -278,10 +294,11 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         self.lineEditEndereco.setText(lista[7])
         self.labelEscola.setText("Escola: " + str(lista[8]))
         self.labelId.setText("ID: " + str(lista[10]))
+        self.dateEditNascimento.setDate(lista[9])
 
     def editar(self):
         if self.lineEditNome.text() != "" and self.labelId.text() != "ID: ":
-            
+
             dados = []
 
             dados.append(self.lineEditNome.text())
@@ -312,7 +329,9 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             if deuCerto == 1:
                 messageDialog(self, "Editado", "", "Aluno editado com sucesso!")
             elif deuCerto == 2:
-                messageDialog(self, "ERRO", "", "Não consegui encontrar esse endereço!")
+                messageDialog(self, "ERRO", "", "Favor posicione o aluno manualmente")
+
+
 
         else: 
             messageDialog(self, "Escolha um aluno", "", "Escolha um aluno na lista ao lado!")
@@ -509,14 +528,61 @@ class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
         widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
         widget.pushButton.setText("Remover")
 
+class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_ESCOLA_WIDGET.__init__(self)
+        self.setupUi(iface)
+
 #DIALOG ESCOLA
 class NewEscolaDialog(QtWidgets.QDialog, NEW_ESCOLA_WIDGET):
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
-        NEW_ESCOLA_WIDGET.__init__(self)
-        iface : MainWindow
-        self.iface=iface 
-        self.setupUi(self)
+        NEW_ALUNO_WIDGET.__init__(self)    
+        self.iface = iface
+        self.iface.varManager : VariableManager
+        self.iface=iface
+        newEscolaWidget = NewEscolaWidget(self)
+        newEscolaWidget.show()
+        self.setupUi(iface)
+        #self.signals_connection();
+
+        self.lineEditNome : QtWidgets.QLineEdit
+        self.lineEditRua : QtWidgets.QLineEdit
+        self.lineEditNumero : QtWidgets.QLineEdit
+        self.lineEditBairro : QtWidgets.QLineEdit
+
+
+        self.comboBoxModalidade : QtWidgets.QComboBox
+
+
+        for i in listaDeModalidades:
+            self.comboBoxModalidade.addItem(i)
+
+
+      #  iface.escola.setup(self,
+      #  signals=[self.buttonOk.clicked, self.lineEditNome.textEdited, self.lineEditRua.textEdited, self.lineEditNumero.textEdited, self.lineEditBairro.textEdited,  self.comboBoxModalidade.currentIndexChanged],
+      #  slots=[  iface.saveEscola,                 lambda: 0,                    lambda: 0,                  lambda: 0,                   lambda: 0,                         lambda: 0,                         lambda: 0],
+      #  properties=["nome",                    "rua",                    "numero",                    "bairro",                      "modalidade"],
+      #  readers =  [self.lineEditNome.text,    self.lineEditRua.text,    self.lineEditNumero.text,    self.lineEditBairro.text],
+      #  writers =  [self.lineEditNome.text,    self.lineEditRua.text,    self.lineEditNumero.text,    self.lineEditBairro.text])
+ 
+        self.buttonOk.clicked.connect(self.salvarDadosEscola)
+
+    def salvarDadosEscola(self):
+        erro = 0
+
+        nome = self.lineEditNome.text()
+        rua = self.lineEditRua.text()
+        numero = self.lineEditNumero.text()
+        bairro = self.lineEditBairro.text()
+        modalidade = self.comboBoxModalidade.text()
+
+
+        if (self.lineEditNome.text() != "") and (self.lineEditRua.text() != "") and (self.lineEditNumero.text() != "") and (self.lineEditBairro.text() != ""):
+            erro = 1
+            yesNoDialog(self, "Atenção", "", "É necessário preencher todos os campos.")
+        
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
@@ -540,6 +606,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.config.notModified.connect(lambda: self.config.customSlot("apply"))
         self.pushButtonBusca.clicked.connect(self.buscarAluno)  
         self.addMap()
+        self.dialog=[]
 
 #Mechi aqui tbm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     def buscarAluno(self):
@@ -549,11 +616,21 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
         busca = var.buscando()
 
+        self.w.addMarkerAtAdress(aluno)
+        self.w.centerAtAdress(aluno)        
+
         #print(list(busca))
 
         #for i in busca:
             #self.listViewBusca.addItem(i)
-        
+
+ 
+    def closeEvent(self, event):
+        # here you can terminate your threads and do other stuff
+
+        # and afterwards call the closeEvent of the super-class
+        [d.close() for d in self.dialog]
+        super().closeEvent(event)       
 
     def restartProgram(self):
         self.app.restart=True
@@ -583,26 +660,34 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def settingDialog(self):
         dialog=SettingsDialog(self)
-        dialog.setModal(True)
+       # dialog.setModal(True)
+        self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
     
     def saveAluno(self):
         self.aluno.save(DB_ADD_ALUNO)
-            
+
+    def saveEscola(self):
+        pass
 
     def newAlunoDialog(self): 
         self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
         dialog=NewAlunoDialog(self)             
-        dialog.setModal(True)
+        #dialog.setModal(True)
+        self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
 
+
     def newEscolaDialog(self):  
+        self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
         dialog=NewEscolaDialog(self)             
-        dialog.setModal(True)
+        #dialog.setModal(True)
+        self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
+
 
     def saveConfig(self):  
         cfg=self.config.get()
@@ -616,8 +701,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def modalidadesDialog(self):
         self.modalidades=self.varManager.read(ListaModalidades(),DB_MODALIDADES_BASE)    
         dialog=ModalidadesDialog(self)
-        dialog.setModal(True)
+        #dialog.setModal(True)
         dialog.accepted.connect(self.modalidades.save)
+        self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
 

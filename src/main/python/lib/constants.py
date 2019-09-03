@@ -18,6 +18,7 @@ DB_CONFIG="config"
 DB_ALUNO_TEMP="sfdlkjhjset75"
 DB_MODALIDADES_BASE="modalidades_base"
 DB_ADD_ALUNO="alunos"
+DB_ADD_ESCOLA="escolas"
 
 listaDeEscolas = ["Escola a","Escola b", "Escola d", "Escola C"]
 listaDeSeries  = [["1° Ano", "2°Ano"],["3° Ano", "4°Ano"],["5° Ano", "6° Ano"],["7° Ano", "8° Ano"]]

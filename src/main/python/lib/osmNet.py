@@ -297,7 +297,7 @@ class netHandler():
             x, y=lenghs[0][3]
             #plotNode(n1)
             #plotNode(n2)
-            print("Found inline point: ",x,",",y, "nodes:  ",n1," ",n2, " dist: ", dist, "\n\n")                                
+#            print("Found inline point: ",x,",",y, "nodes:  ",n1," ",n2, " dist: ", dist, "\n\n")                                
             
         else:       
             n2=nodes[2]
@@ -376,18 +376,12 @@ class netHandler():
     def save_geojson(self, filepath):
         features = []
         ls=LineString(self.parts)
-        features.append(Feature(geometry=ls, properties={"country": "Spain"}))
-        feature_collection = FeatureCollection(features)
+        features.append(Feature(geometry=ls, properties={"country": "Brazil"}))
+       # feature_collection = FeatureCollection(features)
         with open(filepath, 'w') as f:
-            dump(feature_collection, f)
+            dump(features[0], f)
         return filepath
           
-
-net=netHandler(osmpath=filepath)
-parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"), target=net.addNode(ptB, "escola"))
-print("DIST: ", dist)
-net.save_shp('/home/matheus/tmp/line/line')
-
 def test(filepath, ptA, ptB):
     net=netHandler(osmpath=filepath)        
     parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"), target=net.addNode(ptB, "escola"))

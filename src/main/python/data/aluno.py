@@ -4,6 +4,7 @@ import datetime
 import persistent
 from lib.constants import *
 from lib.hidden.constants import API_KEY
+from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
 
 from lib.osm import MapWidget
 from lib.gmaps import *
@@ -95,8 +96,8 @@ class definirEscola(persistent.Persistent):
             lista.append(row)
 
         dadosSalvos.close()
-
-        return lista
+        coordenadas_ = GeoCoder().geocode(DADOS[7], API_KEY)
+        return lista, coordenadas_
     
     def definirEscolas(self):
 
@@ -130,7 +131,6 @@ class manipularDB(persistent.Persistent):
         self.ID = self.dados[18]
     
     def setarAluno(self):
-
         dadosSalvos = sqlite3.connect("dadosAlunos.db")
         cursor = dadosSalvos.cursor()
 
@@ -142,7 +142,7 @@ class manipularDB(persistent.Persistent):
             lista.append(i)
             
             nasc = lista[row][3].split()
-            nascimento = nasc[2] + "/" + nasc[1] + "/" + nasc[3]
+            nascimento = QDate(nasc[3], nasc[1], nasc[2])           
 
             if lista[row][14] == int(self.ID):
                 lista_.append(lista[row][2])

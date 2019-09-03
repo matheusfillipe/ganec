@@ -8,10 +8,11 @@ JS = '''
 var map;
 var markers = [];
 var qtWidget;
+var paths=[];
 
 // main init function
 function initialize() {
-    var paths=[];
+
 
     var myOptions = {
         center: {lat: -34.397, lng: 150.644},
@@ -43,15 +44,16 @@ function initialize() {
 }
 // custom functions
 function gmap_addPath(filepath) {    
-    paths.push(map.data.loadGeoJson(filepath));
+    paths.push(map.data.addGeoJson(filepath));
 }
-function gmap_clearPaths(){} {
+
+function gmap_clearPaths() {
     for (var i = 0; i < paths.length; i++){
         features=paths[i];
-        for (var i = 0; i < features.length; i++)
-            map.data.remove(features[i]);
+        for (var j = 0; j < features.length; j++)
+            map.data.remove(features[j]);
     }
-    paths=[]
+    paths=[];
 }
 
 function gmap_setCenter(lat, lng) {
@@ -177,6 +179,14 @@ class GeoCoder(QtNetwork.QNetworkAccessManager):
             return latitude, longitude
         raise GeoCoder.NotFoundError
 
+    def geoFind(self,location):
+        try:
+            return self.geocode(location)
+        except GeoCoder.NotFoundError:
+            return [False, False]
+
+
+
 
 class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
 
@@ -246,6 +256,7 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     def geocode(self, location):
         return GeoCoder(self).geocode(location, self._api_key)
 
+
     def centerAtAddress(self, location):
         try:
             latitude, longitude = self.geocode(location)
@@ -264,9 +275,6 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
             return None
         return self.addMarker(location, latitude, longitude, **extra)
     
-    def addPath(self, parts):
-        map.data.loadGeoJson('westcampus.json');
-
     @QtCore.pyqtSlot(float, float)
     def mapIsMoved(self, lat, lng):
         self.mapMoved.emit(lat, lng)
@@ -310,7 +318,8 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         self.runScript("gmap_setCenter({},{})".format(latitude, longitude))
 
     def addPath(self, filepath):
-        self.runScript("gmap_addPath({})".format(filepath))
+      #  print(filepath)
+        self.runScript('gmap_addPath({})'.format(filepath))
     
     def clearPaths(self):
         self.runScript("gmap_clearPaths()")
@@ -356,9 +365,14 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
             "gmap_deleteMarker("
             "key={!r} "
             "); ".format(key))
+ptA=0
+ptB=0
+net=0
 
 def test():
+    global ptA, ptB
     import sys
+    from lib.osmNet import netHandler
     app = QtWidgets.QApplication(sys.argv)
     w = QGoogleMap(api_key=API_KEY)
     w.resize(640, 480)
@@ -369,23 +383,47 @@ def test():
     if lat is None and lng is None:
         lng, lat = -46.30973, -19.00009 
     w.centerAt(lat, lng)
+    ptB=[lat,lng]
 
     w.addMarker("MyDragableMark", lat, lng, **dict(
         icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_red.png",
         draggable=True,
         title="Move me!"
     ))
+    ptA=[lat, lng]
 
     for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
         w.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
+    def update(n, x, y):
+        global net
 
+        filepath='/home/matheus/map.osm'
+        net=netHandler(osmpath=filepath)
+
+        global ptA, ptB
+        if n=='MyDragableMark':
+            ptA=[y,x]
+        else:
+            ptB=[y,x]
+        if ptA == ptB:
+            return
+        print("ptA", ptA)
+        print("ptB", ptB)
+        parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"), target=net.addNode(ptB, "escola"))
+        print("DIST: ", dist)    
+        w.clearPaths()       
+        with open(net.save_geojson("/home/matheus/test.geojson"), 'r') as file:
+            geo = file.read().replace("\"","\'")
+        w.addPath(geo)
+        net.save_shp("/home/matheus/test.shp")
 
     w.mapMoved.connect(print)
     w.mapClicked.connect(print)
     w.mapRightClicked.connect(print)
     w.mapDoubleClicked.connect(print)
-    w.markerMoved.connect(print)
-    sys.exit(app.exec_())
-    
+    w.markerMoved.connect(update)
+
+    app.exec_()   
+        
 if __name__ == '__main__':
     test()

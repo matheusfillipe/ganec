@@ -36,10 +36,10 @@ class DB():
             self.connected = False
     
     def _salvarDado(self, dado):
+            dado=self.toList(dado)
             self.cursor.execute("INSERT INTO "+self.tableName+" ("+str(self.dataNameList)[1:-1] +")VALUES (" + (len(self.dataNameList)*"?,")[:-1]+")", dado)		
 
     def salvarDado(self, dado):
-            dado=self.toList(dado)
             assert len(dado)==len(self.dataNameList), "ERRO: O dado deve ter o tamanho " + str(len(self.dataNameList))
             self.connect()
             self._salvarDado(dado)

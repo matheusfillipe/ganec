@@ -269,7 +269,8 @@ class netHandler():
             
         self.G = G
         self.osm=osm
-        
+        self.original=deepcopy(self.G.nodes())
+     
     def getPart(self, name):
         node=self.G.node[name]       
         return [float(node['lon']), float(node['lat'])]       
@@ -279,11 +280,15 @@ class netHandler():
     
         nodes=sorted(list(self.G.nodes()), key=lambda u: self.getLength(u,name))
         lenghs=[]
-        n1=nodes[1]
+        for n1 in nodes[1:]:
+            if n1 in self.original:
+                break
         p3=self.getPart(name)                              
         p1=self.getPart(n1)       
       #  plotNode(n1)
         for n2 in self.G.neighbors(n1):    
+            if not n2 in self.original:
+                continue
             p2=self.getPart(n2)
             x,y=interLinePoint(p1, p2, p3)                      
             if is_between(p1,[x,y],p2):
@@ -297,7 +302,7 @@ class netHandler():
             x, y=lenghs[0][3]
             #plotNode(n1)
             #plotNode(n2)
-#            print("Found inline point: ",x,",",y, "nodes:  ",n1," ",n2, " dist: ", dist, "\n\n")                                
+            print("Found inline point: ",x,",",y, "nodes:  ",n1," ",n2, " dist: ")                                
             
         else:       
             n2=nodes[2]
@@ -328,11 +333,13 @@ class netHandler():
         
     def get_dist(self):
         d=[]   
-        for i, p in enumerate(self.parts[:-1]):    
-            dist=np.linalg.norm(np.array(p)-np.array(self.parts[i+1]))
+        for i, p in enumerate(self.parts[:-1]):  
+            z,j,p1=project(p)  
+            z,j,p2=project(self.parts[i+1])
+            dist=np.linalg.norm(np.array(p1)-np.array(p2))
             d.append(dist)
         # print(dist*11319.490793)        
-        return sum(d)*DISTANCE_CONVERT
+        return sum(d)
 
     def getLength(self, u, v, d=None):
         n1 = self.G.nodes[u]

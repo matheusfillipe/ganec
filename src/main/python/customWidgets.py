@@ -2,9 +2,191 @@
 from PyQt5 import QtWidgets
 from math import ceil
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets, QtGui, uic, QtCore
+import csv
+
+CSV_DIALOG, _ = uic.loadUiType("./src/main/python/ui/dialogs/importCsv.ui")
+delimiter = ";"
+
+
+def messageDialog(iface=None, title="Concluído", info="", message=""):
+    msgBox = QtWidgets.QMessageBox(iface)
+    msgBox.setIcon(QtWidgets.QMessageBox.Question)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(message)
+    msgBox.setInformativeText(info)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+    msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+    msgBox.show()
+    return msgBox.exec_() == QtWidgets.QMessageBox.Ok
+
+
+
+class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
+    def __init__(self, dataNamesList:list, parent=None):
+        '''dataNamesList: lista de strings com os nomes dos possíveis atributos '''
+        super().__init__(None)
+        self.setupUi(self)
+        self.horizontalLayout : QtWidgets.QHBoxLayout
+        self.cbList=[]
+        self.dataNamesList=dataNamesList         
+        self.result=[]
+        self.header=[]
+
+        for i,dName in enumerate(dataNamesList):
+            cb=QtWidgets.QComboBox()                       
+            cb.addItems(dataNamesList)
+            self.con(cb,i) 
+            vlay=QtWidgets.QVBoxLayout()
+            lbl=QtWidgets.QLabel(str(i+1))
+            vlay.addWidget(lbl)
+            vlay.addWidget(cb)
+            self.horizontalLayout.addLayout(vlay)
+            cb.show()            
+            lbl.show()
+            self.cbList.append(cb)           
+
+    def updateData(self, text, index):        
+        for i, cb in enumerate(self.cbList):
+            cb:QtWidgets.QComboBox         
+            if i!=index:
+                j=cb.currentIndex()
+                while self.dataNamesList[j] in [cb.currentText() for k, cb in enumerate(self.cbList) if i!=k]:
+                    j=j+1 if not j+1>=len(self.dataNamesList) else 0
+                cb.setCurrentIndex(j)                
+                self.con(cb, i) 
+    
+    def default(self):
+        range=QtWidgets.QTableWidgetSelectionRange(0,0,9,len(self.dataNamesList)-1)
+        self.tableWidget.setRangeSelected(range, True)
+        for i,cb in enumerate(self.cbList):                        
+            cb : QtWidgets.QComboBox
+            cb.currentTextChanged.disconnect()
+            cb.setCurrentIndex(i)
+            self.con(cb,i) 
+
+    def con(self, cb, i):
+        cb.currentTextChanged.connect(lambda text: self.updateData(text, i))       
+
+    def exec_(self):
+        if self.openFile():
+            self.default()
+            return super().exec_()
+        else:
+            messageDialog(title="Atenção!", message="A planilha não contém um número de colunas suficiente ("+str(len(self.dataNamesList))+")")
+            return                   
+ 
+
+    def show(self):
+        if self.openFile():
+            self.default()
+            return super().show()
+        else:
+            messageDialog(title="Atenção!", message="A planilha não contém um número de colunas suficiente ("+str(len(self.dataNamesList))+")")
+            return        
+    
+    def accept(self):
+        self.result=self.csvRead()   
+        if not self.result:
+            return 
+        return super().accept()
+    
+    def csvRead(self):
+        global delimiter
+        result=[]
+        first=True
+        columnIndexes=list(set(index.column() for index in self.tableWidget.selectionModel().selectedIndexes()))
+        if len(columnIndexes) != len(self.dataNamesList):
+            messageDialog(title="Atenção!", message="Por favor selectione o mesmo número de colunas que de campos necessários \n Você seleciou "+str(len(columnIndexes))+", mas são necessários "+str(len(self.dataNamesList)))
+            return False
+
+        with open(self.filepath, 'r') as fi:
+            for i, r in enumerate(csv.reader(fi, delimiter=delimiter, dialect='excel')):
+                if self.checkBox.isChecked() and first:
+                    first=False
+                    continue
+                first=False
+                dado = {}
+                j=0
+                for field, dName in zip([f for index, f in enumerate(r) if index in columnIndexes], 
+                                                        [cb.currentText() for cb in self.cbList]):
+                    if dName=="":
+                        messageDialog(title="Atenção!", message="Por favor atribua valores para cada coluna")
+                        return False
+                    dado[dName]=field
+                result.append(dado)
+        return result
+    
+    def openFile(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo/Planilha CSV (*.csv)")[0]
+        if filename in ["", None]: return False
+        self.filepath=filename
+        self.tableWidget : QtWidgets.QTableWidget
+
+        with open(self.filepath, 'r') as fi:
+            for i,r in enumerate(csv.reader(fi, delimiter=delimiter, dialect='excel')):        
+                for j,field in enumerate(r):
+                    if i==0:
+                        self.header.append(field)                        
+                        continue
+                    if i>=1:
+                        if i==1 and j==0:
+                            self.tableWidget.setRowCount(10)                      
+                            self.tableWidget.setColumnCount(len(self.header))
+                            self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectColumns)
+                            self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+                            #self.tableWidget.setHorizontalHeaderLabels((str(i+1) for i in range(len(self.header)) ))
+                            self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+                            self.tableWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                            self.tableWidget.horizontalHeader().setStretchLastSection(True)                          
+
+                            for k,f in enumerate(self.header):        
+                                tableItem=QtWidgets.QTableWidgetItem(u"%s" % str(f))
+                                tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
+                                self.tableWidget.setItem(0,k,tableItem)
+
+                        tableItem=QtWidgets.QTableWidgetItem(u"%s" % str(field))
+                        tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
+                        self.tableWidget.setItem(i,j,tableItem)
+                if i>10:
+                    break
+        self.stretchTable(self.tableWidget)
+        return len(self.dataNamesList)<=len(self.header)
+
+    def stretchTable(self, table):            
+            tableSize = table.width()
+            sideHeaderWidth = table.verticalHeader().width()
+            tableSize -= sideHeaderWidth
+            numberOfColumns = table.columnCount()
+
+            remainingWidth = tableSize % numberOfColumns
+            for columnNum in range(table.columnCount()):
+                if remainingWidth > 0:
+                    table.setColumnWidth(columnNum, int(tableSize / numberOfColumns) + 1)
+                    remainingWidth -= 1
+                else:
+                    table.setColumnWidth(columnNum, int(tableSize / numberOfColumns))
+
+    def resizeEvent(self, event):
+        self.stretchTable(self.tableWidget)
+        super().resizeEvent(event)  # Restores the original behaviour of the resize event
+
+
+def test(*args):  
+        app = QtWidgets.QApplication(*args)
+        app.restart=False
+        win=csvDialog(["nome", "idade", "x"], app)
+        win.show()     
+        r=app.exec_()        
+        print(win.result)
+        return r
+
+if __name__ == '__main__':
+    import sys
+    currentExitCode=test(sys.argv)
+    sys.exit(currentExitCode)
+
 
 
 class QtWaitingSpinner(QWidget):

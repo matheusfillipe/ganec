@@ -368,9 +368,10 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
 ptA=0
 ptB=0
 net=0
+count=0
 
 def test():
-    global ptA, ptB
+    global ptA, ptB, net
     import sys
     from lib.osmNet import netHandler
     app = QtWidgets.QApplication(sys.argv)
@@ -383,24 +384,21 @@ def test():
     if lat is None and lng is None:
         lng, lat = -46.30973, -19.00009 
     w.centerAt(lat, lng)
-    ptB=[lat,lng]
+    ptB=[lng, lat]
 
     w.addMarker("MyDragableMark", lat, lng, **dict(
         icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_red.png",
         draggable=True,
         title="Move me!"
     ))
-    ptA=[lat, lng]
-
-    for place in ["Plaza Ramon Castilla", "Plaza San Martin", ]:
-        w.addMarkerAtAddress(place, icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png")
+    ptA=[lng, lat]
+   
+    filepath='/home/matheus/map.osm'
+    net=netHandler(osmpath=filepath)
+    
     def update(n, x, y):
         global net
-
-        filepath='/home/matheus/map.osm'
-        net=netHandler(osmpath=filepath)
-
-        global ptA, ptB
+        global ptA, ptB, count
         if n=='MyDragableMark':
             ptA=[y,x]
         else:
@@ -409,13 +407,14 @@ def test():
             return
         print("ptA", ptA)
         print("ptB", ptB)
-        parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"), target=net.addNode(ptB, "escola"))
+        parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"+str(count)), target=net.addNode(ptB, "escola"+str(count)))
         print("DIST: ", dist)    
         w.clearPaths()       
+        count+=1
         with open(net.save_geojson("/home/matheus/test.geojson"), 'r') as file:
             geo = file.read().replace("\"","\'")
         w.addPath(geo)
-        net.save_shp("/home/matheus/test.shp")
+        net.save_kml("/home/matheus/test.kml")
 
     w.mapMoved.connect(print)
     w.mapClicked.connect(print)

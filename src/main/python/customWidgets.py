@@ -189,8 +189,9 @@ if __name__ == '__main__':
 
 
 
+
 class QtWaitingSpinner(QWidget):
-    mColor = QColor(Qt.gray)
+    mColor = QtGui.QColor(Qt.gray)
     mRoundness = 100.0
     mMinimumTrailOpacity = 31.4159265358979323846
     mTrailFadePercentage = 50.0

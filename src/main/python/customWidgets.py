@@ -188,8 +188,6 @@ if __name__ == '__main__':
     sys.exit(currentExitCode)
 
 
-
-
 class QtWaitingSpinner(QWidget):
     mColor = QtGui.QColor(Qt.gray)
     mRoundness = 100.0

@@ -58,12 +58,24 @@ class DB():
             dado=self._getDado(id)
             self.close()
             return dado
+
+    def todosOsDados(self):
+            self.connect()
+            dados = [self.toDict(row[1:]) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
+            self.close()
+            return dados
+
                     
     def acharDado(self, key, nome): 
             self.connect()					
-            idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
-            for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
-            if nome in self.toDict(list(dado)[1:])[key]]
+            if type(nome)==str:
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if nome in self.toDict(list(dado)[1:])[key]]
+            else:
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if str(nome) == str(self.toDict(list(dado)[1:])[key])]
             self.close()			
             return [x[0] for x in sorted(idList, key=lambda x: x[1])]
 
@@ -73,11 +85,47 @@ class DB():
     def acharDados(self, key, nome):
             return sorted(self.getDados(self.acharDado(key, nome)), key=lambda x: x[key])
 
+    def acharMaiorQue(self, key, valor): 
+        assert type(valor) == int or type(valor) == float, "Entre com valores numéricos"
+        self.connect()
+        idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if float(valor) <= float(self.toDict(list(dado)[1:])[key])]
+        self.close()			
+        return [x[0] for x in sorted(idList, key=lambda x: x[1])]
 
+    def acharMenorQue(self, key, valor):    
+        assert type(valor) == int or type(valor) == float, "Entre com valores numéricos"
+        self.connect()
+        idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if float(valor) >= float(self.toDict(list(dado)[1:])[key])]
+        self.close()			
+        return [x[0] for x in sorted(idList, key=lambda x: x[1])]
+
+    def acharDadosMaioresQue(self,key,valor):
+        return sorted(self.getDados(self.acharMaiorQue(key, valor)), key=lambda x: x[key])
+
+    def acharDadosMenoresQue(self,key,valor):
+        return sorted(self.getDados(self.acharMenorQue(key, valor)), key=lambda x: x[key])
+   
     def apagarDado(self, id):
             self.connect()
             self.cursor.execute("DELETE FROM "+ self.tableName +" WHERE ID = ?", (id,))		
             self.close()			
+
+    def update(self, id, dado):
+        '''
+        id do dado a se modificar
+        dado: pode ser um dicionário só com as modificações
+        '''     
+        d=self.getDado(id)
+        d.update(dado)
+        d=self.toList(d)
+        self.connect()
+        self.cursor.execute("UPDATE "+ self.tableName +" SET " + " = ?,".join(self.dataNameList) +"= ? WHERE id= ?",
+                (d+[id]))
+        self.close()
 
     def apagarTabela(self):
             self.connect()
@@ -86,3 +134,37 @@ class DB():
 
     def apagarTudo(self):	
             Path(self.filepath).unlink()
+
+def test():
+     caminho='/home/matheus/test.db'
+
+     attr=["nome", "matricula", "dataNasc", "RG", "CPF", "nomeDaMae", "nomeDoPai", "telefone", "endereco",
+ "serie", "escola", "idade", "lat", "long"] 
+     db=DB(caminho, 'haha', attr)   
+
+     d1={"nome":'majose', "matricula":"ER215", "dataNasc":'12/05/87', "RG":'askfasj1545', "CPF":'15618684',
+      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
+ "serie":2, "escola":1, "idade":13, "lat":-19.231, "long":47.12331}
+     d2={"nome":'matheus', "matricula":"ER128", "dataNasc":'17/05/87', "RG":'askfasj1545', "CPF":'15618684',
+      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
+ "serie":5, "escola":1, "idade":21, "lat":-19.231, "long":47.12331}
+     d3={"nome":'carlos', "matricula":"ER125", "dataNasc":'18/05/87', "RG":'askfasj1545', "CPF":'15618684',
+      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
+ "serie":8, "escola":3, "idade":15, "lat":-19.231, "long":47.12331}
+
+     db.salvarDados([d1,d2,d3]) 
+     print("TODOS: \n", db.todosOsDados(), "\n\n")
+     print("Nomes com ma: \n", db.acharDados('nome', 'ma'), "\n\n")
+     print("Idade 13 \n", db.acharDados('idade', 13), "\n\n")
+     print("Idade maior que 14: \n", db.acharDadosMaioresQue('idade', 14), "\n\n")
+     print("Idade menor que 14: \n", db.acharDadosMenoresQue('idade', 14), "\n\n")
+     id=db.acharDado('nome','matheus')[0]
+     db.update(id, {'idade': 40})
+     print("dado matheus atualizado: \n", db.getDado(id), "\n\n")  
+     db.apagarDado(id)
+     print("Matheus Excluído: \n", db.todosOsDados(), "\n\n")
+     db.apagarTabela()
+
+
+if __name__=="__main__":    
+     test()

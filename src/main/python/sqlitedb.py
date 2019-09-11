@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-
+from copy import copy
 class DB():
     def __init__(self, caminhoDoArquivo, tableName, dataNameList):    
             '''caminhoDoArquivo: String com o caminho do arquivo
@@ -14,7 +14,11 @@ class DB():
 
     def toDict(self, data):        
             return {n : data[i] for i, n in enumerate(self.dataNameList)}
-            
+
+    def toDictComId(self, data):        
+            return {n : data[i] for i, n in enumerate(["id"]+self.dataNameList)}
+
+           
     def toList(self, data):
             return [data[n] for n in self.dataNameList]
 
@@ -43,7 +47,9 @@ class DB():
             assert len(dado)==len(self.dataNameList), "ERRO: O dado deve ter o tamanho " + str(len(self.dataNameList))
             self.connect()
             self._salvarDado(dado)
+            id=copy(self.cursor.lastrowid)
             self.close()
+            return id
 
     def salvarDados(self, lista): 
             self.connect()
@@ -59,11 +65,25 @@ class DB():
             self.close()
             return dado
 
+    def getDadoComId(self, id):
+            self.connect()
+            dado=self._getDado(id)
+            self.close()
+            dado.update({"id": id})
+            return dado
+
     def todosOsDados(self):
             self.connect()
             dados = [self.toDict(row[1:]) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
             self.close()
             return dados
+
+    def todosOsDadosComId(self):
+            self.connect()
+            dados = [self.toDictComId(row) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
+            self.close()
+            return dados
+        
 
                     
     def acharDado(self, key, nome): 
@@ -135,6 +155,9 @@ class DB():
     def apagarTudo(self):	
             Path(self.filepath).unlink()
 
+
+
+
 def test():
      caminho='/home/matheus/test.db'
 
@@ -163,8 +186,13 @@ def test():
      print("dado matheus atualizado: \n", db.getDado(id), "\n\n")  
      db.apagarDado(id)
      print("Matheus Excluído: \n", db.todosOsDados(), "\n\n")
-     db.apagarTabela()
+     print("Dados com id \n", db.todosOsDadosComId(), "\n\n")
+     print("Dados com id 3 \n", db.getDadoComId(3), "\n\n")
+     id=db.salvarDado(d1)
+     print("ultimo id: ", id)
 
+     db.apagarTabela()
+     db.apagarTudo()
 
 if __name__=="__main__":    
      test()

@@ -5,7 +5,9 @@ from math import ceil
 from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtGui, uic, QtCore
 import csv
+from PyQt5.QtWidgets import QFileDialog
 
+DELIMITADOR_CSV=';'
 CSV_DIALOG, _ = uic.loadUiType("./src/main/python/ui/dialogs/importCsv.ui")
 delimiter = ";"
 
@@ -20,7 +22,6 @@ def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Ok
-
 
 
 class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
@@ -173,6 +174,44 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
         super().resizeEvent(event)  # Restores the original behaviour of the resize event
 
 
+def exportCsv(listaDeAlunos):
+    '''
+    listaDeAlunos: lista de Dicionários de alunos
+    filename: Caminho do arquivo csv a salvar
+    '''
+    filename=QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")
+    #filename=["/home/matheus/test.csv"]
+    if not filename[0]: return
+
+    header=list(listaDeAlunos[0].keys())    
+    with open(filename[0], "w") as fo:
+        writer = csv.writer(fo, delimiter=DELIMITADOR_CSV, dialect='excel')
+        if type(header)==list:
+            writer.writerow(header)
+        for dic in listaDeAlunos:
+            r=list(dic.values())
+            writer.writerow(r)
+
+
+
+def test1(*args):
+    app = QtWidgets.QApplication(*args)
+    app.restart=False
+    d1={"nome":'majose', "matricula":"ER215", "dataNasc":'12/05/87', "RG":'askfasj1545', "CPF":'15618684',
+      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
+ "serie":2, "escola":1, "idade":13, "lat":-19.231, "long":47.12331}
+    d2={"nome":'matheus', "matricula":"ER128", "dataNasc":'17/05/87', "RG":'askfasj1545', "CPF":'15618684',
+      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
+ "serie":5, "escola":1, "idade":21, "lat":-19.231, "long":47.12331}
+    d3={"nome":'carlos', "matricula":"ER125", "dataNasc":'18/05/87', "RG":'askfasj1545', "CPF":'15618684',
+      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
+ "serie":8, "escola":3, "idade":15, "lat":-19.231, "long":47.12331}
+ 
+    exportCsv([d1,d2,d3])
+    r=app.exec_()        
+    return r
+
+
 def test(*args):  
         app = QtWidgets.QApplication(*args)
         app.restart=False
@@ -182,9 +221,11 @@ def test(*args):
         print(win.result)
         return r
 
+
+
 if __name__ == '__main__':
     import sys
-    currentExitCode=test(sys.argv)
+    currentExitCode=test1(sys.argv)
     sys.exit(currentExitCode)
 
 

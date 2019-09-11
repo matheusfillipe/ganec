@@ -1,6 +1,6 @@
 import json
 
-from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets, QtWebChannel, QtNetwork
+from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets, QtWebChannel, QtNetwork, QtGui, QtCore
 from lib.hidden.constants import API_KEY
 
 JS = '''
@@ -9,6 +9,7 @@ var map;
 var markers = [];
 var qtWidget;
 var paths=[];
+var coordInfoWindow = new google.maps.InfoWindow();
 
 // main init function
 function initialize() {
@@ -42,9 +43,27 @@ function initialize() {
         qtWidget.mapIsDoubleClicked(ev.latLng.lat(), ev.latLng.lng());
     });
 }
+
+ map.data.setStyle(function(feature) {
+    var strokeColor = feature.getProperty('color');
+    var dist = feature.getProperty('distance');
+    dist = parseFloat(dist).toFixed(2);
+    coordInfoWindow.setContent("Distância: "+ dist + "m");
+    feature.getGeometry().forEachLatLng(function(latlng){
+        coordInfoWindow.setPosition(latlng);
+    });
+    coordInfoWindow.open(map);
+    return {
+      strokeColor: strokeColor,
+      strokeWeight: 3
+    };
+  });
+
 // custom functions
 function gmap_addPath(filepath) {    
     paths.push(map.data.addGeoJson(filepath));
+    
+
 }
 
 function gmap_clearPaths() {
@@ -215,7 +234,11 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         self.initialized = False
 
         self._manager = QtNetwork.QNetworkAccessManager(self)
-    
+
+    def saveImage(self, filepath):
+        p = QtGui.QGuiApplication.primaryScreen()
+        p.grabWindow(self.winId()).save(filepath, 'jpg')
+
     def show(self):
         self.waitUntilReady()
         self.setZoom(16)       
@@ -412,9 +435,11 @@ def test():
         w.clearPaths()       
         count+=1
         with open(net.save_geojson("/home/matheus/test.geojson"), 'r') as file:
-            geo = file.read().replace("\"","\'")
+            geo = file.read().replace("\"","\'")    
+      #  print(geo)
         w.addPath(geo)
         net.save_kml("/home/matheus/test.kml")
+        w.saveImage("/home/matheus/test.jpg")
 
     w.mapMoved.connect(print)
     w.mapClicked.connect(print)

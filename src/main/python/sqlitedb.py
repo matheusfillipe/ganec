@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 from copy import copy
+
 class DB():
     def __init__(self, caminhoDoArquivo, tableName, dataNameList):    
             '''caminhoDoArquivo: String com o caminho do arquivo
@@ -20,7 +21,7 @@ class DB():
 
            
     def toList(self, data):
-            return [data[n] for n in self.dataNameList]
+            return [data[n] if n in data.keys() else "" for n in self.dataNameList]            
 
 
     def checkIfExistsIfNotCreate(self):				
@@ -50,6 +51,7 @@ class DB():
             id=copy(self.cursor.lastrowid)
             self.close()
             return id
+
 
     def salvarDados(self, lista): 
             self.connect()
@@ -87,11 +89,12 @@ class DB():
 
                     
     def acharDado(self, key, nome): 
+            key=key.lower()
             self.connect()					
             if type(nome)==str:
                 idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
                         for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
-                        if nome in self.toDict(list(dado)[1:])[key]]
+                        if nome.lower() in self.toDict(list(dado)[1:])[key].lower()]
             else:
                 idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
                         for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
@@ -101,6 +104,9 @@ class DB():
 
     def getDados(self, listaDeIds):
             return [self.getDado(id) for id in listaDeIds]
+
+    def getDadosComId(self, listaDeIds):
+            return [self.getDadoComId(id) for id in listaDeIds]
     
     def acharDados(self, key, nome):
             return sorted(self.getDados(self.acharDado(key, nome)), key=lambda x: x[key])

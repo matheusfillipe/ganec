@@ -6,103 +6,143 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>506</width>
-    <height>307</height>
+    <width>627</width>
+    <height>265</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Cadastrar Escola</string>
+  </property>
+  <property name="toolTip">
+   <string/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="labelNome">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="text">
-      <string>Nome:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1" colspan="3">
-    <widget class="QLineEdit" name="lineEditNome"/>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="labelRua">
-     <property name="text">
-      <string>Rua:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1" colspan="3">
-    <widget class="QLineEdit" name="lineEditRua"/>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="labelNumero">
-     <property name="text">
-      <string>Número:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1" colspan="3">
-    <widget class="QLineEdit" name="lineEditNumero"/>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="labelBairro">
-     <property name="text">
-      <string>Bairro:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1" colspan="3">
-    <widget class="QLineEdit" name="lineEditBairro"/>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="labelModalidade">
-     <property name="text">
-      <string>Modalidade:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="3">
-    <widget class="QComboBox" name="comboBoxModalidade"/>
-   </item>
-   <item row="6" column="1">
-    <widget class="QPushButton" name="buttonOk">
-     <property name="text">
-      <string>OK</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="2">
+   <item row="6" column="3">
     <widget class="QPushButton" name="buttonCancelar">
      <property name="text">
       <string>Cancelar</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="3">
-    <widget class="QPushButton" name="buttonEditar">
-     <property name="text">
+   <item row="0" column="1" colspan="4">
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="lineEditNumero"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="labelNumero">
+       <property name="text">
+        <string>Número:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="labelBairro">
+       <property name="text">
+        <string>Bairro:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="labelNome">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="text">
+        <string>Nome:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelRua">
+       <property name="text">
+        <string>Rua:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="lineEditNome"/>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="lineEditBairro"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditRua"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="labelModalidade">
+       <property name="text">
+        <string>Modalidade:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="comboBoxModalidade"/>
+     </item>
+    </layout>
+   </item>
+   <item row="6" column="4">
+    <widget class="QToolButton" name="toolButtonEditar">
+     <property name="toolTip">
       <string>Editar</string>
+     </property>
+     <property name="text">
+      <string>...</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="2">
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+   <item row="6" column="2">
+    <widget class="QPushButton" name="buttonOk">
+     <property name="text">
+      <string>OK</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+    </widget>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>lineEditNome</tabstop>
+  <tabstop>lineEditRua</tabstop>
+  <tabstop>lineEditNumero</tabstop>
+  <tabstop>lineEditBairro</tabstop>
+  <tabstop>comboBoxModalidade</tabstop>
+  <tabstop>buttonOk</tabstop>
+  <tabstop>buttonCancelar</tabstop>
+  <tabstop>toolButtonEditar</tabstop>
+ </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>buttonCancelar</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>483</x>
+     <y>409</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>328</x>
+     <y>165</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonOk</sender>
+   <signal>clicked()</signal>
+   <receiver>Dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>368</x>
+     <y>409</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>257</x>
+     <y>156</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

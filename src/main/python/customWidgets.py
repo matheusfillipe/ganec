@@ -1,11 +1,10 @@
-
-from PyQt5 import QtWidgets
-from math import ceil
-
 from PyQt5.QtCore import Qt
 from PyQt5 import QtWidgets, QtGui, uic, QtCore
 import csv
 from PyQt5.QtWidgets import QFileDialog
+from pathlib import Path
+
+from lib.constants import *
 
 DELIMITADOR_CSV=';'
 CSV_DIALOG, _ = uic.loadUiType("./src/main/python/ui/dialogs/importCsv.ui")
@@ -23,6 +22,11 @@ def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Ok
 
+def confPath():
+    path=QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0] / Path(NAME)
+    path.mkdir(parents=True, exist_ok=True)  
+    return path
+ 
 
 class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
     def __init__(self, dataNamesList:list, parent=None):
@@ -229,7 +233,7 @@ if __name__ == '__main__':
     sys.exit(currentExitCode)
 
 
-class QtWaitingSpinner(QWidget):
+'''class QtWaitingSpinner(QWidget):
     mColor = QtGui.QColor(Qt.gray)
     mRoundness = 100.0
     mMinimumTrailOpacity = 31.4159265358979323846
@@ -408,7 +412,7 @@ class QtWaitingSpinner(QWidget):
     def setMinimumTrailOpacity(self, minimumTrailOpacity):
         self.mMinimumTrailOpacity = minimumTrailOpacity
 
-
+'''
 if __name__ == '__main__':
     import sys
 

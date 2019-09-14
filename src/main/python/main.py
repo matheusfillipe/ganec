@@ -689,7 +689,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc = calcularRotasThread()
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()   
-        self.loadingLabel.setText("Computando rotas")   
+        self.loadingLabel.setText("Computando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   
 
 

@@ -1,12 +1,13 @@
 import lib.constants
 from sqlitedb import DB
 from lib.osmNet import netHandler
-from lib import constants
+from lib.constants import *
 from pathlib import Path
 import csv
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5 import QtCore 
 from PyQt5.QtCore import pyqtSignal
+from customWidgets import confPath
 
 
 # Nomes dos atributos:
@@ -30,10 +31,12 @@ class calcularRotasThread(QtCore.QThread):
 
     def run(self):
         count = 0
-        db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-        listaDeEscolas=db.todosOsDadosComId()
-        db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-        listDeAlunos
+        dbE= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        listaDeEscolas=dbE.todosOsDadosComId()
+        dbA= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        listaDeAlunos=dbA.todosOsDadosComId()
+        configFolder=confPath()
+        osmpath='/home/matheus/map.osm'  #???
     #def gerarDistAlunos(listaDeEscolas, listaDeAlunos, configFolder, osmpath='/home/matheus/map.osm'):
         '''
         retorna uma lista de alunos atualizada com a propriedade escola escolhida com o id da listaDeEscolas
@@ -48,7 +51,7 @@ class calcularRotasThread(QtCore.QThread):
         net=netHandler(osmpath=osmpath)     #netHandler distancia até todas
 
         for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
-            self.countChanged.emit(int(count/len(tdodd)*100))
+            self.countChanged.emit(int(j/len(listaDeAlunos)*100))
             alunoFolder=alunosFolder / aluno['id']
             alunoFolder.mkdir(parents=True, exist_ok=True)
             escolas=[escola for escola in listaDeEscolas if aluno[SERIE] in escola[ESCOLA_SERIES].split(",") ]  #lista de posíveis escolas destino
@@ -80,27 +83,9 @@ class calcularRotasThread(QtCore.QThread):
                         serie[SERIES_ATTR[3]]+=1
                         db.update(id, serie)                     
                         listaDeAlunos[j]['escola']=escola['id']
+
+            dbA.update({'escola': listaDeAlunos[j]['escola']})
+
                 
 
    
-
-def test1():
-    d1={"nome":'majose', "matricula":"ER215", "dataNasc":'12/05/87', "RG":'askfasj1545', "CPF":'15618684',
-      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
- "serie":2, "escola":1, "idade":13, "lat":-19.231, "long":47.12331}
-    d2={"nome":'matheus', "matricula":"ER128", "dataNasc":'17/05/87', "RG":'askfasj1545', "CPF":'15618684',
-      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
- "serie":5, "escola":1, "idade":21, "lat":-19.231, "long":47.12331}
-    d3={"nome":'carlos', "matricula":"ER125", "dataNasc":'18/05/87', "RG":'askfasj1545', "CPF":'15618684',
-      "nomeDaMae":'josefina', "nomeDoPai":'Jão', "telefone":'121839128', "endereco":'fksdkf 239j 29r',
- "serie":8, "escola":3, "idade":15, "lat":-19.231, "long":47.12331}
-
-    exportCsv([d1,d2,d3])
-
-def test2():
-    pass
-
-
-
-if __name__ == "__main__":
-    test1()

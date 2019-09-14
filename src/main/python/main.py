@@ -595,16 +595,22 @@ class calcularAlunosThread(QtCore.QThread):
     Runs a counter thread.
     """
     countChanged = pyqtSignal(int)
+    def __init__(self, iface):
+        self.iface=iface
+        super().__init__()
 
     def run(self):
         count = 0
         db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
         a=Aluno()
         tdodd=db.todosOsDadosComId()
-        tdodd=[aluno for aluno in tdodd if not aluno['lat']]
+        tdodd=[aluno for aluno in tdodd if not aluno['lat']]       
+        config=self.iface.config
+        centro=[config.get().lat, config.get().lng]
         for aluno in tdodd:
             a.endereco=aluno['endereco']
             cor=a.latLongAluno()
+            cor = cor if cor else centro
             db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
             count +=1          
             self.countChanged.emit(int(count/len(tdodd)*100))
@@ -622,10 +628,13 @@ class calcularEscolasThread(QtCore.QThread):
         db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         a=Aluno()
         tdodd=db.todosOsDadosComId()
-        tdodd=[aluno for aluno in tdodd if not aluno['lat']]
+        varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))       
+        config=varManager.read(Config(),DB_CONFIG)  
+        centro=[config.get().lat, config.get().lng]
         for aluno in tdodd:
             a.endereco=aluno['endereco']
             cor=a.latLongAluno()
+            cor = cor if cor else centro
             db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
             count +=1          
             self.countChanged.emit(int(count/len(tdodd)*100))
@@ -700,7 +709,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
     
-        self.calc = calcularAlunosThread()
+        self.calc = calcularAlunosThread(self)
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()   
         self.loadingLabel.setText("Computando localização dos alunos")   

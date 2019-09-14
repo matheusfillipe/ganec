@@ -28,6 +28,33 @@ def confPath():
     return path
  
 
+class dropDown(QtWidgets.QWidget):
+    def __init__(self, lista, parent=None, flags=Qt.WindowFlags()):
+        super().__init__(parent=parent, flags=flags)
+        self.toolbutton = QtWidgets.QToolButton(self)
+        self.toolbutton.setText('Select Categories ')
+        self.toolmenu = QtWidgets.QMenu()
+        self.actions=[]
+        checkBox = QtWidgets.QCheckBox("Selecionar Todos", self.toolmenu)
+        checkableAction = QtWidgets.QWidgetAction(self.toolmenu)
+        checkableAction.setDefaultWidget(checkBox)
+        self.toolmenu.addAction(checkableAction)
+        checkBox.stateChanged.connect(lambda s: [c.setCheckState(s) for c in self.actions])
+
+        for i in lista:            
+            checkBox = QtWidgets.QCheckBox(str(i), self.toolmenu)
+            checkableAction = QtWidgets.QWidgetAction(self.toolmenu)
+            checkableAction.setDefaultWidget(checkBox)
+            self.toolmenu.addAction(checkableAction)
+            self.actions.append(checkBox)
+                
+        self.toolbutton.setMenu(self.toolmenu)
+        self.toolbutton.setPopupMode(QtWidgets.QToolButton.InstantPopup)        
+
+    def selectedIndexes(self):
+        return [i for i, action in enumerate(self.actions) if action.isChecked()]
+
+
 class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
     def __init__(self, dataNamesList:list, parent=None):
         '''dataNamesList: lista de strings com os nomes dos possíveis atributos '''

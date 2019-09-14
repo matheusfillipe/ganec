@@ -89,9 +89,15 @@ class DB():
 
                     
     def acharDado(self, key, nome): 
-            key=key.lower()
+            func=str
+            try:
+                float(nome)
+                func=float
+            except:
+                pass           
             self.connect()					
             if type(nome)==str:
+                key=key.lower()
                 idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
                         for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
                         if nome.lower() in self.toDict(list(dado)[1:])[key].lower()]
@@ -100,7 +106,7 @@ class DB():
                         for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
                         if str(nome) == str(self.toDict(list(dado)[1:])[key])]
             self.close()			
-            return [x[0] for x in sorted(idList, key=lambda x: x[1])]
+            return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
 
     def getDados(self, listaDeIds):
             return [self.getDado(id) for id in listaDeIds]

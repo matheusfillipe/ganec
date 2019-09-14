@@ -31,7 +31,9 @@ class calcularRotasThread(QtCore.QThread):
     def run(self):
         count = 0
         db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-
+        listaDeEscolas=db.todosOsDadosComId()
+        db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        listDeAlunos
     #def gerarDistAlunos(listaDeEscolas, listaDeAlunos, configFolder, osmpath='/home/matheus/map.osm'):
         '''
         retorna uma lista de alunos atualizada com a propriedade escola escolhida com o id da listaDeEscolas

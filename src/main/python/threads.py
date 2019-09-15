@@ -2,12 +2,16 @@ import lib.constants
 from sqlitedb import DB
 from lib.osmNet import netHandler
 from lib.constants import *
+from customWidgets import confPath, osmFilePath
+from data.aluno import Aluno
+
+
 from pathlib import Path
 import csv
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5 import QtCore 
 from PyQt5.QtCore import pyqtSignal
-from customWidgets import confPath
+
 
 
 # Nomes dos atributos:
@@ -18,9 +22,62 @@ ESCOLA_SERIES='series'  #lista de modalidades ou séries separadas por virgula e
 COLORS=["blue", "green", "yellow", "red", "black"] #em ordem de proximidade
 DB_FILEPATH='/home/matheus/test.db'
 TABLE_ESCOLAS="escolas"
-TABLE_SERIES="series"
+TABLE_SERIES="SERIES"
 SERIES_ATTR= ['idDaEscola' ,'serie' ,'vagas', 'nDeAlunos']
 DELIMITADOR_CSV=';'
+ 
+class calcularAlunosThread(QtCore.QThread):
+    """
+    Runs a counter thread.
+    """
+    countChanged = pyqtSignal(int)
+    def __init__(self, iface):
+        self.iface=iface
+        super().__init__()
+
+    def run(self):
+        count = 0
+        db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        a=Aluno()
+        tdodd=db.todosOsDadosComId()
+        tdodd=[aluno for aluno in tdodd if not aluno['lat']]       
+        config=self.iface.config
+        centro=[config.get().lat, config.get().lng]
+        for aluno in tdodd:
+            a.endereco=aluno['endereco']
+            cor=a.latLongAluno()
+            cor = cor if cor else centro
+            db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
+            count +=1          
+            self.countChanged.emit(int(count/len(tdodd)*100))
+
+
+
+class calcularEscolasThread(QtCore.QThread):
+    """
+    Runs a counter thread.
+    """
+    countChanged = pyqtSignal(int)
+    def __init__(self, iface):
+        self.iface=iface
+        super().__init__()
+
+    def run(self):
+        count = 0
+        db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        a=Aluno()
+        tdodd=db.todosOsDadosComId()
+        config=self.iface.config       
+        centro=[config.get().lat, config.get().lng]
+        for aluno in tdodd:
+            a.endereco=aluno['endereco']
+            cor=a.latLongAluno()
+            cor = cor if cor else centro
+            db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
+            count +=1          
+            self.countChanged.emit(int(count/len(tdodd)*100))
+
+
 
 
 class calcularRotasThread(QtCore.QThread):
@@ -36,7 +93,7 @@ class calcularRotasThread(QtCore.QThread):
         dbA= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
         listaDeAlunos=dbA.todosOsDadosComId()
         configFolder=confPath()
-        osmpath='/home/matheus/map.osm'  #???
+        osmpath=osmFilePath  #???
     #def gerarDistAlunos(listaDeEscolas, listaDeAlunos, configFolder, osmpath='/home/matheus/map.osm'):
         '''
         retorna uma lista de alunos atualizada com a propriedade escola escolhida com o id da listaDeEscolas

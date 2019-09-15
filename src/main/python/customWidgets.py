@@ -4,6 +4,7 @@ import csv
 from PyQt5.QtWidgets import QFileDialog
 from pathlib import Path
 
+from sqlitedb import DB
 from lib.constants import *
 
 DELIMITADOR_CSV=';'
@@ -26,7 +27,19 @@ def confPath():
     path=QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0] / Path(NAME)
     path.mkdir(parents=True, exist_ok=True)  
     return path
- 
+
+def tmpPath(): 
+    path = QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.TempLocation)[0] / Path(NAME)
+    path.mkdir(parents=True, exist_ok=True)  
+    return path
+
+def osmFilePath():
+    db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
+    try:
+        return db.getDado(db.acharDado('nome','osmPath')[0])['string']
+    except:
+        return False
+
 
 class dropDown(QtWidgets.QWidget):
     def __init__(self, lista, parent=None, flags=Qt.WindowFlags()):

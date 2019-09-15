@@ -248,15 +248,23 @@
     <property name="title">
      <string>Op&amp;ções</string>
     </property>
-    <addaction name="actionCalcular_rotas"/>
     <addaction name="actionConfigura_es"/>
     <addaction name="actionAjuda"/>
     <addaction name="actionSobre"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuComputar">
+    <property name="title">
+     <string>Ca&amp;lcular</string>
+    </property>
+    <addaction name="actionCalcular_Rotas"/>
+    <addaction name="actionRecalcular_endere_os_de_alunos"/>
+    <addaction name="actionRecalcular_endere_os_de_escolas"/>
+   </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
    <addaction name="menuOp_es"/>
+   <addaction name="menuComputar"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionSalvar">
@@ -342,6 +350,21 @@
   <action name="actionCalcular_rotas">
    <property name="text">
     <string>Calcular rotas</string>
+   </property>
+  </action>
+  <action name="actionCalcular_Rotas">
+   <property name="text">
+    <string>Calcular Rotas</string>
+   </property>
+  </action>
+  <action name="actionRecalcular_endere_os_de_alunos">
+   <property name="text">
+    <string>Recalcular endereços de alunos</string>
+   </property>
+  </action>
+  <action name="actionRecalcular_endere_os_de_escolas">
+   <property name="text">
+    <string>Recalcular endereços de escolas</string>
    </property>
   </action>
  </widget>

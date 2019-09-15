@@ -5,6 +5,8 @@ class Config(persistent.Persistent):
         self.isApplied=False
         self.lng, self.lat = -46.30973, -19.00009 
         self.osmPath=''
+        self.text=''
+        self.text2=''
 
     def apply(self):
         self.isApplied=True

@@ -22,9 +22,10 @@ DB_ADD_ESCOLA="escolas"
 
 #CONSTANTED DB
 
-CAMINHO = {'aluno':"aluno.db", 'escola':"escola.db"}
+CAMINHO = {'aluno':"aluno.db", 'escola':"escola.db", 'strings':'strings.db'}
 
-TABLE_NAME = {'aluno':"ALUNOS", 'escola':"ESCOLAS"}
+TABLE_NAME = {'aluno':"ALUNOS", 'escola':"ESCOLAS", 'series':'SERIES'}
+
 
 ATRIBUTOS = {
 	'aluno':["nome",

@@ -60,7 +60,7 @@ class DB():
 
     def _getDado(self, id):
             return self.toDict(list(list(self.cursor.execute("SELECT * FROM " + self.tableName + " WHERE id = ?", (id,)))[0])[1:])
-                    
+                                
     def getDado(self, id):
             self.connect()
             dado=self._getDado(id)

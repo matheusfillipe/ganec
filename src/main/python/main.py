@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets, QtGui, uic, Qt, QtCore
 from fbs_runtime.application_context import ApplicationContext
 import os, sys, traceback
 from copy import deepcopy
+import zipfile
 
 from data.config import *
 from data.aluno import *
@@ -13,8 +14,8 @@ from lib.osm import MapWidget
 from lib.gmaps import QGoogleMap 
 from lib.database import VariableManager, QInterface
 from lib.constants import *
-from algoritmos import *
-from customWidgets import exportCsv, confPath, csvDialog
+from threads import *
+from customWidgets import *
 from PyQt5.QtCore import pyqtSignal
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
@@ -83,7 +84,13 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.lineEdit : QtWidgets.QLineEdit
         self.lineEdit_2 : QtWidgets.QLineEdit
         self.buttonBox : QtWidgets.QDialogButtonBox
+        self.setOsmBtn : QtWidgets.QPushButton
+        self.backupBtn : QtWidgets.QPushButton
+        self.restaurarBtn : QtWidgets.QPushButton
 
+        self.backupBtn.clicked.connect(self.backup)
+        self.restaurarBtn.clicked.connect(self.restore)
+        
         self.comboBox.addItem("Google")    
         self.comboBox.addItem("OSM")
         self.comboBox.addItem("Here")
@@ -94,9 +101,65 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         slots=[iface.saveConfig,                lambda: 0,                         iface.saveConfig,           self.reset],
         properties=["map"],
         readers=[self.comboBox.currentIndex],
-        writers=[self.comboBox.setCurrentIndex])        
+        writers=[self.comboBox.setCurrentIndex])    
+
+        self.setOsmBtn.clicked.connect(self.setOsm)
+        db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
+        self.db=db
+        try:
+            self.lineEdit.setText(db.getDado(db.acharDado('nome','osmPath')[0])['string'])
+        except:
+            self.db.salvarDado({'nome': 'osmPath', 'string': ''})
+            self.lineEdit.setText("")
+
+
+    def setOsm(self):
+        db=self.db
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de mapa (*.osm)")[0]
+        if filename in ['', None]: return
+        self.db.update(db.acharDado('nome','osmPath')[0], {'string': filename})    
+        self.lineEdit.setText(db.getDado(db.acharDado('nome','osmPath')[0])['string'])
+
+    def backup(self):
+        db=self.db
+        filename : str
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo de backup (*.zip *.ZIP)")[0]
+        if filename in ['', None]: return
+        filename= filename if filename.endswith(".zip") else filename+".zip"
+        zip_file = zipfile.ZipFile(filename, 'w')
+        for path in confPath().rglob('*'):
+            path: Path
+            zip_file.write(str(path), str(Path(NAME)/Path(path.name)),zipfile.ZIP_DEFLATED)
+        zip_file.close()
+
+    def restore(self):
+        db=self.db
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de backup (*.zip)")[0]
+        if filename in ['', None]: return
+        if yesNoDialog(title="Atenção!", message='Isso irá juntar seus dados atuais com os do backup. Tem certeza disso?'):
+            z = zipfile.ZipFile(filename, "r")
+            tmp=tmpPath() 
+            z.extractall(str(tmp))
+            print("Extracting to: ", str(tmp))                        
+            z.close()
+
+            #Juntar dois bancos de dados
+            dbA= DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+            dbE=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+            dbS=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['SERIES'], ATRIBUTOS['series'])
+ 
+            dbAR= DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+            dbER=DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+            dbSR=DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['escola'])), TABLE_NAME['SERIES'], ATRIBUTOS['series'])
+
+            [dbA.salvarDado(aluno) for aluno in dbAR.todosOsDadosComId()]
+            [dbE.salvarDado(escola) for escola in dbER.todosOsDadosComId()]
+            [dbS.salvarDado(serie) for serie in dbSR.todosOsDadosComId()]
+
+            os.rmdir(str(tmpPath()))
+            
+
         
-    
     def reset(self):        
         reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 
         info="Esta operação irá remover todos os arquivos de configuração e de banco de dados. Isso não é reversível.")
@@ -112,6 +175,9 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             messageDialog(self, message="O programa irá reiniciar")
             self.close()
             self.iface.restartProgram()                
+
+
+
 
 #classe que pega os dados digitados na UI e concatena em uma string, assim como os manda para um otra classe em outro arquivo
 #chamado aluno, que vai salvar e organizar esses dados e também pesquizar qual a escola mais próxima
@@ -580,65 +646,6 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         EDITAR_ESCOLA.__init__(self)
         self.setupUi(self)
         self.db = DB(CAMINHO['escola'], TABLE_NAME['escola'], ATRIBUTOS['escola'])
-        #quando apertar para editar algum aluno
-        #self.pushButtonEditar.clicked.connect()
-        #quando apertar para excluir algum aluno
-        #self.pushButtonExcluir.clicked.connect(self.excluir)
-        #quando escolher algum item da lista
-        #self.listViewEscolas.itemClicked.connect(self.setarEscola)
-        #for i in listaDeModalidades:
-        #    self.comboBoxModalidade.addItem(i) 
-
- 
-class calcularAlunosThread(QtCore.QThread):
-    """
-    Runs a counter thread.
-    """
-    countChanged = pyqtSignal(int)
-    def __init__(self, iface):
-        self.iface=iface
-        super().__init__()
-
-    def run(self):
-        count = 0
-        db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-        a=Aluno()
-        tdodd=db.todosOsDadosComId()
-        tdodd=[aluno for aluno in tdodd if not aluno['lat']]       
-        config=self.iface.config
-        centro=[config.get().lat, config.get().lng]
-        for aluno in tdodd:
-            a.endereco=aluno['endereco']
-            cor=a.latLongAluno()
-            cor = cor if cor else centro
-            db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
-            count +=1          
-            self.countChanged.emit(int(count/len(tdodd)*100))
-
-
-
-class calcularEscolasThread(QtCore.QThread):
-    """
-    Runs a counter thread.
-    """
-    countChanged = pyqtSignal(int)
-
-    def run(self):
-        count = 0
-        db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-        a=Aluno()
-        tdodd=db.todosOsDadosComId()
-        varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))       
-        config=varManager.read(Config(),DB_CONFIG)  
-        centro=[config.get().lat, config.get().lng]
-        for aluno in tdodd:
-            a.endereco=aluno['endereco']
-            cor=a.latLongAluno()
-            cor = cor if cor else centro
-            db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
-            count +=1          
-            self.countChanged.emit(int(count/len(tdodd)*100))
-
 
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
@@ -683,7 +690,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAlunos_3.triggered.connect(self.imporAlunoCsv)
         self.actionEscolar.triggered.connect(self.imporEscolaCsv)
         self.actionCalcular_rotas.triggered.connect(self.calcularRotas)
+        self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)
+        self.actionRecalcular_endere_os_de_escolas.triggered.connect(self.recalcularEscolas)
+        self.actionExportar_imagem.triggered.connect(self.exportImg)
         self.progressBar.hide()        
+
+    def exportImg(self):
+        filename=QFileDialog.getSaveFileName(filter="Salvar Imagem (*.jpg)")[0]
+        filename=filename if filename.endswith(".jpg") else filename+",jpg"        
+        self.mapWidget.saveImage(filename)
 
     def calcularRotas(self):
         self.calc = calcularRotasThread()
@@ -691,7 +706,35 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.start()   
         self.loadingLabel.setText("Computando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   
+    
+    def recalcularAlunos(self):
+        db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        for aluno in db.todosOsDadosComId():
+            aluno['lat']=''
+            alumo['long']=''
+            db.update(aluno['id'], aluno)
+        
+        self.calc = calcularAlunosThread(self)
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()   
+        self.loadingLabel.setText("Computando localização dos alunos")   
+        self.calc.finished.connect(self.cleanProgress)   
 
+
+    def recalcularEscolas(self):
+        db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        for aluno in db.todosOsDadosComId():
+            aluno['lat']=''
+            alumo['long']=''
+            db.update(aluno['id'], aluno)
+ 
+        self.calc = calcularEscolasThread()
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()         
+        self.calc.finished.connect(self.cleanProgress)       
+        self.loadingLabel.setText("Computando localização das Escolas")     
+
+ 
 
     def imporAlunoCsv(self):
         dialog=csvDialog(CSV_ALUNOS)
@@ -942,13 +985,13 @@ def main(*args):
             path.mkdir(parents=True, exist_ok=True)  
             CONF_PATH=str(path)
             win.showMaximized()     
-            currentExitCode=app.exec_()
+            currentExitCode=app.exec_()          
             if not app.restart:
                 break        
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1], info="O programa irá reiniciar")
             currentExitCode=-13
-        return currentExitCode   
+    return currentExitCode   
 
 if __name__ == '__main__':
     currentExitCode=main(sys.argv)

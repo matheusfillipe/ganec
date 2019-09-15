@@ -7,7 +7,7 @@ from data.aluno import Aluno
 
 
 from pathlib import Path
-import csv
+import csv, time
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5 import QtCore 
 from PyQt5.QtCore import pyqtSignal
@@ -25,6 +25,16 @@ TABLE_ESCOLAS="escolas"
 TABLE_SERIES="SERIES"
 SERIES_ATTR= ['idDaEscola' ,'serie' ,'vagas', 'nDeAlunos']
 DELIMITADOR_CSV=';'
+
+class imageThread(QtCore.QThread):
+    def __init__(self, iface, filepath):
+        self.filepath=filepath
+        self.iface=iface
+        super().__init__()
+
+    def run(self):
+        time.sleep(.5)
+        self.iface.mapWidget.saveImage(self.filepath)
  
 class calcularAlunosThread(QtCore.QThread):
     """

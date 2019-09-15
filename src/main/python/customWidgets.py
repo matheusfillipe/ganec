@@ -42,30 +42,41 @@ def osmFilePath():
 
 
 class dropDown(QtWidgets.QWidget):
-    def __init__(self, lista, parent=None, flags=Qt.WindowFlags()):
+    selected=QtCore.pyqtSignal(list)
+
+    def __init__(self, lista=[], parent=None, flags=Qt.WindowFlags()):
         super().__init__(parent=parent, flags=flags)
         self.toolbutton = QtWidgets.QToolButton(self)
         self.toolbutton.setText('Select Categories ')
         self.toolmenu = QtWidgets.QMenu()
         self.actions=[]
+        self.checks=[]
         checkBox = QtWidgets.QCheckBox("Selecionar Todos", self.toolmenu)
         checkableAction = QtWidgets.QWidgetAction(self.toolmenu)
         checkableAction.setDefaultWidget(checkBox)
         self.toolmenu.addAction(checkableAction)
-        checkBox.stateChanged.connect(lambda s: [c.setCheckState(s) for c in self.actions])
+        checkBox.stateChanged.connect(lambda s: [c.setCheckState(s) for c in self.checks])
+        checkBox.stateChanged.connect(lambda: self.selected.emit(self.selectedIndexes()))
+       
+        self.repopulate(lista)                
+        self.toolbutton.setMenu(self.toolmenu)
+        self.toolbutton.setPopupMode(QtWidgets.QToolButton.InstantPopup)  
 
+    def repopulate(self, lista):
+        for act in self.actions:
+            self.toolmenu.removeAction(act)
+     
         for i in lista:            
             checkBox = QtWidgets.QCheckBox(str(i), self.toolmenu)
+            checkBox.stateChanged.connect(lambda: self.selected.emit(self.selectedIndexes()))
             checkableAction = QtWidgets.QWidgetAction(self.toolmenu)
             checkableAction.setDefaultWidget(checkBox)
             self.toolmenu.addAction(checkableAction)
-            self.actions.append(checkBox)
-                
-        self.toolbutton.setMenu(self.toolmenu)
-        self.toolbutton.setPopupMode(QtWidgets.QToolButton.InstantPopup)        
+            self.checks.append(checkBox)
+            self.actions.append(checkableAction)
 
     def selectedIndexes(self):
-        return [i for i, action in enumerate(self.actions) if action.isChecked()]
+        return [i for i, c in enumerate(self.checks) if c.isChecked()]
 
 
 class csvDialog(QtWidgets.QDialog, CSV_DIALOG):

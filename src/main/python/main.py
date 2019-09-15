@@ -698,7 +698,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def exportImg(self):
         filename=QFileDialog.getSaveFileName(filter="Salvar Imagem (*.jpg)")[0]
         filename=filename if filename.endswith(".jpg") else filename+",jpg"        
-        self.mapWidget.saveImage(filename)
+        self.calc = imageThread(self, filename)
+        self.calc.start()   
+ 
 
     def calcularRotas(self):
         self.calc = calcularRotasThread()
@@ -770,7 +772,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         if not res: return
         try:          
             db = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-            dbs= DB(str(confPath()/Path(CAMINHO['series'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+            dbs= DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
             for r in res:
                 id=db.salvarDado(r)
                 for s in r['series'].split(","): 
@@ -779,7 +781,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
 
-        self.calc = calcularEscolasThread()
+        self.calc = calcularEscolasThread(self)
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()         
         self.calc.finished.connect(self.cleanProgress)       
@@ -971,6 +973,16 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
+
+    def adicionarCaminho(self, aluno):
+        self.mapWidget.clearPaths()
+        f=confPath()/ Path(PASTA_ALUNOS) / Path(aluno['id'])  
+        if f.is_dir():
+            f=f/Path(aluno['escola'])
+            if f.is_file():
+                with open(f, 'r') as file:
+                    geo = file.read().replace("\"","\'")    
+                self.mapWidget.addPath(geo)
 
 
 def main(*args):

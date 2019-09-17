@@ -97,16 +97,47 @@ class DB():
                 pass           
             self.connect()					
             if type(nome)==str:
-                key=key.lower()
+                key=key
                 idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
                         for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
-                        if nome.lower() in self.toDict(list(dado)[1:])[key].lower()]
+                        if nome.lower() in str(self.toDict(list(dado)[1:])[key]).lower()]
             else:
                 idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
                         for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
                         if str(nome) == str(self.toDict(list(dado)[1:])[key])]
             self.close()			
-            return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
+            try:
+                return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
+            except ValueError as e:
+                return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
+
+
+    def acharDadoExato(self, key, nome): 
+            func=str
+            try:
+                float(nome)
+                func=float
+            except:
+                pass           
+            self.connect()					
+            if type(nome)==str:
+                key=key
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if nome.lower() == str(self.toDict(list(dado)[1:])[key]).lower()]
+            else:
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if str(nome) == str(self.toDict(list(dado)[1:])[key])]
+            self.close()			
+            try:
+                return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
+            except ValueError as e:
+                return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
+
+
+
+
 
     def getDados(self, listaDeIds):
             return [self.getDado(id) for id in listaDeIds]

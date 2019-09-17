@@ -373,17 +373,19 @@ class netHandler():
         w.record(FIRST_FLD='First', SECOND_FLD='Line')
         w.close()
     
-    def save_kml(self, filepath):
+    def save_kml(self, filepath, color='ff0000ff'):
         kml=simplekml.Kml()
         ls = kml.newlinestring(name="Caminho")
+        ls.style.labelstyle.color=color
         for row in self.parts:
             ls.coords.addcoordinates([(row[0],row[1])]) #<-- IMPORTANT! Longitude first, Latitude second.            
         kml.save(filepath);
    
-    def save_geojson(self, filepath):
+    def save_geojson(self, filepath, color='blue'):
         features = []
         ls=LineString(self.parts)
-        features.append(Feature(geometry=ls, properties={"country": "Brazil"}))
+        features.append(Feature(geometry=ls, properties={"country": "Brazil", "color": color, 'distance': str(self.get_dist())}))
+
        # feature_collection = FeatureCollection(features)
         with open(filepath, 'w') as f:
             dump(features[0], f)

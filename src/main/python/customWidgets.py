@@ -4,12 +4,17 @@ import csv
 from PyQt5.QtWidgets import QFileDialog
 from pathlib import Path
 
+
 from sqlitedb import DB
 from lib.constants import *
+from lib.database import VariableManager, QInterface
 
-DELIMITADOR_CSV=';'
+
 CSV_DIALOG, _ = uic.loadUiType("./src/main/python/ui/dialogs/importCsv.ui")
-delimiter = ";"
+MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
+NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
+delimiter = CSV_SEPARATOR
+SEPARADOR_CSV=CSV_SEPARATOR
 
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
@@ -23,31 +28,42 @@ def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox.show()
     return msgBox.exec_() == QtWidgets.QMessageBox.Ok
 
+
+def yesNoDialog(iface=None, title="Atenção", info="", message=""):
+    msgBox = QtWidgets.QMessageBox(iface)
+    msgBox.setIcon(QtWidgets.QMessageBox.Question)
+    msgBox.setWindowTitle(title)
+    msgBox.setText(message)
+    msgBox.setInformativeText(info)
+    msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+    msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
+    msgBox.show()
+    return msgBox.exec_() == QtWidgets.QMessageBox.Yes
+
+
 def confPath():
     path=QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0] / Path(NAME)
     path.mkdir(parents=True, exist_ok=True)  
     return path
+
 
 def tmpPath(): 
     path = QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.TempLocation)[0] / Path(NAME)
     path.mkdir(parents=True, exist_ok=True)  
     return path
 
-def osmFilePath():
-    db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
-    try:
-        return db.getDado(db.acharDado('nome','osmPath')[0])['string']
-    except:
-        return False
 
 
 class dropDown(QtWidgets.QWidget):
     selected=QtCore.pyqtSignal(list)
 
-    def __init__(self, lista=[], parent=None, flags=Qt.WindowFlags()):
+    def __init__(self, lista=[], parent=None, text="", flags=Qt.WindowFlags()):
         super().__init__(parent=parent, flags=flags)
+        self.layout=QtWidgets.QGridLayout(self)
+        self.setLayout(self.layout)
         self.toolbutton = QtWidgets.QToolButton(self)
-        self.toolbutton.setText('Select Categories ')
+        self.layout.addWidget(self.toolbutton)
+        self.toolbutton.setText(text)
         self.toolmenu = QtWidgets.QMenu()
         self.actions=[]
         self.checks=[]
@@ -57,10 +73,13 @@ class dropDown(QtWidgets.QWidget):
         self.toolmenu.addAction(checkableAction)
         checkBox.stateChanged.connect(lambda s: [c.setCheckState(s) for c in self.checks])
         checkBox.stateChanged.connect(lambda: self.selected.emit(self.selectedIndexes()))
-       
+        self.todos=checkBox
         self.repopulate(lista)                
         self.toolbutton.setMenu(self.toolmenu)
         self.toolbutton.setPopupMode(QtWidgets.QToolButton.InstantPopup)  
+       #  self.setMinimumHeight(10)
+       #  self.setMinimumWidth(100)
+
 
     def repopulate(self, lista):
         for act in self.actions:
@@ -77,7 +96,10 @@ class dropDown(QtWidgets.QWidget):
 
     def selectedIndexes(self):
         return [i for i, c in enumerate(self.checks) if c.isChecked()]
-
+        
+    def selectedTexts(self):
+        return [c.text() for  c in self.checks if c.isChecked()]
+       
 
 class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
     def __init__(self, dataNamesList:list, parent=None):
@@ -240,13 +262,135 @@ def exportCsv(listaDeAlunos):
 
     header=list(listaDeAlunos[0].keys())    
     with open(filename[0], "w") as fo:
-        writer = csv.writer(fo, delimiter=DELIMITADOR_CSV, dialect='excel')
+        writer = csv.writer(fo, delimiter=CSV_SEPARATOR, dialect='excel')
         if type(header)==list:
             writer.writerow(header)
         for dic in listaDeAlunos:
             r=list(dic.values())
             writer.writerow(r)
 
+
+class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_MODALIDADE_WIDGET.__init__(self)
+        self.setupUi(self)        
+        self.lineEdit:QtWidgets.QLineEdit
+        self.lineEdit.setPlaceholderText("Nome da Modalidade")
+
+class NewTurmaWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
+    def __init__(self, iface):
+        QtWidgets.QWidget.__init__(self)
+        NEW_MODALIDADE_WIDGET.__init__(self)
+        self.setupUi(self)
+        self.lineEdit:QtWidgets.QLineEdit
+        self.lineEdit.setPlaceholderText("Turma/Série")
+
+class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
+    edited = QtCore.pyqtSignal()
+    def __init__(self, iface):
+        QtWidgets.QDialog.__init__(self)
+        MODALIDADES_DIALOD.__init__(self)
+        self.setupUi(self)
+
+        self.iface:MainWindow
+        self.varManager:VariableManager
+        self.listWidget:QtWidgets.QListWidget
+        self.listWidget_2:QtWidgets.QListWidget
+        self.modalidades:QInterface
+        self.buttonBox:QtWidgets.QDialogButtonBox
+
+        self.iface=iface
+        self.varManager:VariableManager = iface.varManager
+        self.modalidades=self.iface.modalidades    
+        self.listWidget.itemClicked.connect(self.modalidadeChanged)
+
+        self.modalidades.setup(self,
+            signals =  [],
+            slots   =  [], 
+            properties=["modalidades"], 
+            readers  = [self.read],
+            writers  = [self.write]
+        )
+
+    def read(self):
+        return []
+
+    def write(self,modalidades:list):
+        for i,m in enumerate(modalidades):   
+            self.addToListWidget1(m, removable=True if i<len(modalidades)-1 else False)
+        
+    def addToListWidget1(self, modalidade, removable=False):
+
+        itemN = QtWidgets.QListWidgetItem() 
+        widget = NewModalidadeWidget(self)
+        widget.label.setText("Modalidade Escolar: ")
+        widget.horizontalLayout.addStretch()
+        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        itemN.setSizeHint(widget.sizeHint())  
+        self.listWidget.addItem(itemN)
+        self.listWidget.setItemWidget(itemN, widget)
+
+        i=self.listWidget.row(itemN)
+        widget.lineEdit.setText(modalidade.nome)                
+        widget.pushButton.clicked.connect(lambda: self.addToListWidget1(Modalidade()))
+        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))
+
+        if removable:
+            self.setRemovableFromListWidget1(widget, itemN)
+
+
+    def removeFromListWidget1(self, item):
+        i=self.listWidget.row(item)
+        self.listWidget.takeItem(i)
+        self.modalidades.get().removeByIndex(i)
+
+    def setRemovableFromListWidget1(self, widget, itemN):
+        while True:
+            try: widget.pushButton.clicked.disconnect() 
+            except Exception: break
+        widget.lineEdit.setReadOnly(True)
+        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget1(itemN))
+        widget.pushButton.setText("Remover")
+
+    def modalidadeChanged(self):
+        item=self.listWidget.currentItem()
+        self.listWidget_2.clear()  
+        lista=self.modalidades.get().modalidades[self.listWidget.row(item)].turmas
+        for i,t in enumerate(lista):
+            self.addToListWidget2(t,removable=True if i < len(lista)-1 else False)
+
+    def addToListWidget2(self, turma, removable=False):        
+        item=self.listWidget.currentItem()
+        itemN = QtWidgets.QListWidgetItem() 
+        widget = NewTurmaWidget(self)
+        widget.label.setText("Turma: ")
+        widget.horizontalLayout.addStretch()
+        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        itemN.setSizeHint(widget.sizeHint())    
+
+        self.listWidget_2.addItem(itemN)
+        self.listWidget_2.setItemWidget(itemN, widget)
+        widget.pushButton.clicked.connect(lambda: self.addToListWidget2(Turma()))
+        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget2(widget, itemN))
+
+        if removable:
+            self.setRemovableFromListWidget2(widget, itemN)
+
+    def removeFromListWidget2(self, item):
+        i=self.listWidget_2.row(item)
+        item=self.listWidget.currentItem()       
+        self.listWidget_2.takeItem(i)   
+        self.modalidades.get().modalidades[self.listWidget.row(item)]
+        
+
+    def setRemovableFromListWidget2(self, widget, itemN):
+        while True:
+            try: widget.pushButton.clicked.disconnect() 
+            except Exception: break
+        widget.lineEdit.setReadOnly(True)
+        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
+        widget.pushButton.setText("Remover")
 
 
 def test1(*args):
@@ -282,195 +426,3 @@ if __name__ == '__main__':
     import sys
     currentExitCode=test1(sys.argv)
     sys.exit(currentExitCode)
-
-
-'''class QtWaitingSpinner(QWidget):
-    mColor = QtGui.QColor(Qt.gray)
-    mRoundness = 100.0
-    mMinimumTrailOpacity = 31.4159265358979323846
-    mTrailFadePercentage = 50.0
-    mRevolutionsPerSecond = 1.57079632679489661923
-    mNumberOfLines = 20
-    mLineLength = 10
-    mLineWidth = 2
-    mInnerRadius = 20
-    mCurrentCounter = 0
-    mIsSpinning = False
-
-    def __init__(self, centerOnParent=True, disableParentWhenSpinning=True, *args, **kwargs):
-        QWidget.__init__(self, *args, **kwargs)
-        self.mCenterOnParent = centerOnParent
-        self.mDisableParentWhenSpinning = disableParentWhenSpinning
-        self.initialize()
-
-    def initialize(self):
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.rotate)
-        self.updateSize()
-        self.updateTimer()
-        self.hide()
-
-    @pyqtSlot()
-    def rotate(self):
-        self.mCurrentCounter += 1
-        if self.mCurrentCounter > self.numberOfLines():
-            self.mCurrentCounter = 0
-        self.update()
-
-    def updateSize(self):
-        size = (self.mInnerRadius + self.mLineLength) * 2
-        self.setFixedSize(size, size)
-
-    def updateTimer(self):
-        self.timer.setInterval(1000 / (self.mNumberOfLines * self.mRevolutionsPerSecond))
-
-    def updatePosition(self):
-        if self.parentWidget() and self.mCenterOnParent:
-            self.move(self.parentWidget().width() / 2 - self.width() / 2,
-                      self.parentWidget().height() / 2 - self.height() / 2)
-
-    def lineCountDistanceFromPrimary(self, current, primary, totalNrOfLines):
-        distance = primary - current
-        if distance < 0:
-            distance += totalNrOfLines
-        return distance
-
-    def currentLineColor(self, countDistance, totalNrOfLines, trailFadePerc, minOpacity, color):
-        if countDistance == 0:
-            return color
-
-        minAlphaF = minOpacity / 100.0
-
-        distanceThreshold = ceil((totalNrOfLines - 1) * trailFadePerc / 100.0)
-        if countDistance > distanceThreshold:
-            color.setAlphaF(minAlphaF)
-
-        else:
-            alphaDiff = self.mColor.alphaF() - minAlphaF
-            gradient = alphaDiff / distanceThreshold + 1.0
-            resultAlpha = color.alphaF() - gradient * countDistance
-            resultAlpha = min(1.0, max(0.0, resultAlpha))
-            color.setAlphaF(resultAlpha)
-        return color
-
-    def paintEvent(self, event):
-        self.updatePosition()
-        painter = QPainter(self)
-        painter.fillRect(self.rect(), Qt.transparent)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        if self.mCurrentCounter > self.mNumberOfLines:
-            self.mCurrentCounter = 0
-        painter.setPen(Qt.NoPen)
-
-        for i in range(self.mNumberOfLines):
-            painter.save()
-            painter.translate(self.mInnerRadius + self.mLineLength,
-                              self.mInnerRadius + self.mLineLength)
-            rotateAngle = 360.0 * i / self.mNumberOfLines
-            painter.rotate(rotateAngle)
-            painter.translate(self.mInnerRadius, 0)
-            distance = self.lineCountDistanceFromPrimary(i, self.mCurrentCounter,
-                                                         self.mNumberOfLines)
-            color = self.currentLineColor(distance, self.mNumberOfLines,
-                                          self.mTrailFadePercentage, self.mMinimumTrailOpacity, self.mColor)
-            painter.setBrush(color)
-            painter.drawRoundedRect(QRect(0, -self.mLineWidth // 2, self.mLineLength, self.mLineLength),
-                                    self.mRoundness, Qt.RelativeSize)
-            painter.restore()
-
-    def start(self):
-        self.updatePosition()
-        self.mIsSpinning = True
-        self.show()
-
-        if self.parentWidget() and self.mDisableParentWhenSpinning:
-            self.parentWidget().setEnabled(False)
-
-        if not self.timer.isActive():
-            self.timer.start()
-            self.mCurrentCounter = 0
-
-    def stop(self):
-        self.mIsSpinning = False
-        self.hide()
-
-        if self.parentWidget() and self.mDisableParentWhenSpinning:
-            self.parentWidget().setEnabled(True)
-
-        if self.timer.isActive():
-            self.timer.stop()
-            self.mCurrentCounter = 0
-
-    def setNumberOfLines(self, lines):
-        self.mNumberOfLines = lines
-        self.updateTimer()
-
-    def setLineLength(self, length):
-        self.mLineLength = length
-        self.updateSize()
-
-    def setLineWidth(self, width):
-        self.mLineWidth = width
-        self.updateSize()
-
-    def setInnerRadius(self, radius):
-        self.mInnerRadius = radius
-        self.updateSize()
-
-    def color(self):
-        return self.mColor
-
-    def roundness(self):
-        return self.mRoundness
-
-    def minimumTrailOpacity(self):
-        return self.mMinimumTrailOpacity
-
-    def trailFadePercentage(self):
-        return self.mTrailFadePercentage
-
-    def revolutionsPersSecond(self):
-        return self.mRevolutionsPerSecond
-
-    def numberOfLines(self):
-        return self.mNumberOfLines
-
-    def lineLength(self):
-        return self.mLineLength
-
-    def lineWidth(self):
-        return self.mLineWidth
-
-    def innerRadius(self):
-        return self.mInnerRadius
-
-    def isSpinning(self):
-        return self.mIsSpinning
-
-    def setRoundness(self, roundness):
-        self.mRoundness = min(0.0, max(100, roundness))
-
-    def setColor(self, color):
-        self.mColor = color
-
-    def setRevolutionsPerSecond(self, revolutionsPerSecond):
-        self.mRevolutionsPerSecond = revolutionsPerSecond
-        self.updateTimer()
-
-    def setTrailFadePercentage(self, trail):
-        self.mTrailFadePercentage = trail
-
-    def setMinimumTrailOpacity(self, minimumTrailOpacity):
-        self.mMinimumTrailOpacity = minimumTrailOpacity
-
-'''
-if __name__ == '__main__':
-    import sys
-
-    app = QApplication(sys.argv)
-    dial = QDialog()
-    w = QtWaitingSpinner(dial)
-    dial.show()
-    w.start()
-    QTimer.singleShot(1000, w.stop)
-    sys.exit(app.exec_())

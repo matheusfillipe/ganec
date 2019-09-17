@@ -1,4 +1,8 @@
 import persistent
+from sqlitedb import DB
+from customWidgets import *
+from pathlib import Path
+
 class Config(persistent.Persistent):
     def __init__(self):
         self.map=0
@@ -15,6 +19,11 @@ class Config(persistent.Persistent):
     def setInitialPos(self, lat, lng):
         self.lat=lat
         self.lng=lng
+        
+    @classmethod 
+    def cidade(cls):
+        db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
+        return db.getDado(db.acharDado('nome','cidade')[-1])['string']
 
     def __eq__(self, value):        
         return self.map==value.map and self.text==value.text and self.text2==value.text2

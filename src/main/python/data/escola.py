@@ -1,7 +1,5 @@
-import sqlite3
-
+from collections import OrderedDict
 import datetime
-
 from datetime import date
 import persistent
 from lib.constants import *
@@ -11,6 +9,8 @@ from sqlitedb import *
 
 from lib.osm import MapWidget
 from lib.gmaps import *
+from customWidgets import *
+
 #
 class Escola(persistent.Persistent):
     def __init__(self, nome="", rua="", numero="", bairro= "", modalidade= "", lat=0, long = 0, id = 0):
@@ -21,9 +21,20 @@ class Escola(persistent.Persistent):
         self.lat = lat
         self.long = long
         self.id = id
-        enderecoo = rua + numero + bairro + cidade
+        enderecoo = rua + numero + bairro 
         self.listaDeDados=[nome, enderecoo, lat, long]
-        self.DB = DB(CAMINHO['escola'], TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        self.DB = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        self.DBSerie=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+        
+    @classmethod  
+    def todasAsSeries(cls):
+        db = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])       
+        return list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in db.todosOsDados()], [])))      
+    
+    @classmethod  
+    def todasAsEscolas(cls):
+        db = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])       
+        return [escola['nome'] for escola in db.todosOsDados()] 
 
     def salvar(self):
         coordenadas = self.latLongAluno()
@@ -78,9 +89,99 @@ class Escola(persistent.Persistent):
 
 
 class Turma(persistent.Persistent):
-    def __init__(self, nome:str="", vagas=0):
+    def __init__(self, nome:str="", escola=""):
         self.nome=nome
-        self.vagas=vagas
+        self.vagas=0
+        self.alunos=0
+        self.escola=escola
+        self.series=self.createDb()
+        if self.series:
+            self.serie=[serie for serie in self.series if serie['serie']==nome]
+            if len(self.serie)!=0:
+                self.serie=self.serie[-1]
+            else:
+                print("Serie não encontrada:  Escola"+self.escola+" ", self.series)
+                self.serie=False        
+
+    def createDb(self):
+        self.dbSeries=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+        self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])  
+        id=self.dbEscola.acharDadoExato('nome',self.escola)
+        if len(id)>0:
+            self.escola=self.dbEscola.getDadoComId(id[-1])
+            return self.dbSeries.getDadosComId(self.dbSeries.acharDadoExato('idDaEscola',self.escola['id']))    
+        else:
+            print("Falhar ao achar escola")
+            return False
+
+    def _update(self, dict):
+        if hasattr(self, 'serie'):
+            self.dbSeries.update(self.serie["id"], dict)
+        else:
+            d={'vagas': 0,'nDeAlunos': 0}
+            d.update(dict)
+            self.dbSeries.salvarDado({
+             'idDaEscola': self.escola['id'],
+			  'serie':  self.nome, 
+			  'vagas':  d['vagas'], 
+			  'nDeAlunos': d['nDeAlunos']
+            })
+
+    def _increment(self, n=1):
+        '''
+        serie: nome da série (string)
+        escola: nome da escola (string)
+        n: número a incrementar, adicionar (int)
+        '''
+        if self.serie:
+            if self.serie['nDeAlunos']+n>self.serie['vagas']:
+                return False
+            else:
+                self.dbSeries.update(self.serie['id'], {'nDeAlunos': self.serie['nDeAlunos']+n})
+                return self.serie['vagas']
+
+    def _decrement(self, n=1):
+        '''
+        serie: nome da série (string)
+        escola: nome da escola (string)
+        n: número a decrescer, tirar (int)
+        '''
+        if self.serie:
+            if self.serie['nDeAlunos']-n<0:
+                self.dbSeries.update(self.serie['id'], {'nDeAlunos': 0})               
+            else:
+                self.dbSeries.update(self.serie['id'], {'nDeAlunos': self.serie['nDeAlunos']-n})
+
+    @classmethod
+    def increment(cls, serie, escola, n=1):
+        '''
+        serie: nome da série (string)
+        escola: nome da escola (string)
+        n: número a incrementar, adicionar (int)
+        '''
+        t=Turma(serie, escola)
+        t._increment(n)        
+
+    @classmethod
+    def decrement(cls, serie, escola, n=1):
+        '''
+        serie: nome da série (string)
+        escola: nome da escola (string)
+        n: número a decrescer, tirar (int)
+        '''
+        t=Turma(serie, escola)
+        t._decrement(n)
+
+    @classmethod
+    def update(cls, serie, escola, dict):
+        t=Turma(serie, escola)
+        t._update(dict)
+
+
+    @classmethod
+    def instance(cls, serie, escola):
+        return Turma(serie, escola)
+
 
 class Modalidade(persistent.Persistent):
     def __init__(self, nome:str="",turmas=[]):

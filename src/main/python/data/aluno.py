@@ -10,11 +10,13 @@ from sqlitedb import *
 from lib.osm import MapWidget
 from lib.gmaps import *
 from pathlib import Path
-
 import customWidgets
 
+from data.config import *
+cidade=Config.cidade()
+
 class Aluno(persistent.Persistent):
-    def __init__(self, name="", matricula="", dataDeNascimento="", RG = "", CPF = "", nomeMae="", nomePai="", telefone = "", endereco = "", serie = -1, escola = -1, idade = 0, lat=0, long = 0, id = 0):
+    def __init__(self, name="", matricula="", dataDeNascimento="", RG = "", CPF = "", nomeMae="", nomePai="", telefone = "", endereco = "", serie = "", escola = "", idade = 0, lat=0, long = 0, id = 0):
         self.nome=name 
         self.matricula=matricula   
         self.dataDeNascimento=dataDeNascimento
@@ -32,7 +34,8 @@ class Aluno(persistent.Persistent):
         self.id = id
         self.listaDeDados=[name, matricula, dataDeNascimento, RG, CPF, nomeMae, nomePai, telefone, endereco, serie, escola, self.idade, lat, long]
         self.DB = DB(str(customWidgets.confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-
+        self.DBSeries=DB(str(customWidgets.confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+        self.DBSettings=DB(str(customWidgets.confPath()/Path('settings.db')),"strings", ['nome', 'string'])
 
     def salvar(self):
         coordenadas = self.latLongAluno()
@@ -108,6 +111,17 @@ class Aluno(persistent.Persistent):
             return coordenadas
         except:
             return False
+            
+    @classmethod 
+    def getLatLong(cls, endereco):
+        try:
+            DBSettings=DB(str(customWidgets.confPath()/Path('settings.db')),"strings", ['nome', 'string'])
+            coordenadas = GeoCoder().geocode(endereco+" - "+DBSettings.getDado(DBSettings.acharDado('nome','cidade')[0])['string'], API_KEY)
+            return coordenadas
+        except:
+            return False
+
+       
 
     def montarDicionario(self):
         self.listaDeDados=[self.nome, self.matricula, self.dataDeNascimento, self.RG, self.CPF, self.nomeMae, self.nomePai, self.telefone, self.endereco, self.serie, self.escola, self.idade, self.lat, self.long]

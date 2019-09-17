@@ -20,12 +20,11 @@ DB_MODALIDADES_BASE="modalidades_base"
 DB_ADD_ALUNO="alunos"
 DB_ADD_ESCOLA="escolas"
 
-#CONSTANTED DB
+
+#CONSTANTEs DB
 
 CAMINHO = {'aluno':"aluno.db", 'escola':"escola.db", 'strings':'strings.db'}
-
 TABLE_NAME = {'aluno':"ALUNOS", 'escola':"ESCOLAS", 'series':'SERIES'}
-
 
 ATRIBUTOS = {
 	'aluno':["nome",
@@ -44,11 +43,10 @@ ATRIBUTOS = {
 			 "long"],
 
 		'escola':["nome",
-		 "endereco" ,
-		  "modalidade", 
-		  "lat",
-		   "long",
-			"series"],
+				 "endereco" ,
+		  		 "lat",
+		   		 "long",
+				 "series"],
 
 		'modalidade':[],
 		
@@ -80,33 +78,10 @@ ATRIBUTOS_STRING = {
 	'series':["Buscar por:"]
 }
 
-#usado para definir todas as séries que existem. E assim alocar cada aluno numa escola em que a série que ele está existe;
+SEPARADOR_SERIES = ","
+CSV_SEPARATOR=";"
 
-listaDeSeries  = ["Educação infantil - N1",
-				  "Educação infantil - N2", 
-				  "Educação infantil - N3", 
-				  "Ensino Fundamental - 1° Ano", 
-				  "Ensino Fundamental - 2° Ano", 
-				  "Ensino Fundamental - 3° Ano", 
-				  "Ensino Fundamental - 4° Ano", 
-				  "Ensino Fundamental - 5° Ano", 
-				  "Ensino Fundamental - 6° Ano", 
-				  "Ensino Fundamental - 7° Ano", 
-				  "Ensino Fundamental - 8° Ano", 
-				  "Ensino Fundamental - 9° Ano", 
-				  "Ensino Médio - 1° Ano", 
-				  "Ensino Médio - 2° Ano", 
-				  "Ensino Médio - 3° Ano"]
-
-
-listaDeModalidades  = ["Ensino Infantil",
-						"Ensino Fundamental", 
-						"Ensino Médio",  
-						"INDEFINIDO"]
-
-cidade = "Carmo Do Paranaíba"
-
-#Transformar data de meses jul, jun, etc em numero:
+#UTILS
 
 dataEmNumero = {
 	'jan':1,
@@ -123,7 +98,7 @@ dataEmNumero = {
 	'dez':12
 }
 
-#IMPORTS
+#CSV DATA IMPORTS
 
 CSV_ALUNOS=["nome",
 			 "matricula", 

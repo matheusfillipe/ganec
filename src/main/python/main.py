@@ -1,4 +1,36 @@
-''' GANEC = Gestor de Alunos Nas Escolas do Carmo '''
+# -*- coding: utf-8 -*-
+
+"""
+
+/**********************************************************************************
+GANEC = Gestor de Alunos Nas Escolas do Carmo 
+    
+        
+        begin                : 2019-15-09
+        git sha              : $Format:%H$
+        copyright            : (C) 2019 by Fellipe, Lucas e Matheus
+        email                : matheusfillipeag@gmail.com
+**********************************************************************************/
+
+/**********************************************************************************
+*  LICENSE: "Zero Clause BSD"
+*
+* Copyright (C) 2019 by Matheus Fillipe <matheusfillipeag@gmail.com>
+* Permission to use, copy, modify, and/or distribute this software for any 
+* purpose with or without fee is hereby granted.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH 
+* REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND 
+* FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, 
+* OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+* DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS 
+* ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
+*                                                                         
+****************************************************************************************/
+
+! Many important values can be changed at src/main/python/lib/constants.py !
+
+"""
 
 import PyQt5
 from PyQt5 import QtWidgets, QtGui, uic, Qt, QtCore
@@ -6,71 +38,24 @@ from fbs_runtime.application_context import ApplicationContext
 import os, sys, traceback
 from copy import deepcopy
 import zipfile
+from PyQt5.QtCore import pyqtSignal
 
 from data.config import *
-from data.aluno import *
-from data.escola import *
 from lib.osm import MapWidget
 from lib.gmaps import QGoogleMap 
 from lib.database import VariableManager, QInterface
 from lib.constants import *
 from threads import *
 from customWidgets import *
-from PyQt5.QtCore import pyqtSignal
+from escolasWidgets import *
+from alunosWidgets import *
+from customWidgets import *
 
 MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
-MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
-NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
 SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
-NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui")
-NEW_ESCOLA_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaForm2.ui")
-EDITAR_ALUNO, _ = uic.loadUiType("./src/main/python/ui/widgets/editarOuExcluir.ui")
-ALUNO_BUSCA, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoBusca.ui")
-EDITAR_ESCOLA, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaEditar.ui")
 
+RESET=0   
 
-RESET=0
-
-def messageDialog(iface=None, title="Concluído", info="", message=""):
-    msgBox = QtWidgets.QMessageBox(iface)
-    msgBox.setIcon(QtWidgets.QMessageBox.Question)
-    msgBox.setWindowTitle(title)
-    msgBox.setText(message)
-    msgBox.setInformativeText(info)
-    msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
-    msgBox.setDefaultButton(QtWidgets.QMessageBox.Ok)
-    msgBox.show()
-    return msgBox.exec_() == QtWidgets.QMessageBox.Ok
-
-
-def yesNoDialog(iface=None, title="Atenção", info="", message=""):
-    msgBox = QtWidgets.QMessageBox(iface)
-    msgBox.setIcon(QtWidgets.QMessageBox.Question)
-    msgBox.setWindowTitle(title)
-    msgBox.setText(message)
-    msgBox.setInformativeText(info)
-    msgBox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-    msgBox.setDefaultButton(QtWidgets.QMessageBox.No)
-    msgBox.show()
-    return msgBox.exec_() == QtWidgets.QMessageBox.Yes
-
-class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
-    def __init__(self, parent, aluno):
-        QtWidgets.QWidget.__init__(self)
-        self.setupUi(self)        
-        self.Form : QtWidgets.QWidget
-        self.label : QtWidgets.QLabel
-        self.parent=parent
-        self.aluno=aluno
-        self.pushButton : QtWidgets.QPushButton
-        self.pushButton.clicked.connect(lambda : editarAlunoDialog(parent, aluno['id']).exec_())
-        self.label.setText("Nome: " + aluno['nome'] + "\nMatrícula: "+aluno['matricula'])
-    
-    def mouseDoubleClickEvent(self, QMouseEvent):
-        if QMouseEvent.button() == QtCore.Qt.LeftButton:
-            editarAlunoDialog(self.parent, self.aluno['id']).exec_()
-        return super().mouseDoubleClickEvent(QMouseEvent)
-       
 
 class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
@@ -87,9 +72,10 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.setOsmBtn : QtWidgets.QPushButton
         self.backupBtn : QtWidgets.QPushButton
         self.restaurarBtn : QtWidgets.QPushButton
+        self.lineEdit_2 : QtWidgets.QLineEdit
 
         self.backupBtn.clicked.connect(self.backup)
-        self.restaurarBtn.clicked.connect(self.restore)
+        self.restaurarBtn.clicked.connect(self.importar)
         
         self.comboBox.addItem("Google")    
         self.comboBox.addItem("OSM")
@@ -106,19 +92,25 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.setOsmBtn.clicked.connect(self.setOsm)
         db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
         self.db=db
+
         try:
-            self.lineEdit.setText(db.getDado(db.acharDado('nome','osmPath')[0])['string'])
+            self.lineEdit.setText(db.getDado(db.acharDado('nome','osmPath')[-1])['string'])
         except:
             self.db.salvarDado({'nome': 'osmPath', 'string': ''})
             self.lineEdit.setText("")
 
+        try:
+            self.lineEdit_2.setText(db.getDado(db.acharDado('nome','cidade')[-1])['string'])
+        except:
+            self.db.salvarDado({'nome': 'cidade', 'string': ''})
+            self.lineEdit_2.setText("")
 
     def setOsm(self):
         db=self.db
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de mapa (*.osm)")[0]
         if filename in ['', None]: return
         self.db.update(db.acharDado('nome','osmPath')[0], {'string': filename})    
-        self.lineEdit.setText(db.getDado(db.acharDado('nome','osmPath')[0])['string'])
+        self.lineEdit.setText(db.getDado(db.acharDado('nome','osmPath')[-1])['string'])
 
     def backup(self):
         db=self.db
@@ -129,10 +121,10 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         zip_file = zipfile.ZipFile(filename, 'w')
         for path in confPath().rglob('*'):
             path: Path
-            zip_file.write(str(path), str(Path(NAME)/Path(path.name)),zipfile.ZIP_DEFLATED)
+            zip_file.write(str(path), str(Path(NAME)/path.relative_to(confPath())), zipfile.ZIP_DEFLATED)
         zip_file.close()
 
-    def restore(self):
+    def importar(self):
         db=self.db
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de backup (*.zip)")[0]
         if filename in ['', None]: return
@@ -146,18 +138,43 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             #Juntar dois bancos de dados
             dbA= DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
             dbE=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-            dbS=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['SERIES'], ATRIBUTOS['series'])
+            dbS=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
  
             dbAR= DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
             dbER=DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-            dbSR=DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['escola'])), TABLE_NAME['SERIES'], ATRIBUTOS['series'])
+            dbSR=DB(str(tmpPath() / Path(NAME)/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+            dbSettings=DB(str(tmpPath()/Path('settings.db')),"strings", ['nome', 'string'])
 
-            [dbA.salvarDado(aluno) for aluno in dbAR.todosOsDadosComId()]
-            [dbE.salvarDado(escola) for escola in dbER.todosOsDadosComId()]
-            [dbS.salvarDado(serie) for serie in dbSR.todosOsDadosComId()]
+            dbA.salvarDados(dbAR.todosOsDados())
+            dbE.salvarDados(dbER.todosOsDados())
+            dbS.salvarDados(dbSR.todosOsDados())
+            self.db.salvarDados(dbSettings.todosOsDados())
 
             os.rmdir(str(tmpPath()))
-            
+
+
+    def restore(self):
+        reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 
+        info="Esta operação irá remover todos os arquivos de configuração e de banco de dados. Isso não é reversível.")     
+        if reply:
+            filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de backup (*.zip)")[0]
+            if not filename: return
+            try:
+                self.iface.varManager.removeDatabase()
+            except:
+                pass
+            try:
+                os.rmdir(str(confPath()))
+            except:
+                pass
+
+            z = zipfile.ZipFile(filename, "r") 
+            z.extractall(QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0])
+            messageDialog(self, message="O programa irá reiniciar")
+            self.close()
+            self.iface.restartProgram()                
+
+                 
 
         
     def reset(self):        
@@ -177,477 +194,6 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             self.iface.restartProgram()                
 
 
-
-
-#classe que pega os dados digitados na UI e concatena em uma string, assim como os manda para um otra classe em outro arquivo
-#chamado aluno, que vai salvar e organizar esses dados e também pesquizar qual a escola mais próxima
-
-class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
-
-    def __init__(self, iface):
-        QtWidgets.QWidget.__init__(self)
-        NEW_ALUNO_WIDGET.__init__(self)
-        iface : MainWindow
-        self.iface=iface 
-        self.setupUi(self)
-        self.aluno = self.iface.aluno
-
-#mostro ao python o que é cada coisa "defino variaveis"
-
-        self.lineEditNome : QtWidgets.QLineEdit
-        self.lineEditRG : QtWidgets.QLineEdit
-        self.lineEditCPF : QtWidgets.QLineEdit
-        self.lineEditNomeDaMae : QtWidgets.QLineEdit
-        self.lineEditNomeDoPai : QtWidgets.QLineEdit
-        self.lineEditTelefone : QtWidgets.QLineEdit
-        self.lineEditRua : QtWidgets.QLineEdit
-        self.lineEditNumero : QtWidgets.QLineEdit
-        self.lineEditBairro : QtWidgets.QLineEdit
-        self.lineEditComplemento : QtWidgets.QLineEdit
-        self.lineEditMatricula : QtWidgets.QLineEdit        
-        self.comboBoxSerie : QtWidgets.QComboBox
-
-#adicionei a comboBox de séries cada série disponível nas escolas. conferir se as séries estao corretas.
-        for i in listaDeSeries:
-            self.comboBoxSerie.addItem(i)
-
-        '''#defini o ctr-z
-        iface.aluno.setup(self,
-        signals=[self.pushButtonAdiconar.clicked, self.lineEditNome.textEdited, self.lineEditRG.textEdited, self.lineEditCPF.textEdited, self.lineEditNomeDaMae.textEdited, self.lineEditNomeDoPai.textEdited, self.lineEditTelefone.textEdited, self.lineEditRua.textEdited, self.lineEditNumero.textEdited, self.lineEditBairro.textEdited, self.lineEditComplemento.textEdited, self.lineEditMatricula.textEdited, self.comboBoxSerie.currentIndexChanged],
-        slots=[  iface.saveAluno,                 lambda: 0,                    lambda: 0,                  lambda: 0,                   lambda: 0,                         lambda: 0,                         lambda: 0,                        lambda: 0,                   lambda: 0,                      lambda: 0,                      lambda: 0,                           lambda: 0,                         lambda: 0],
-        properties=["name",                    "RG",                    "CPF",                    "nomeMae",                      "nomePai",                      "telefone",                    "rua",                    "numero",                    "bairro",                    "complemento",                    "matricula"],
-        readers =  [self.lineEditNome.text,    self.lineEditRG.text,    self.lineEditCPF.text,    self.lineEditNomeDaMae.text,    self.lineEditNomeDoPai.text,    self.lineEditTelefone.text,    self.lineEditRua.text,    self.lineEditNumero.text,    self.lineEditBairro.text,    self.lineEditComplemento.text,    self.lineEditMatricula.text],
-        writers =  [self.lineEditNome.setText, self.lineEditRG.setText, self.lineEditCPF.setText, self.lineEditNomeDaMae.setText, self.lineEditNomeDoPai.setText, self.lineEditTelefone.setText, self.lineEditRua.setText, self.lineEditNumero.setText, self.lineEditBairro.setText, self.lineEditComplemento.setText, self.lineEditMatricula.setText])
-        '''
-#quando clicar no botao para adicionar escolas ele executa a função, definida aqui, salvarDados        
-        self.pushButtonAdiconar.clicked.connect(self.salvarDados)
-
-#quando clicar no botao de opcoes executar editarAluno       
-        self.toolButtonEditarAlunos.clicked.connect(self.editarAluno)
-      
-
-    def salvarDados(self):
-        self.iface.mapWidget.deleteMarker("alunoNovo")
-        erro = 0
-
-        #peguei cada dado digitado na minha UI e aloquei em variaveis para transformalas numa string e numa lista com todos esses dados
-        nome = self.lineEditNome.text() 
-        nomeDaMae = self.lineEditNomeDaMae.text()
-        nomeDoPai = self.lineEditNomeDoPai.text()
-        RG = self.lineEditRG.text()
-        CPF = self.lineEditCPF.text()
-        rua =self.lineEditRua.text()
-        numero = self.lineEditNumero.text()
-        bairro = self.lineEditBairro.text()
-        complemento = self.lineEditComplemento.text()
-        matricula = self.lineEditMatricula.text()
-        telefone = self.lineEditTelefone.text()
-        dataNasc = self.dateEditNascimento.date().toString()
-        serie = self.comboBoxSerie.currentIndex()
-
-        #confiro se todos os dados estão digitados    
-        if (self.lineEditNome.text() != "") and (self.lineEditRua.text() != "") and (self.lineEditNumero.text() != "") and (self.lineEditBairro.text() != ""):
-            
-            endereco = [rua, numero, bairro, complemento]
-            endereco_ = "Rua " + rua + " " + numero + ", Bairro " + bairro
-            
-            #monto uma string com os dados para ser utilizada em outras aplicações 
-            stringDados = "Matrícula: " + matricula + "\n\nNome: " + nome + "\nRG: " + RG + "\nCPF: " + CPF + "\nMãe: " + nomeDaMae + "\nPai: " + nomeDoPai + "\nTelefone: " + telefone + "\nEndereço:\n\nRua: " + endereco[0] + ", " + endereco[1] + "\nBairro: " + endereco[2]
-
-            if endereco[3] != "":
-                stringDados = stringDados + "\nComplemento: " + endereco[3]
-                endereco_ = endereco_ + ", Complemento " + complemento
-            
-            endereco_ = endereco_ + ", " + cidade
-
-            aluno = Aluno(nome, matricula, dataNasc, RG, CPF, nomeDaMae, nomeDoPai, telefone, endereco_, serie)
-            coordenada = aluno.salvar()
-            
-            erro = 1
-            deuCerto=coordenada[0]
-
-            if deuCerto != 0:
-                messageDialog(self, "Editado", "", "Aluno encontrado com sucesso!\n\nMas confira na pagina inicial se o local está correto")
-            else:            
-                messageDialog(self, "ERRO", "", "Favor ir na pagina inicial e mover o marcador de endereço manualmente")
-                self.iface.alunoId=aluno.id
-                self.iface.mapWidget.centerAt(self.iface.config.get().lat, self.iface.config.get().lng)
-                self.iface.mapWidget.addMarker("alunoNovo",self.iface.config.get().lat,self.iface.get().lng,
-                **dict(
-                icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
-                draggable=True,
-                title=aluno.nome
-                ))
-            
-                
-            nome = self.lineEditNome.setText("") 
-            nomeDaMae = self.lineEditNomeDaMae.setText("")
-            nomeDoPai = self.lineEditNomeDoPai.setText("")
-            RG = self.lineEditRG.setText("")
-            CPF = self.lineEditCPF.setText("")
-            rua =self.lineEditRua.setText("")
-            numero = self.lineEditNumero.setText("")
-            bairro = self.lineEditBairro.setText("")
-            complemento = self.lineEditComplemento.setText("")
-            matricula = self.lineEditMatricula.setText("")
-            telefone = self.lineEditTelefone.setText("")
-
-        if erro == 0:
-            messageDialog(self, "Atenção", "", "Todos os campos Obrigatórios devem estar preenchidos.")
-
-         
-    def editarAluno(self):
-        dialog=editarAlunoDialog(self.iface)             
-        #dialog.setModal(True)
-        dialog.show()
-        self.iface.dialog.append(dialog)
-        dialog.exec_()
-
-    def closeEvent(self, QCloseEvent):
-        self.iface.mapWidget.deleteMarker("alunoNovo") 
-        return super().closeEvent(QCloseEvent)
-
-
-
-#classe para escolher entre editar ou excluir um aluno
-class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):   
-
-    def __init__(self, iface, alunoId=None):
-        QtWidgets.QWidget.__init__(self)       
-        self.alunoId=None
-        self.setupUi(self)
-        self.iface=iface
-        self.db = DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-        #quando apertar para editar algum aluno
-        self.pushButtonEditar.clicked.connect(self.editar)
-        #quando apertar para excluir algum aluno
-        self.pushButtonExcluir.clicked.connect(self.excluir)
-        #quando escolher algum item da lista
-        self.listViewAlunos.itemClicked.connect(lambda: self.setarAluno(None))
-        for i in listaDeSeries:
-            self.comboBoxSerie.addItem(i)
-        #quando pesquisar um nome
-        self.lineEditBuscarAlunos.textChanged.connect(self.buscarOsAlunos)
-        self.labelId.hide()
-        if not alunoId is None:
-            self.setarAluno(alunoId)
-        self.show()
-
-    def buscarOsAlunos(self):
-        self.listViewAlunos.clear()
-        row = 0
-        alunos = self.lineEditBuscarAlunos.text()
-        if alunos != "":
-            listaDeIds = self.db.acharDado(ATRIBUTOS['aluno'][0], alunos)
-            resultado = self.db.getDadosComId(listaDeIds)
-        else:
-            resultado = []
-        self.resultado=resultado
-        for i in resultado:
-            nasc = i['dataNasc'].split()
-            if len(nasc) >= 3:
-                nascimento = nasc[2] + "/" + nasc[1] + "/" + nasc[3]
-            else:
-                nascimento = nasc[0]
-            strr = "Nome: " + i['nome'] + "  - Matrícula: " + i['matricula'] + "\n" + listaDeSeries[int(i['serie'])] + "\nData de Nascimento: " + nascimento + "\nRG: " + i['RG'] + "  - CPF: " + i['CPF'] + "\nMãe: " + i['nomeDaMae'] + "  - Pai: " + i['nomeDoPai'] + "\nTelefone: " + i['telefone'] + "\nEndereço: " + i['endereco'] + "\nEscola: " +  str(i['escola'])  + "\n\n"
-            self.listViewAlunos.addItem(strr)
-            row = row + 1
-
-    def setarAluno(self, id=None):
-        if id is None:
-            self.listViewAlunos : QtWidgets.QListWidget
-            id = self.listViewAlunos.currentRow()
-            id = self.resultado[id]["id"]
-            self.id=id
-            aluno = self.db.getDado(id)
-        else:
-            aluno=self.db.getDado(id)
-            self.id=id
-        self.lineEditNome.setText(aluno['nome'])
-        self.lineEditMatricula.setText(aluno['matricula'])
-        data = aluno['dataNasc']
-        data_ = data.split(' ')
-        if len(data_) < 3:
-            data_ = data.split('/')
-            mes=0
-            try:
-                mes=int(data_[1])            
-            except:
-                mes=dataEmNumero[data_[1]]
-            self.dateEdit.setDate(QDate(int(data_[2]), mes, int(data_[0])))        
-
-        else:
-            mes=0
-            try:
-                mes=int(data_[1])            
-            except:
-                mes=dataEmNumero[data_[1]]
-            self.dateEdit.setDate(QDate(int(data_[3]), mes, int(data_[2])))
-        
-        self.lineEditRG.setText(aluno['RG'])
-        self.lineEditCPF.setText(aluno['CPF'])
-        self.lineEditMae.setText(aluno['nomeDaMae'])
-        self.lineEditPai.setText(aluno['nomeDoPai'])
-        self.lineEditTelefone.setText(aluno['telefone'])
-        self.lineEditEndereco.setText(aluno['endereco'])
-        self.labelEscola.setText("Escola: " + str(aluno['escola']))
-        self.comboBoxSerie.setCurrentIndex(int(aluno['serie']))
-      #  self.id=id
-       # self.labelId.setText("ID: " + str(id[0]))
-
-    def editar(self):
-        self.iface.mapWidget.deleteMarker("alunoNovo") 
-        if self.lineEditNome.text() != "":
-            dados = []
-            dados.append(self.lineEditNome.text())
-            dados.append(self.lineEditMatricula.text())
-            nasc = self.dateEdit.date().toString().split()
-            nascimento = nasc[2] + "/" + nasc[1] + "/" + nasc[3]
-            dados.append(nascimento)
-            dados.append(self.lineEditRG.text())
-            dados.append(self.lineEditCPF.text())
-            dados.append(self.lineEditMae.text())
-            dados.append(self.lineEditPai.text())
-            dados.append(self.lineEditTelefone.text())
-            dados.append(self.lineEditEndereco.text())
-            dados.append(self.comboBoxSerie.currentIndex())
-            id = self.id
-            aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], id=id)
-            deuCerto = aluno_.editar(id)
-            self.lineEditNome.setText("")
-            self.lineEditMatricula.setText("")
-            self.lineEditRG.setText("")
-            self.lineEditCPF.setText("")
-            self.lineEditMae.setText("")
-            self.lineEditPai.setText("")
-            self.lineEditTelefone.setText("")
-            self.lineEditEndereco.setText("")
-            self.labelId.setText("ID: ")
-            self.listViewAlunos.clear()
-            if deuCerto == 1:
-                messageDialog(self, "Editado", "", "Aluno editado com sucesso!")
-            elif deuCerto == 2:
-                messageDialog(self, "ERRO", "", "Favor posicione o aluno manualmente")
-                #colocar para posicionar manualmente!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                self.iface.alunoId=aluno_.id
-                self.iface.mapWidget.centerAt(self.iface.config.get().lat, self.iface.config.get().lng)
-                self.iface.mapWidget.addMarker("alunoNovo",self.iface.config.get().lat,self.iface.get().lng,
-                **dict(
-                icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
-                draggable=True,
-                title=aluno_.nome
-                ))
- 
-        else: 
-            messageDialog(self, "Escolha um aluno", "", "Escolha um aluno na lista ao lado!")
-
-    def excluir(self):
-        if self.lineEditRG.text() != "":
-            excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados desse aluno serão removidos!")
-            if excluir_ :
-                id=self.id
-                self.db.apagarDado(id)
-                self.listViewAlunos.clear() 
-                self.lineEditNome.setText("")
-                self.lineEditMatricula.setText("")
-                self.lineEditRG.setText("")
-                self.lineEditCPF.setText("")
-                self.lineEditMae.setText("")
-                self.lineEditPai.setText("")
-                self.lineEditTelefone.setText("")
-                self.lineEditEndereco.setText("")
-                self.labelId.setText("ID: ")
-            else :
-                messageDialog(self, "Não excluido", "", "Ok, o aluno nao foi excluido")
-        else: 
-            messageDialog(self, "ID do aluno", "", "Nenhum aluno com esse ID")
-
-    def closeEvent(self, QCloseEvent):
-        self.iface.mapWidget.deleteMarker("alunoNovo") 
-        return super().closeEvent(QCloseEvent)
-
-
-#mudei até aqui!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
-    def __init__(self, iface):
-        QtWidgets.QWidget.__init__(self)
-        NEW_MODALIDADE_WIDGET.__init__(self)
-        self.setupUi(self)        
-        self.lineEdit:QtWidgets.QLineEdit
-        self.lineEdit.setPlaceholderText("Nome da Modalidade")
-
-class NewTurmaWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):
-    def __init__(self, iface):
-        QtWidgets.QWidget.__init__(self)
-        NEW_MODALIDADE_WIDGET.__init__(self)
-        self.setupUi(self)
-        self.lineEdit:QtWidgets.QLineEdit
-        self.lineEdit.setPlaceholderText("Turma/Série")
-
-class ModalidadesDialog(QtWidgets.QDialog, MODALIDADES_DIALOD):
-    edited = QtCore.pyqtSignal()
-    def __init__(self, iface):
-        QtWidgets.QDialog.__init__(self)
-        MODALIDADES_DIALOD.__init__(self)
-        self.setupUi(self)
-
-        self.iface:MainWindow
-        self.varManager:VariableManager
-        self.listWidget:QtWidgets.QListWidget
-        self.listWidget_2:QtWidgets.QListWidget
-        self.modalidades:QInterface
-        self.buttonBox:QtWidgets.QDialogButtonBox
-
-        self.iface=iface
-        self.varManager:VariableManager = iface.varManager
-        self.modalidades=self.iface.modalidades    
-        self.listWidget.itemClicked.connect(self.modalidadeChanged)
-
-        self.modalidades.setup(self,
-            signals =  [],
-            slots   =  [], 
-            properties=["modalidades"], 
-            readers  = [self.read],
-            writers  = [self.write]
-        )
-
-    def read(self):
-        return []
-
-    def write(self,modalidades:list):
-        for i,m in enumerate(modalidades):   
-            self.addToListWidget1(m, removable=True if i<len(modalidades)-1 else False)
-        
-    def addToListWidget1(self, modalidade, removable=False):
-
-        itemN = QtWidgets.QListWidgetItem() 
-        widget = NewModalidadeWidget(self)
-        widget.label.setText("Modalidade Escolar: ")
-        widget.horizontalLayout.addStretch()
-        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        itemN.setSizeHint(widget.sizeHint())  
-        self.listWidget.addItem(itemN)
-        self.listWidget.setItemWidget(itemN, widget)
-
-        i=self.listWidget.row(itemN)
-        widget.lineEdit.setText(modalidade.nome)                
-        widget.pushButton.clicked.connect(lambda: self.addToListWidget1(Modalidade()))
-        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget1(widget, itemN))
-
-        if removable:
-            self.setRemovableFromListWidget1(widget, itemN)
-
-
-    def removeFromListWidget1(self, item):
-        i=self.listWidget.row(item)
-        self.listWidget.takeItem(i)
-        self.modalidades.get().removeByIndex(i)
-
-    def setRemovableFromListWidget1(self, widget, itemN):
-        while True:
-            try: widget.pushButton.clicked.disconnect() 
-            except Exception: break
-        widget.lineEdit.setReadOnly(True)
-        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget1(itemN))
-        widget.pushButton.setText("Remover")
-
-    def modalidadeChanged(self):
-        item=self.listWidget.currentItem()
-        self.listWidget_2.clear()  
-        lista=self.modalidades.get().modalidades[self.listWidget.row(item)].turmas
-        for i,t in enumerate(lista):
-            self.addToListWidget2(t,removable=True if i < len(lista)-1 else False)
-
-    def addToListWidget2(self, turma, removable=False):        
-        item=self.listWidget.currentItem()
-        itemN = QtWidgets.QListWidgetItem() 
-        widget = NewTurmaWidget(self)
-        widget.label.setText("Turma: ")
-        widget.horizontalLayout.addStretch()
-        widget.horizontalLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        itemN.setSizeHint(widget.sizeHint())    
-
-        self.listWidget_2.addItem(itemN)
-        self.listWidget_2.setItemWidget(itemN, widget)
-        widget.pushButton.clicked.connect(lambda: self.addToListWidget2(Turma()))
-        widget.pushButton.clicked.connect(lambda: self.setRemovableFromListWidget2(widget, itemN))
-
-        if removable:
-            self.setRemovableFromListWidget2(widget, itemN)
-
-    def removeFromListWidget2(self, item):
-        i=self.listWidget_2.row(item)
-        item=self.listWidget.currentItem()       
-        self.listWidget_2.takeItem(i)   
-        self.modalidades.get().modalidades[self.listWidget.row(item)]
-        
-
-    def setRemovableFromListWidget2(self, widget, itemN):
-        while True:
-            try: widget.pushButton.clicked.disconnect() 
-            except Exception: break
-        widget.lineEdit.setReadOnly(True)
-        widget.pushButton.clicked.connect(lambda: self.removeFromListWidget2(itemN))
-        widget.pushButton.setText("Remover")
-
-class NewEscolaDialog(QtWidgets.QDialog, NEW_ESCOLA_WIDGET):
-    def __init__(self, iface):
-        QtWidgets.QDialog.__init__(self)
-        self.setupUi(self)
-
-        self.iface = iface
-        self.lineEditNome : QtWidgets.QLineEdit
-        self.lineEditRua : QtWidgets.QLineEdit
-        self.lineEditNumero : QtWidgets.QLineEdit
-        self.lineEditBairro : QtWidgets.QLineEdit
-        self.comboBoxModalidade : QtWidgets.QComboBox
-
-        for i in listaDeModalidades:
-            self.comboBoxModalidade.addItem(i) 
-        self.buttonOk.clicked.connect(self.salvarDadosEscola)
-        self.toolButtonEditar.clicked.connect(self.editarEscola)
-        self.buttonCancelar.clicked.connect(self.close)
-    
-    def editarEscola(self):
-        dialog=editarEscolaDialog(self.iface)
-        dialog.setModal(True)
-        dialog.show()
-        self.iface.dialog.append(dialog)
-        dialog.exec_()
-
-
-    def salvarDadosEscola(self):
-        nome = self.lineEditNome.text()
-        rua = self.lineEditRua.text()
-        numero = self.lineEditNumero.text()
-        bairro = self.lineEditBairro.text()
-        modalidad = self.comboBoxModalidade.currentIndex()
-        
-
-        #Verificar se todos os dados foram preenchidos
-        if (self.lineEditNome.text() != "") and (self.lineEditRua.text() != "") and (self.lineEditNumero.text() != "") and (self.lineEditBairro.text() != ""):
-            enderecoEscola = [rua, numero, bairro]
-            stringEndereco = "Rua " + rua + ", " + numero + ", " + bairro + cidade
-        else:
-            messageDialog(self, "Atenção", "Todos os campos devem ser preenchidos.")
-
-        nome = self.lineEditNome.setText("")
-        rua = self.lineEditRua.setText("")
-        numero = self.lineEditNumero.setText("")
-        bairro = self.lineEditBairro.setText("")
-        
-        escola = Escola(nome, enderecoEscola, modalidad)
-        coordenada = escola.salvar()
-            
-class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):   
-
-    def __init__(self, iface):
-        QtWidgets.QWidget.__init__(self)
-        EDITAR_ESCOLA.__init__(self)
-        self.setupUi(self)
-        self.db = DB(CAMINHO['escola'], TABLE_NAME['escola'], ATRIBUTOS['escola'])
-
-
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def __init__(self, app):         
@@ -659,6 +205,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         if RESET:
             #self.varManager.removeDatabase()
             self.close()
+
+        self.dbAluno = DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])  
+        self.dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+
+
         self.setupUi(self)
         self.actionSair.triggered.connect(self.close)
         self.actionModalidades.triggered.connect(self.modalidadesDialog)
@@ -672,229 +224,39 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionExportarBusca.triggered.connect(self.exportarBusca)
         self.listViewBusca.itemClicked.connect(self.setarEndereco)
         self.idEscola = 0
-        self.latLong = []
+
         self.latLongAns = ["a"]
         self.spinBoxIdadeMaxima.setValue(50)
-        self.spinBoxIdadeMinima.setValue(1)
-        for i in ["Escolas:","teste1","teste2","teste3","teste4","teste5", "teste6"]:
-            self.comboBoxEscolas.addItem(i)
-            '''colocar para buscar todas as escolas'''
-        for i in ATRIBUTOS_STRING['aluno']:
-            self.comboBoxBusca.addItem(i)
-        self.listaParaExportar = []
-        self.comboBoxEscolas.currentIndexChanged.connect(self.adicionarSeries)
+        self.spinBoxIdadeMinima.setValue(0)
+        self.comboBoxBusca.addItems(ATRIBUTOS['aluno'][:-2])        
         self.lineEditAluno.textChanged.connect(self.buscarAluno)
         self.scrollAreaTeste : QtWidgets.QScrollArea
         self.addMap()
         self.dialog=[]
         self.actionAlunos_3.triggered.connect(self.imporAlunoCsv)
         self.actionEscolar.triggered.connect(self.imporEscolaCsv)
-        self.actionCalcular_rotas.triggered.connect(self.calcularRotas)
+        self.actionCalcular_Rotas_2.triggered.connect(self.calcularRotas)
         self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)
         self.actionRecalcular_endere_os_de_escolas.triggered.connect(self.recalcularEscolas)
         self.actionExportar_imagem.triggered.connect(self.exportImg)
-        self.progressBar.hide()        
+        self.progressBar.hide() 
 
-    def exportImg(self):
-        filename=QFileDialog.getSaveFileName(filter="Salvar Imagem (*.jpg)")[0]
-        filename=filename if filename.endswith(".jpg") else filename+",jpg"        
-        self.calc = imageThread(self, filename)
-        self.calc.start()   
- 
+        self.escolaDropDownLayout : QtWidgets.QHBoxLayout
+        self.serieDropDownLayout : QtWidgets.QHBoxLayout
 
-    def calcularRotas(self):
-        self.calc = calcularRotasThread()
-        self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.start()   
-        self.loadingLabel.setText("Computando rotas ")   
-        self.calc.finished.connect(self.cleanProgress)   
-    
-    def recalcularAlunos(self):
-        db= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-        for aluno in db.todosOsDadosComId():
-            aluno['lat']=''
-            alumo['long']=''
-            db.update(aluno['id'], aluno)
-        
-        self.calc = calcularAlunosThread(self)
-        self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.start()   
-        self.loadingLabel.setText("Computando localização dos alunos")   
-        self.calc.finished.connect(self.cleanProgress)   
+        self.dropDownEscolas=dropDown([], self, "Escolas")    
+        self.escolaDropDownLayout.addWidget(self.dropDownEscolas)    
+        self.dropDownSeries=dropDown([], self, "Turmas")
+        self.serieDropDownLayout.addWidget(self.dropDownSeries)
 
+        from collections import OrderedDict
+        self.dropDownEscolas.selected.connect(lambda indices:
+         self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
+         for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
 
-    def recalcularEscolas(self):
-        db= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-        for aluno in db.todosOsDadosComId():
-            aluno['lat']=''
-            alumo['long']=''
-            db.update(aluno['id'], aluno)
- 
-        self.calc = calcularEscolasThread()
-        self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.start()         
-        self.calc.finished.connect(self.cleanProgress)       
-        self.loadingLabel.setText("Computando localização das Escolas")     
-
- 
-
-    def imporAlunoCsv(self):
-        dialog=csvDialog(CSV_ALUNOS)
-        dialog.exec_()
-        res=dialog.result
-        if not res: return
-        try:
-            dados=deepcopy(res)
-            a=Aluno()
-            for i, r in enumerate(res):            
-                dados[i].update({"idade": a.calcularIdade(r['dataNasc'])})
-            db = DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-            db.salvarDados(dados)   
-
-        except Exception as e:
-            messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
-    
-        self.calc = calcularAlunosThread(self)
-        self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.start()   
-        self.loadingLabel.setText("Computando localização dos alunos")   
-        self.calc.finished.connect(self.cleanProgress)   
-
-    def onCountChanged(self, value):
-        self.progressBar.show()
-        self.progressBar.setValue(value)
-
-
-    def imporEscolaCsv(self):
-        dialog=csvDialog(CSV_ESCOLAS)
-        dialog.exec_()
-        res=dialog.result
-        if not res: return
-        try:          
-            db = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-            dbs= DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-            for r in res:
-                id=db.salvarDado(r)
-                for s in r['series'].split(","): 
-                   dbs.salvarDado(dbs.toDict([id,s,0,0]))            
-
-        except Exception as e:
-            messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
-
-        self.calc = calcularEscolasThread(self)
-        self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.start()         
-        self.calc.finished.connect(self.cleanProgress)       
-        self.loadingLabel.setText("Computando localização das Escolas")      
-
-    def cleanProgress(self):
-        self.progressBar.setValue(0)
-        self.loadingLabel.setText("")
-        self.progressBar.hide()
-
-#Mechi aqui tbm !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    def buscarAluno(self):        
-        self.idadeMinima = self.spinBoxIdadeMinima.value()
-        self.idadeMaxima = self.spinBoxIdadeMaxima.value()
-        self.listViewBusca.clear()
-        db = DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-        busca = self.lineEditAluno.text()
-        try:
-            if self.comboBoxBusca.currentIndex() != 0:
-                listaDeIdsBusca = db.acharDado(ATRIBUTOS['aluno'][self.comboBoxBusca.currentIndex() - 1], busca)
-
-                serie = 0
-                listaDeIdsSeries = []
-                for i in listaDeSeries:
-                    if self.checkBoxSeries[i].isChecked():
-                        for j in db.acharDado(ATRIBUTOS['aluno'][9], serie):
-                            listaDeIdsSeries.append(j)
-                    serie += 1
-
-                listaDeIdsIdade = []
-                for i in range((self.idadeMaxima - self.idadeMinima) + 1):
-                    i+=(self.idadeMinima)
-                    ids = db.acharDado(ATRIBUTOS['aluno'][11], i)
-                    for row in ids:
-                        listaDeIdsIdade.append(row)
-                id1 = [id1 for id1 in listaDeIdsBusca if id1 in listaDeIdsIdade]
-                id = [id for id in id1 if id in listaDeIdsSeries]
-                
-                resultado=db.getDadosComId(id)                
-                self.buscaResultado=resultado
-                
-                self.latLong = []
-                j = 0
-                for i in resultado:
-                    id_ = id[j]
-                    self.latLong.append([i['nome'],i['lat'], i['long'], id_])                    
-                    itemN = QtWidgets.QListWidgetItem() 
-                    widget = alunoBusca(self, i)                   
-                    itemN.setSizeHint(widget.sizeHint())  
-                    self.listViewBusca.addItem(itemN)                    
-                    self.listViewBusca.setItemWidget(itemN, widget)
-                    d=deepcopy(i)  #remover coisas inúteis para csv
-                    d.pop("id")
-                    self.listaParaExportar.append(d)
-                    j += 1
-                if j==0:
-                    self.listViewBusca.addItem("Nenhum aluno foi encontrado")
-                   
-        except Exception as e:
-            print(e)
-            self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento")
-    
-    def exportarBusca(self):
-        if len(self.listaParaExportar) > 0:
-            exportCsv(self.listaParaExportar)
-        else:
-            messageDialog(self, "Problema ao salvar arquivo", "", "Nenhum aluno corresponde a busca")
-
-    def setarEndereco(self):       
-        self.mapWidget.deleteMarker("aluno")
-        coordenads = self.latLong[self.listViewBusca.currentRow()]
-        self.mapWidget.centerAt(coordenads[1], coordenads[2])
-        self.mapWidget.addMarker("aluno", coordenads[1], coordenads[2], **dict(
-        icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
-        draggable=True,
-        title=coordenads[0]
-        ))
-        print(self.latLongAns[0])
-        self.latLongAns = coordenads
-    
-    def markerMovido(self, n, lat, long):
-        if n=="Centro":
-            self.updateCenter(lat, long)
-        elif n=="aluno":
-            id = self.buscaResultado[self.listViewBusca.currentRow()]['id']        
-            v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, id)
-            v.salvarCoordenada()            
-        elif n=="alunoNovo":
-            v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, self.alunoId)
-            v.salvarCoordenada()          
-
-    def adicionarSeries(self):
-        self.idEscola = self.comboBoxEscolas.currentIndex() - 1
-        print(self.idEscola)
-        top_widget = QtWidgets.QWidget()
-        top_layout = QtWidgets.QVBoxLayout()
-        top_layout.setSpacing(1)
-        listaDeSeries_add = listaDeSeries #!!!!!!!!!!!!!!!!!!!!!Adicionar as series para cada escola.
-        self.checkBoxSeries = {}
-        for i in listaDeSeries_add:
-            self.checkBoxSeries[i] = QtWidgets.QCheckBox(i)
-            group_box = QtWidgets.QGroupBox()
-            layout = QtWidgets.QHBoxLayout(group_box)
-            layout.addWidget(self.checkBoxSeries[i])
-            top_layout.addWidget(group_box)
-        top_widget.setLayout(top_layout)
-        self.scrollAreaTeste.setWidget(top_widget)
-        self.scrollAreaTeste.setFixedSize(self.spinBoxIdadeMinima.width()*12,self.spinBoxIdadeMinima.height()*8)
+        self.update()
 
     def closeEvent(self, event):
-        # here you can terminate your threads and do other stuff
-
-        # and afterwards call the closeEvent of the super-class
         [d.close() for d in self.dialog]
         super().closeEvent(event)       
 
@@ -923,21 +285,209 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.mapWidget=w
         self.horizontalLayout_4.addWidget(w)
         w.show()
+   
+ 
+    def centro(self):
+        return [self.config.get().lat, self.config.get().lng]
 
-    def settingDialog(self):
-        dialog=SettingsDialog(self)
-       # dialog.setModal(True)
-        self.dialog.append(dialog)
-        dialog.show()
-        dialog.exec_()
+    def exportImg(self):
+        filename=QFileDialog.getSaveFileName(filter="Salvar Imagem (*.jpg)")[0]
+        filename=filename if filename.endswith(".jpg") else filename+",jpg"        
+        self.calc = imageThread(self, filename)
+        self.calc.start()   
+ 
+
+    def calcularRotas(self):
+        self.calc = calcularRotasThread()
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.error.connect(lambda: messageDialog(title="Erro", message="Por favor escolha o arquivo osm no menu configurações"))
+        self.calc.start()   
+        self.loadingLabel.setText("Computando rotas ")   
+        self.calc.finished.connect(self.cleanProgress)   
     
-    def saveAluno(self):
-        print("Não está salvando")
-        #self.aluno.save(DB_ADD_ALUNO)
+    def recalcularAlunos(self):
+        db= self.dbAluno
+        for aluno in db.todosOsDadosComId():
+            aluno['lat']=''
+            aluno['long']=''
+            db.update(aluno['id'], aluno)
+        
+        self.calc = calcularAlunosThread(self)
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()   
+        self.loadingLabel.setText("Computando localização dos alunos")   
+        self.calc.finished.connect(self.cleanProgress)   
+        self.update()
 
-    def saveEscola(self):
-        pass
 
+    def recalcularEscolas(self):
+        db= self.dbEscola
+        for aluno in db.todosOsDadosComId():
+            aluno['lat']=''
+            aluno['long']=''
+            db.update(aluno['id'], aluno)
+ 
+        self.calc = calcularEscolasThread(self)
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()         
+        self.calc.finished.connect(self.cleanProgress)       
+        self.loadingLabel.setText("Computando localização das Escolas")     
+        self.update()
+
+
+    def imporAlunoCsv(self):
+        dialog=csvDialog(CSV_ALUNOS)
+        dialog.exec_()
+        res=dialog.result
+        if not res: return
+        try:
+            dados=deepcopy(res)
+            a=Aluno()
+            for i, r in enumerate(res):            
+                dados[i].update({"idade": a.calcularIdade(r['dataNasc'])})
+            db = self.dbAluno
+            db.salvarDados(dados)   
+
+        except Exception as e:
+            messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+    
+        self.calc = calcularAlunosThread(self)
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()   
+        self.loadingLabel.setText("Computando localização dos alunos")   
+        self.calc.finished.connect(self.cleanProgress)         
+        self.update()
+
+
+    def onCountChanged(self, value):
+        self.progressBar.show()
+        self.progressBar.setValue(value)
+
+
+    def imporEscolaCsv(self):
+        dialog=csvDialog(CSV_ESCOLAS)
+        dialog.exec_()
+        res=dialog.result
+        if not res: return
+        try:          
+            db = self.dbEscola
+            dbs= self.dbSeries
+            for r in res:
+                id=db.salvarDado(r)
+                for s in r['series'].split(","): 
+                   dbs.salvarDado(dbs.toDict([id,s,0,0]))            
+
+        except Exception as e:
+            messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+
+        self.calc = calcularEscolasThread(self)
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()         
+        self.calc.finished.connect(self.cleanProgress)       
+        self.loadingLabel.setText("Computando localização das Escolas")      
+        self.update()
+
+
+    def cleanProgress(self):
+        self.progressBar.setValue(0)
+        self.loadingLabel.setText("")
+        self.progressBar.hide()
+
+
+    def buscarAluno(self):        
+        self.idadeMinima = self.spinBoxIdadeMinima.value()
+        self.idadeMaxima = self.spinBoxIdadeMaxima.value()
+        self.listViewBusca.clear()
+        busca = self.lineEditAluno.text()
+        self.listaParaExportar=[]
+        
+        try:
+            listaDeIdsBusca = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
+            listaDeIdsSeries = sum([self.dbAluno.acharDadoExato('serie', serie) for serie in self.dropDownSeries.selectedTexts()], [])     
+            listaDeIdsIdade =[i for i in self.dbAluno.acharMaiorQue('idade', self.spinBoxIdadeMinima.value()) if i in self.dbAluno.acharMenorQue('idade', self.spinBoxIdadeMaxima.value())]
+            ids=[i for i in listaDeIdsBusca if i in listaDeIdsSeries and i in listaDeIdsIdade]
+            resultado=self.dbAluno.getDadosComId(ids)                
+            self.buscaResultado=resultado
+            self.resultado=resultado            
+
+            j = 0
+            for i in resultado:
+                itemN = QtWidgets.QListWidgetItem() 
+                widget = alunoBusca(self, i)                   
+                itemN.setSizeHint(widget.sizeHint())  
+                self.listViewBusca.addItem(itemN)                    
+                self.listViewBusca.setItemWidget(itemN, widget)
+                d=deepcopy(i)  #remover coisas inúteis para csv
+                d.pop("id")  # ... ?
+                self.listaParaExportar.append(d)
+                j += 1
+
+            if j==0:
+                self.listViewBusca.addItem("Nenhum aluno foi encontrado")
+                
+        except Exception as e:
+            print(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+            self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento")
+
+            
+    def exportarBusca(self):
+        if len(self.listaParaExportar) > 0:
+            exportCsv(self.listaParaExportar)
+        else:
+            messageDialog(self, "Problema ao salvar arquivo", "", "Nenhum aluno corresponde a busca")
+
+    def setarEndereco(self):       
+        self.mapWidget.deleteMarker("aluno")
+        aluno=self.resultado[self.listViewBusca.currentRow()]
+        self.mapWidget.centerAt(aluno['lat'], aluno['long'])
+        self.mapWidget.addMarker("aluno", aluno['lat'], aluno['long'], **dict(
+        icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+        draggable=True,
+        title=aluno['nome']
+        ))
+        self.latLongAns = [aluno['lat'], aluno['long']]
+        self.adicionarTodosCaminhos(aluno)
+    
+
+    def markerMovido(self, n, lat, long):
+        if n=="Centro":
+            self.updateCenter(lat, long)
+        elif n=="aluno":
+            id = self.buscaResultado[self.listViewBusca.currentRow()]['id']        
+            v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, id)
+            v.salvarCoordenada()          
+            self.listViewBusca.clear()
+            self.buscarAluno()  
+        elif n=="alunoNovo":
+            v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, self.alunoId)
+            v.salvarCoordenada()           
+            self.listViewBusca.clear()
+            self.buscarAluno()              
+        elif n=="escola":
+            self.dbEscola.update(self.escolaId, {'lat':lat, 'long':long})        
+        
+
+    def adicionarSeries(self):
+      
+        self.listaDeSeriesPorEscola = []
+        #mechi tbm na main.ui para essas mudanças...
+        for i in self.listaDeEscolasSelecionadas:
+            #for row in self.dbEscola.acharDado(ATRIBUTOS['escola'][5], self.listaDeEscolas[i]).split(SEPARADOR_SERIES):
+                #self.listaDeSeriesPorEscola.append(row)
+            #todasAsSeries = self.dbSeries.todosOsDados()
+            #todasAsSeries = todasAsSeries['serie']
+            #todasAsSeries = todasAsSeries.split(SEPARADOR_SERIES)
+            #todasAsSeries = list(set(todasAsSeries)) 
+            todasAsSeries = listaDeSeries
+            for row in self.listaDeSeriesParaTeste[i].split(SEPARADOR_SERIES):
+                self.listaDeSeriesPorEscola.append(row)
+        self.listaDeSeriesPorEscola = list(set(self.listaDeSeriesPorEscola))
+        listaDeSeries_add = []
+        for ap in sorted(self.listaDeSeriesPorEscola, key=int):
+            listaDeSeries_add.append(todasAsSeries[int(ap)])
+        self.dropDownSeries = dropDown(listaDeSeries_add)
+        self.layoutDropDown.setWidget(self.dropDownSeries)
+   
     def newAlunoDialog(self): 
         self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
         dialog=NewAlunoDialog(self)             
@@ -945,6 +495,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
+        self.update()
 
 
     def newEscolaDialog(self):  
@@ -954,9 +505,17 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
+        self.update()
 
-
+    def settingDialog(self):
+        dialog=SettingsDialog(self)
+       # dialog.setModal(True)
+        self.dialog.append(dialog)
+        dialog.show()
+        dialog.exec_()
+ 
     def saveConfig(self):  
+        self.dialog[-1].db.update(self.dialog[-1].db.acharDado('nome', 'cidade')[0], {'string': self.dialog[-1].lineEdit_2.text()})   
         cfg=self.config.get()
         if not cfg.isApplied:      
             self.config.get().apply()
@@ -976,13 +535,30 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def adicionarCaminho(self, aluno):
         self.mapWidget.clearPaths()
-        f=confPath()/ Path(PASTA_ALUNOS) / Path(aluno['id'])  
+        f=confPath()/ Path(PASTA_ALUNOS) / Path(str(aluno['id']))  
         if f.is_dir():
             f=f/Path(aluno['escola'])
             if f.is_file():
                 with open(f, 'r') as file:
                     geo = file.read().replace("\"","\'")    
                 self.mapWidget.addPath(geo)
+
+    def adicionarTodosCaminhos(self,aluno):
+        self.mapWidget.clearPaths()
+        f=confPath()/ Path(PASTA_ALUNOS) / Path(str(aluno['id']))  
+        if f.is_dir():
+            for file in f.rglob("*.geojson"):
+                if file.is_file():
+                    with open(str(file), 'r') as fp:
+                        geo = fp.read().replace("\"","\'")
+                    self.mapWidget.addPath(geo, self.dbEscola.getDado(file.stem)['nome'])
+
+    def update(self):
+        self.dropDownEscolas.repopulate(Escola.todasAsEscolas())
+        self.dropDownEscolas.todos.setChecked(True)
+        self.dropDownSeries.todos.setChecked(True)
+
+
 
 
 def main(*args):
@@ -1002,6 +578,7 @@ def main(*args):
                 break        
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1], info="O programa irá reiniciar")
+            print(str(traceback.format_exception(None, e, e.__traceback__)))
             currentExitCode=-13
     return currentExitCode   
 

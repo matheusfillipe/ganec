@@ -10,10 +10,10 @@ var markers = [];
 var qtWidget;
 var paths=[];
 var coordInfoWindow = new google.maps.InfoWindow();
+var Mtext;
 
 // main init function
 function initialize() {
-
 
     var myOptions = {
         center: {lat: -34.397, lng: 150.644},
@@ -48,7 +48,7 @@ function initialize() {
     var strokeColor = feature.getProperty('color');
     var dist = feature.getProperty('distance');
     dist = parseFloat(dist).toFixed(2);
-    coordInfoWindow.setContent("Distância: "+ dist + "m");
+    coordInfoWindow.setContent(Mtext + "<br>Distância: "+ dist + "m");    
     feature.getGeometry().forEachLatLng(function(latlng){
         coordInfoWindow.setPosition(latlng);
     });
@@ -60,10 +60,9 @@ function initialize() {
   });
 
 // custom functions
-function gmap_addPath(filepath) {    
+function gmap_addPath(filepath, text) {    
     paths.push(map.data.addGeoJson(filepath));
-    
-
+    Mtext=text;
 }
 
 function gmap_clearPaths() {
@@ -236,7 +235,6 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         self._manager = QtNetwork.QNetworkAccessManager(self)
 
     def saveImage(self, filepath):
-        if filepath in ['', None]: return
         p = QtGui.QGuiApplication.primaryScreen()
         p.grabWindow(self.winId()).save(filepath, 'jpg')
 
@@ -341,9 +339,9 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     def centerAt(self, latitude, longitude):
         self.runScript("gmap_setCenter({},{})".format(latitude, longitude))
 
-    def addPath(self, filepath):
+    def addPath(self, filepath, text=""):
       #  print(filepath)
-        self.runScript('gmap_addPath({})'.format(filepath))
+        self.runScript('gmap_addPath({},"{}")'.format(filepath, text))
     
     def clearPaths(self):
         self.runScript("gmap_clearPaths()")

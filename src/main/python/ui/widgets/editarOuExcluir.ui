@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>633</width>
-    <height>495</height>
+    <width>842</width>
+    <height>740</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,13 +43,6 @@
             <widget class="QLabel" name="label_11">
              <property name="text">
               <string>Série:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="15" column="0">
-            <widget class="QLabel" name="labelId">
-             <property name="text">
-              <string>ID: </string>
              </property>
             </widget>
            </item>
@@ -157,6 +150,16 @@
              </property>
             </widget>
            </item>
+           <item row="17" column="1">
+            <widget class="QComboBox" name="comboBoxEscola"/>
+           </item>
+           <item row="15" column="0">
+            <widget class="QLabel" name="labelId">
+             <property name="text">
+              <string>ID: </string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
@@ -225,7 +228,7 @@
        <item>
         <widget class="QPushButton" name="pushButtonEditar">
          <property name="text">
-          <string>Editar</string>
+          <string>Aplicar</string>
          </property>
         </widget>
        </item>

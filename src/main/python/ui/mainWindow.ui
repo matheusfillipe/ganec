@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1274</width>
-    <height>832</height>
+    <height>839</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,17 +36,17 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>600</width>
+          <width>100</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>500</width>
+          <width>400</width>
           <height>16777215</height>
          </size>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
          <property name="sizeConstraint">
           <enum>QLayout::SetMinimumSize</enum>
          </property>
@@ -72,7 +72,10 @@
             </spacer>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBoxEscolas"/>
+            <layout class="QHBoxLayout" name="escolaDropDownLayout"/>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="serieDropDownLayout"/>
            </item>
            <item>
             <spacer name="horizontalSpacer">
@@ -128,29 +131,6 @@
             </spacer>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QScrollArea" name="scrollAreaTeste">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="widgetResizable">
-            <bool>true</bool>
-           </property>
-           <widget class="QWidget" name="scrollAreaWidgetContents">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>589</width>
-              <height>302</height>
-             </rect>
-            </property>
-           </widget>
-          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -233,7 +213,7 @@
     </property>
     <widget class="QMenu" name="menuImportar_arquivo">
      <property name="title">
-      <string>&amp;Importar arquivo</string>
+      <string>&amp;Importar csv</string>
      </property>
      <addaction name="actionAlunos_3"/>
      <addaction name="actionEscolar"/>
@@ -257,14 +237,14 @@
     <property name="title">
      <string>Ca&amp;lcular</string>
     </property>
-    <addaction name="actionCalcular_Rotas"/>
+    <addaction name="actionCalcular_Rotas_2"/>
     <addaction name="actionRecalcular_endere_os_de_alunos"/>
     <addaction name="actionRecalcular_endere_os_de_escolas"/>
    </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
-   <addaction name="menuOp_es"/>
    <addaction name="menuComputar"/>
+   <addaction name="menuOp_es"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionSalvar">
@@ -288,8 +268,14 @@
    </property>
   </action>
   <action name="actionModalidades">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Modalidades</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
    </property>
   </action>
   <action name="actionConfigura_es">
@@ -354,17 +340,22 @@
   </action>
   <action name="actionCalcular_Rotas">
    <property name="text">
-    <string>Calcular Rotas</string>
+    <string>&amp;Calcular Rotas</string>
    </property>
   </action>
   <action name="actionRecalcular_endere_os_de_alunos">
    <property name="text">
-    <string>Recalcular endereços de alunos</string>
+    <string>&amp;Recalcular endereços de alunos</string>
    </property>
   </action>
   <action name="actionRecalcular_endere_os_de_escolas">
    <property name="text">
-    <string>Recalcular endereços de escolas</string>
+    <string>Recalcular &amp;endereços de escolas</string>
+   </property>
+  </action>
+  <action name="actionCalcular_Rotas_2">
+   <property name="text">
+    <string>Calcular Rotas</string>
    </property>
   </action>
  </widget>

@@ -6,9 +6,9 @@
 GANEC = Gestor de Alunos Nas Escolas do Carmo 
     
         
-        begin                : 2019-15-09
+        begin                : 2019-15-097
         git sha              : $Format:%H$
-        copyright            : (C) 2019 by Fellipe, Lucas e Matheus
+        copyright            : (C) 2019 by Felipe, Lucas e Matheus
         email                : matheusfillipeag@gmail.com
 **********************************************************************************/
 
@@ -22,7 +22,7 @@ GANEC = Gestor de Alunos Nas Escolas do Carmo
 * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH 
 * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND 
 * FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, 
-* OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+* OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE6,
 * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS 
 * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
 *                                                                         
@@ -38,6 +38,7 @@ from fbs_runtime.application_context import ApplicationContext
 import os, sys, traceback
 from copy import deepcopy
 import zipfile
+import shutil
 from PyQt5.QtCore import pyqtSignal
 
 from data.config import *
@@ -185,8 +186,10 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
                 self.iface.varManager.removeDatabase()
             except:
                 pass
-            import shutil
+            #try:
             shutil.rmtree(str(confPath()), ignore_errors=True)
+            #except:
+            #   pass
             messageDialog(self, message="O programa irá reiniciar")
             self.close()
             self.iface.restartProgram()                
@@ -207,7 +210,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dbAluno = DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
         self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])  
         self.dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-
+        self.dbAno = DB(str(confPath()/Path(CAMINHO['ano'])), TABLE_NAME['ano'], ATRIBUTOS['ano'])
+        
+        self.atualizarAno()
 
         self.setupUi(self)
         self.actionSair.triggered.connect(self.close)
@@ -237,6 +242,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)
         self.actionRecalcular_endere_os_de_escolas.triggered.connect(self.recalcularEscolas)
         self.actionExportar_imagem.triggered.connect(self.exportImg)
+        self.actionAvan_ar_todos_os_alunos_em_um_ano.triggered.connect(lambda: pular(1))
+        self.actionRetornar_todos_os_alunoes_um_ano.triggered.connect(lambda: pular(-1))
+
         self.progressBar.hide() 
 
         self.escolaDropDownLayout : QtWidgets.QHBoxLayout
@@ -253,6 +261,16 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
          for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
 
         self.update()
+
+    def atualizarAno(self):
+        anoAtual=date.today().year
+        if len(self.dbAno.todosOsDados())==0:
+            self.dbAno.salvarDado({'ano': anoAtual})
+        anoAnterior = self.dbAno.getDado(1)['ano']
+        if(anoAtual > anoAnterior):
+            self.dbAno.update(1, {'ano':self.anoAtual})
+            pular(1)
+            #print(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for i,escola in  enumerate(self.dbEscola.todosOsDados())],[]))))
 
     def closeEvent(self, event):
         [d.close() for d in self.dialog]
@@ -346,6 +364,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             db = self.dbAluno
             newDados=[]
             for dado in dados:
+                dado[CSV_ALUNOS[8]]+=", "+Config.cidade()
                 try:
                     ids=self.dbEscola.acharDado("nome", dado["escola"])[-1]
                     if len(ids)==0:
@@ -382,9 +401,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             db = self.dbEscola
             dbs= self.dbSeries
             for r in res:
+                r[CSV_ESCOLAS[1]]+=", "+Config.cidade()
                 id=db.salvarDado(r)
                 for s in r['series'].split(","): 
-                   dbs.salvarDado(dbs.toDict([id,s,0,0]))            
+                 # dbs.salvarDado(dbs.toDict([id,s,0,0]))    
+                   Turma.update(s,r['nome'],{'vagas': 10})        
 
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -455,7 +476,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         title=aluno['nome']
         ))
         self.latLongAns = [aluno['lat'], aluno['long']]
-        self.adicionarTodosCaminhos(aluno)
+        if self.checkBox.isChecked():
+            self.adicionarTodosCaminhos(aluno)
+        else:
+            self.adicionarCaminho(aluno)
     
 
     def markerMovido(self, n, lat, long):
@@ -473,29 +497,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.listViewBusca.clear()
             self.buscarAluno()              
         elif n=="escola":
-            self.dbEscola.update(self.escolaId, {'lat':lat, 'long':long})        
-        
-
-    def adicionarSeries(self):
-      
-        self.listaDeSeriesPorEscola = []
-        #mechi tbm na main.ui para essas mudanças...
-        for i in self.listaDeEscolasSelecionadas:
-            #for row in self.dbEscola.acharDado(ATRIBUTOS['escola'][5], self.listaDeEscolas[i]).split(SEPARADOR_SERIES):
-                #self.listaDeSeriesPorEscola.append(row)
-            #todasAsSeries = self.dbSeries.todosOsDados()
-            #todasAsSeries = todasAsSeries['serie']
-            #todasAsSeries = todasAsSeries.split(SEPARADOR_SERIES)
-            #todasAsSeries = list(set(todasAsSeries)) 
-            todasAsSeries = listaDeSeries
-            for row in self.listaDeSeriesParaTeste[i].split(SEPARADOR_SERIES):
-                self.listaDeSeriesPorEscola.append(row)
-        self.listaDeSeriesPorEscola = list(set(self.listaDeSeriesPorEscola))
-        listaDeSeries_add = []
-        for ap in sorted(self.listaDeSeriesPorEscola, key=int):
-            listaDeSeries_add.append(todasAsSeries[int(ap)])
-        self.dropDownSeries = dropDown(listaDeSeries_add)
-        self.layoutDropDown.setWidget(self.dropDownSeries)
+            self.dbEscola.update(self.escolaId, {'lat':lat, 'long':long})
    
     def newAlunoDialog(self): 
         self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
@@ -505,6 +507,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog.show()
         dialog.exec_()
         self.update()
+
 
     def newEscolaDialog(self):  
         self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
@@ -545,7 +548,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.mapWidget.clearPaths()
         f=confPath()/ Path(PASTA_ALUNOS) / Path(str(aluno['id']))  
         if f.is_dir():
-            f=f/Path(aluno['escola'])
+            f=f/Path(str(aluno['escola'])+".geojson")
             if f.is_file():
                 with open(f, 'r') as file:
                     geo = file.read().replace("\"","\'")    
@@ -563,10 +566,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def update(self):
         self.dropDownEscolas.repopulate(Escola.todasAsEscolas())
+        self.dropDownEscolas.todos.setChecked(False)
         self.dropDownEscolas.todos.setChecked(True)
+        indices=self.dropDownEscolas.selectedIndexes()
+        self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
+        for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[]))))
+        self.dropDownSeries.todos.setChecked(False)
         self.dropDownSeries.todos.setChecked(True)
-
-
 
 
 def main(*args):
@@ -592,4 +598,4 @@ def main(*args):
 
 if __name__ == '__main__':
     currentExitCode=main(sys.argv)
-    sys.exit(currentExitCode)    
+    sys.exit(currentExitCode)

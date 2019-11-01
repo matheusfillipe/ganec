@@ -5,15 +5,13 @@ from customWidgets import *
 from sqlitedb import DB
 from data.aluno import *
 from data.escola import *
-
+from threads import nogui, Overlay
 
 NEW_ALUNO_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoForm.ui")
 EDITAR_ALUNO, _ = uic.loadUiType("./src/main/python/ui/widgets/editarOuExcluir.ui")
 ALUNO_BUSCA, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoBusca.ui")
 
 from data.config import *
-#cidade=Config.cidade()
-cidade = "Carmo do Paranaiba"
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
@@ -63,7 +61,7 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
         return super().mouseDoubleClickEvent(QMouseEvent)
 
 class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
-
+    geolocate=pyqtSignal(Aluno, bool, int, int)
     def __init__(self, iface):
         QtWidgets.QWidget.__init__(self)
         NEW_ALUNO_WIDGET.__init__(self)
@@ -93,9 +91,18 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
         self.pushButtonAdiconar.clicked.connect(self.salvarDados)
         self.toolButtonEditarAlunos.clicked.connect(self.editarAluno)
 
-    def salvarDados(self):
+        self.overlay = Overlay(self,"Geolocalizando...")  
+        self.geolocate.connect(self.onGeolocate)
+    
+    def resizeEvent(self, event):        
+        self.overlay.resize(event.size()) 
+        event.accept()
+
+    @nogui
+    def salvarDados(self, a=None):
         self.iface.mapWidget.deleteMarker("alunoNovo")
         erro = 0
+        self.overlay.started.emit()
 
         #peguei cada dado digitado na minha UI e aloquei em variaveis para transformalas numa string e numa lista com todos esses dados
         nome = self.lineEditNome.text() 
@@ -125,14 +132,21 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
                 stringDados = stringDados + "\nComplemento: " + endereco[3]
                 endereco_ = endereco_ + ", Complemento " + complemento
             
-            endereco_ = endereco_ + ", " + cidade
+            endereco_ = endereco_ + ", " + Config.cidade()
 
             aluno = Aluno(nome, matricula, dataNasc, RG, CPF, nomeDaMae, nomeDoPai, telefone, endereco_, serie)
             coordenada = aluno.salvar()
             
             erro = 1
             deuCerto=coordenada[0]
+            self.geolocate.emit(aluno, True, deuCerto, id)
+        else:
+            self.geolocate.emit(Aluno(), False, 0, id)
 
+        self.overlay.stoped.emit()
+
+    def onGeolocate(self, aluno, preenchido, deuCerto, id):
+        if preenchido:       
             if deuCerto != 0:
                 messageDialog(self, "Editado", "", "Aluno encontrado com sucesso!\n\nMas confira na pagina inicial se o local está correto")
             else:            
@@ -144,8 +158,8 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
                 icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
                 draggable=True,
                 title=aluno.nome
-                ))
-            
+                ))       
+         
                 
             nome = self.lineEditNome.setText("") 
             nomeDaMae = self.lineEditNomeDaMae.setText("")
@@ -158,8 +172,7 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
             complemento = self.lineEditComplemento.setText("")
             matricula = self.lineEditMatricula.setText("")
             telefone = self.lineEditTelefone.setText("")
-
-        if erro == 0:
+        else:
             messageDialog(self, "Atenção", "", "Todos os campos Obrigatórios devem estar preenchidos.")
 
          
@@ -176,8 +189,9 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
 
 
 
-class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):   
+class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):  
 
+    geolocate=pyqtSignal(Aluno, bool, int, str, str)
     def __init__(self, iface, alunoId=None):
         QtWidgets.QWidget.__init__(self)       
         self.alunoId=None
@@ -191,12 +205,13 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         #quando escolher algum item da lista
         self.listViewAlunos.itemClicked.connect(lambda: self.setarAluno(None))
         todasEscolas=Escola.todasAsEscolas()
+        self.todasAsEscolas = todasEscolas 
         if len(todasEscolas)==0:
             self.invalid=True
             return
         self.comboBoxEscola: QtWidgets.QComboBox
 
-        self.comboBoxEscola.addItems(todasEscolas)
+        #######################self.comboBoxEscola.addItems(todasEscolas)
         self.comboBoxEscola.currentTextChanged.connect(self.comboBoxSerie.clear)
         self.comboBoxEscola.currentTextChanged.connect(lambda text: self.comboBoxSerie.addItems(iface.dbEscola.acharDados('nome', text)[-1]['series'].split(SEPARADOR_SERIES)))
         self.comboBoxEscola.currentTextChanged.emit(todasEscolas[0])
@@ -205,7 +220,12 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         self.labelId.hide()
         if not alunoId is None:
             self.setarAluno(alunoId)
-
+        self.overlay = Overlay(self,"Geolocalizando...")  
+        self.geolocate.connect(self.onGeolocate)
+    
+    def resizeEvent(self, event):        
+        self.overlay.resize(event.size()) 
+        event.accept()
 
     def show(self):
         if hasattr(self, "invalid"):
@@ -238,19 +258,21 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             row = row + 1
 
     def setarAluno(self, id=None):
+        self.comboBoxEscola.addItems(self.todasAsEscolas)
         if id is None:
             self.listViewAlunos : QtWidgets.QListWidget
             id = self.listViewAlunos.currentRow()
             id = self.resultado[id]["id"]
             self.id=id
             aluno = self.iface.dbAluno.getDado(id)
+           #self.comboBoxEscola.setCurrentIndex(Escola.todasAsEscolas().index(aluno['escola']))
         else:
             aluno=self.iface.dbAluno.getDado(id)
             self.id=id
             try:
                 self.comboBoxEscola.setCurrentIndex(Escola.todasAsEscolas().index(aluno['escola']))
             except:
-                pass # ??? aluno sem escola
+                messageDialog(title="ERRO", message="Esse aluno ainda não tem uma escola\nCalcule as rotas novamente") # ??? aluno sem escola
             
         self.lineEditNome.setText(aluno['nome'])
         self.lineEditMatricula.setText(aluno['matricula'])
@@ -283,9 +305,11 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         self.comboBoxSerie.setCurrentText(aluno['serie'])
         self.alunoAnterior=aluno
 
-    def editar(self):
+    @nogui
+    def editar(self, a=None):
         self.iface.mapWidget.deleteMarker("alunoNovo") 
-        Turma.decrement(self.alunoAnterior['serie'], self.alunoAnterior['escola'])
+        self.overlay.started.emit()
+        #Turma.decrement(self.alunoAnterior['serie'], self.alunoAnterior['escola'])
         if self.lineEditNome.text() != "":
             dados = []
             dados.append(self.lineEditNome.text())
@@ -301,12 +325,29 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             dados.append(self.lineEditEndereco.text())
             dados.append(self.comboBoxSerie.currentText())
             dados.append(self.comboBoxEscola.currentText())
+            serieEditar = self.comboBoxSerie.currentText()
+            escolaEditar = self.comboBoxEscola.currentText()
 
             id = self.id
-            aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
-            deuCerto = aluno_.editar(id)
-            Turma.increment(aluno_['serie'], aluno_['escola'])
+            print("Serie " + serieEditar)
+            print("escola "+ escolaEditar)
 
+            if Turma.increment(serieEditar, escolaEditar) == False:
+                deuCerto = 3
+                aluno_=Aluno()
+            else:
+                dados[9] = serieEditar
+                dados[10] = escolaEditar
+                print(escolaEditar)
+                aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
+                deuCerto = aluno_.editar(id)
+            self.geolocate.emit(aluno_, True, deuCerto, serieEditar, escolaEditar)
+        else:
+            self.geolocate.emit(Aluno(), False , 0, "", "")
+        self.overlay.stoped.emit()
+
+    def onGeolocate(self, aluno_, preenchido, deuCerto, serieEditar, escolaEditar):
+        if preenchido:
             self.lineEditNome.setText("")
             self.lineEditMatricula.setText("")
             self.lineEditRG.setText("")
@@ -316,9 +357,11 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             self.lineEditTelefone.setText("")
             self.lineEditEndereco.setText("")
             self.labelId.setText("ID: ")
+            self.comboBoxEscola.clear()
             self.listViewAlunos.clear()
             if deuCerto == 1:
                 messageDialog(self, "Editado", "", "Aluno editado com sucesso!")
+
             elif deuCerto == 2:
                 messageDialog(self, "ERRO", "", "Favor posicione o aluno manualmente")
                 self.iface.alunoId=aluno_.id
@@ -329,9 +372,13 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
                 draggable=True,
                 title=aluno_.nome
                 ))
+
+            elif deuCerto == 3:
+                messageDialog(self, "Erro ao editar", "", ("As vagas para a série " + serieEditar + " na escola " + escolaEditar + " já estão cheias"))
  
         else: 
             messageDialog(self, "Escolha um aluno", "", "Escolha um aluno na lista ao lado!")
+
 
     def excluir(self):
         if self.lineEditRG.text() != "":
@@ -357,3 +404,51 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
     def closeEvent(self, QCloseEvent):
         self.iface.mapWidget.deleteMarker("alunoNovo") 
         return super().closeEvent(QCloseEvent)
+
+
+def pular(PULO):
+    from collections import OrderedDict
+    dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+    dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+    series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
+    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+    print("Series: ",series)
+    #PULO=1 #muda para -1 para descer de séries
+
+    for aluno in dbAlunos.todosOsDadosComId():
+        ## Move o aluno para a próxima serie
+        serie=aluno['serie']
+        if serie=="FORMADO":
+            continue
+        elif serie=="SEM_ESCOLA":
+            continue
+        else:
+            serieIndex=series.index(serie)
+            nextSerieIndex=serieIndex+PULO
+            escolaId=aluno['escola']
+            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
+            serieDados=dbSeries.getDado(serieId)
+            escola=dbEscola.getDado(escolaId)
+
+        if nextSerieIndex>=len(series): #ALUNO FORMOU
+            serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
+        elif nextSerieIndex<=0 or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
+            serie="SEM_ESCOLA"
+        else:
+            serie=series[nextSerieIndex]            
+            novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)][-1]
+            novaSerieDados=dbSeries.getDado(novaSerieId)
+            dbSeries.update(novaSerieId,{"vagas": novaSerieDados['vagas']+1})  #Adiciona o aluno a nova vaga
+
+        dbAlunos.update(aluno['id'], {"serie":serie})
+
+        ## remove a vaga do aluno na tabela de series antiga
+        dbSeries.update(serieId,{"vagas": serieDados['vagas']-1})
+    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+    print("Series: ",series)
+ 
+
+if __name__=="__main__":
+    pular(1)
+

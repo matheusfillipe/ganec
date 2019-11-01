@@ -44,7 +44,7 @@ class Aluno(persistent.Persistent):
         self.escola = self.definirEscola()
         dicionarioDeDados = self.montarDicionario()
         self.id=self.DB.salvarDado(dicionarioDeDados)
-        return coordenadas
+        return coordenadas, self.id
 
     def salvarCoordenada(self):
         self.DB.update(self.id, {'lat':self.lat, 'long':self.long})
@@ -56,7 +56,9 @@ class Aluno(persistent.Persistent):
             self.long = coordenadas[1]
             self.escola = self.definirEscola()
             dicionarioDeDados = self.montarDicionario()
+            #print(dicionarioDeDados['escola'])
             self.DB.update(id, dicionarioDeDados)
+            #print(self.DB.getDadoComId(id))
             return True
         else:
             self.lat = 0
@@ -76,10 +78,10 @@ class Aluno(persistent.Persistent):
         return  self.DB.getDados(listaIds)
 
     def definirEscola(self):
-        escola = 0
-        '''usar a funcao de procurar escolas aqui'''
+        pass
+        '''usar a funcao de procurar escolas aqui
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        return escola
+        return escola'''
 
     def calcularIdade(self, nascido):
         nascimento_ = nascido

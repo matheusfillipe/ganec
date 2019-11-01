@@ -144,6 +144,16 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Mostrar rotas alternativas&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -189,7 +199,7 @@
      <x>0</x>
      <y>0</y>
      <width>1274</width>
-     <height>39</height>
+     <height>32</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuArquivo">
@@ -240,6 +250,8 @@
     <addaction name="actionCalcular_Rotas_2"/>
     <addaction name="actionRecalcular_endere_os_de_alunos"/>
     <addaction name="actionRecalcular_endere_os_de_escolas"/>
+    <addaction name="actionAvan_ar_todos_os_alunos_em_um_ano"/>
+    <addaction name="actionRetornar_todos_os_alunoes_um_ano"/>
    </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
@@ -356,6 +368,16 @@
   <action name="actionCalcular_Rotas_2">
    <property name="text">
     <string>Calcular Rotas</string>
+   </property>
+  </action>
+  <action name="actionAvan_ar_todos_os_alunos_em_um_ano">
+   <property name="text">
+    <string>Avançar todos os alunos um ano</string>
+   </property>
+  </action>
+  <action name="actionRetornar_todos_os_alunoes_um_ano">
+   <property name="text">
+    <string>Retornar todos os alunos um ano</string>
    </property>
   </action>
  </widget>

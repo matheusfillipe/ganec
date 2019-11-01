@@ -6,15 +6,12 @@ from sqlitedb import DB
 from data.escola import *
 from data.aluno import *
 from data.config import *
-
+from threads import nogui, Overlay
 
 
 NEW_ESCOLA_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaForm.ui")
 EDITAR_ESCOLA, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaEditar.ui")
 VAGAS_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/vagas.ui")
-
-#cidade=Config.cidade()
-cidade = "Carmo do Paranaiba"
 
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
@@ -48,7 +45,7 @@ def confPath():
 
 
 class WidgetVagas(QtWidgets.QWidget, VAGAS_WIDGET):
-    def __init__(self, iface):
+    def __init__(self, iface, idEscola = 0):
         super(QtWidgets.QWidget, self).__init__(iface)
         self.setupUi(self)
         iface : MainWindow
@@ -62,6 +59,7 @@ class WidgetVagas(QtWidgets.QWidget, VAGAS_WIDGET):
         self.verticalLayoutWidget : QtWidgets.QWidget
         self.btnRemover : QtWidgets.QPushButton
         self.spinBoxVagas.valueChanged.connect(self.spinBoxNumAlunos.setMaximum)
+        self.idEscola = idEscola
     
     def vagas(self):
         return self.spinBoxVagas.value()
@@ -69,8 +67,21 @@ class WidgetVagas(QtWidgets.QWidget, VAGAS_WIDGET):
     def alunos(self):
         return self.spinBoxNumAlunos.value()
 
+    def serie(self):
+        return self.labelSerie.text()
+    
+    def idsEscolas(self):
+        return self.idEscola
+
+    def setarVagas(self, n):
+        self.spinBoxVagas.setValue(n)
+
+    def setarAlunos(self, n):
+        self.spinBoxNumAlunos.setValue(n)
  
 class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
+
+    geolocate=pyqtSignal(dict, bool, tuple, int)
     def __init__(self, iface, parent, main=True):
         super(QtWidgets.QWidget, self).__init__(parent=parent)      
         self.setupUi(self)
@@ -86,6 +97,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         self.listWidget : QtWidgets.QListWidget
 
         self.db=iface.dbEscola
+        self.dbSeries = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
         db=self.db
         self.series=[]
         self.widgets=[]
@@ -93,9 +105,19 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         self.comboBoxSerie.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
         self.buttonOk.clicked.connect(self.salvarDadosEscola)
         self.pushButtonAdicionarSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSerie.currentText()))
+        self.numeroDeAlunos = []
+        self.numeroDeVagas = []
 
         if main:
             self.buttonEditar.clicked.connect(self.editarDialog)
+        
+        self.overlay = Overlay(self,"Geolocalizando...")  
+        self.geolocate.connect(self.onGeolocate)
+
+    def resizeEvent(self, event):        
+        self.overlay.resize(event.size()) 
+        event.accept()
+
 
     def editarDialog(self):
         d=editarEscolaDialog(self.iface)
@@ -119,28 +141,39 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         self.listWidget.takeItem(i)
         del self.widgets[i]
 
-    def salvarDadosEscola(self):
+    @nogui
+    def salvarDadosEscola(self, a=None):        
         escola={}
-        escola ["nome"]= self.lineEditNome.text() 
+        escola['nome']= self.lineEditNome.text() 
         rua = self.lineEditRua.text()
         numero = self.lineEditNumero.text()
         bairro = self.lineEditBairro.text()
         escola['series'] = SEPARADOR_SERIES.join(self.series)
-        
+        self.overlay.started.emit()              # Inicia o overlay emitindo um sinal (loading)
+        cor=False
         #confiro se todos os dados estão digitados    
         if (self.lineEditNome.text() != "") and (self.lineEditRua.text() != "") and (self.lineEditNumero.text() != "") and (self.lineEditBairro.text() != ""):
-            a=Aluno()
-            a.endereco = "Rua " + rua + ", " + numero + ", Bairro " + bairro + ", " + cidade
-            escola['endereco']=rua + "," +  numero + ", " + bairro 
-            cor=a.latLongAluno()
-            escola['lat'], escola['long']=cor
-            self.iface.escolaId=self.db.salvarDado(escola)            
-            #TODO update series com vagas e alunos
-            for s, w in zip(self.series, self.widgets):
-                Turma.update(s,escola['nome'],{'vagas': w.spinBoxVagas.value(), 'nDeAlunos': w.spinBoxNumAlunos.value()})
+            escola['endereco'] = "Rua " + rua + ", " + numero + ", Bairro " + bairro + ", " + Config.cidade()
 
+            a=Escola(escola['nome'], escola['endereco'], series = self.series)
+            cor, id = a.salvar()
+            escola['lat'], escola['long']=cor
+            self.iface.escolaId=id
+            for i in self.widgets:
+                w = Turma(i.serie(), escola['nome'])
+                w._update({'vagas': i.vagas(), 'nDeAlunos': i.alunos()})
+                w = ""
+            self.geolocate.emit(escola, True, cor, id)
+        else:
+            self.geolocate.emit(escola, False, [], id)
+
+        self.overlay.stoped.emit() #para o overlay quando a tarefa estiver pronta
+      
+
+    def onGeolocate(self,escola, preenchido, cor, id):
+        if preenchido:
             if cor:
-                messageDialog(self, "Editado", "", "Por favor, confirme a posição da escola:")
+                messageDialog(self, "Editado", "", "Por favor, confirme a posição da escola")
                 x,y=cor
             else:
                 x,y=self.iface.centro()
@@ -153,7 +186,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
             draggable=True,
             title=escola['nome']
             ))     
-
+            self.iface.escolaId=id
             self.clear()
             self.listWidget.clear()
         else:
@@ -191,7 +224,8 @@ class NewEscolaDialog(QtWidgets.QDialog):
         super(NewEscolaDialog, self).closeEvent(evnt)
         
 
-class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):   
+class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
+    geolocate=pyqtSignal(bool, bool, int)      
     def __init__(self, iface):
         super(QtWidgets.QDialog, self).__init__(None)
         iface : MainWindow
@@ -225,8 +259,14 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         self.comboBoxSeries.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
 
         self.pushButtonAddSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSeries.currentText()))
-    
-    #Funções de editar excluir e adicionar os widgets de aluinos;
+
+        self.overlay = Overlay(self,"Geolocalizando...")  
+        self.geolocate.connect(self.onGeolocate)
+
+    def resizeEvent(self, event):        
+        self.overlay.resize(event.size()) 
+        event.accept()
+
 
     def addTurma(self, text):
         itemN = QtWidgets.QListWidgetItem() 
@@ -247,58 +287,84 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         del self.widgets[i]
 
     def setarEscola(self, i):
+        self.widgets = []
         self.escolaEscolhida=self.dbEscola.acharDado('nome', self.listViewEscolas.currentItem().text().split("\n\n")[0])
+        self.seriesSelect = self.dbSeries.acharDado('idDaEscola',self.escolaEscolhida[0])
+        #print("tudo " + str(self.dbSeries.todosOsDados()))
+        #print("Escolas " + str(self.dbEscola.todosOsDados()))
+        self.idsSeries = self.seriesSelect
+        #print("id " + str(self.seriesSelect))
+        self.seriesSelect = self.dbSeries.getDados(self.seriesSelect)
+        #print("Series " + str(self.seriesSelect))
         self.escolaEscolhida=self.dbEscola.getDados(self.escolaEscolhida)[0]
         self.lineEditNomeEscola.setText(self.escolaEscolhida['nome'])
         self.lineEditEndereco.setText(self.escolaEscolhida['endereco'])
         self.listViewSeries.clear()
+
+        
         self.series = []
         seriesAdd = []
-        series = self.escolaEscolhida['series'].split(SEPARADOR_SERIES)
+        #series = self.escolaEscolhida['series'].split(SEPARADOR_SERIES)
+        series = self.seriesSelect
         for i in series:
-            if i not in seriesAdd:
-                seriesAdd.append(i)
-        seriesAdd.sort()
+            if i['serie'] not in seriesAdd:
+                seriesAdd.append(i['serie'])
         for i in seriesAdd:
             self.addTurma(i)
-
-
-    def editar(self):
-        series = self.series[0]
-        seriesAns = []
         j=0
-        for i in self.series:
-           if(j>=1):
-               seriesAns.append(i)
-           j+=1 
+        for i in self.widgets:
+            i.setarVagas(self.seriesSelect[j]['vagas'])
+            i.setarAlunos(self.seriesSelect[j]['nDeAlunos'])
+            j+=1
 
-        for i in seriesAns:
-            series += "," + i
+    @nogui
+    def editar(self, a=None):
+        self.overlay.started.emit()
+        if (self.lineEditNomeEscola.text() != "") and (self.lineEditEndereco.text() != ""):
+            series = SEPARADOR_SERIES.join(self.series)
+            self.series = []
+            j=0
+            for i in self.dbSeries.acharDado('idDaEscola', self.dbEscola.acharDado('nome', self.escolaEscolhida['nome'])[0]):
+                self.dbSeries.apagarDado(i)
+            for i in self.widgets:
+                print(self.escolaEscolhida['nome'])
+                w = Turma(i.serie(), self.escolaEscolhida['nome'])
+                w._atualizar({'serie': i.serie(), 'vagas': i.vagas(), 'nDeAlunos': i.alunos()})
+                w = ""
+                j+=1
 
-        print(series)
-
-        escola_ = Escola(self.lineEditNomeEscola.text(), self.lineEditEndereco.text(), "", "", series = series)
-        deuCerto = escola_.editar(self.dbEscola.acharDado('nome', self.escolaEscolhida['nome'])[0])
-
-        x,y=self.iface.centro()
-        self.iface.mapWidget.addMarker("escola",x,y)
-        self.limparTextos()
-        self.listViewSeries.clear()
-        self.series = []
-        if deuCerto:
-            messageDialog(self, "Editada", "", "Escola editada com sucesso!")
+            escola_ = Escola(self.lineEditNomeEscola.text(), self.lineEditEndereco.text(), "", "", series = series)
+            deuCerto, id = escola_.editar(self.dbEscola.acharDado('nome', self.escolaEscolhida['nome'])[0])
+            self.geolocate.emit(True, deuCerto, id)
         else:
-            messageDialog(self, "ERRO", "", "Favor posicione a escola manualmente")
+            self.geolocate.emit(False,False, 0)
+        self.overlay.stoped.emit()
+
+    def onGeolocate(self, preenchido, deuCerto, id):
+        if preenchido:
+            x,y=self.iface.centro()
+            self.iface.mapWidget.addMarker("escola",x,y)
+            self.iface.escolaId=id
+            self.limparTextos()
+            self.listViewSeries.clear()
+            if deuCerto:
+                messageDialog(self, "Editada", "", "Escola editada com sucesso!")
+            else:
+                messageDialog(self, "ERRO", "", "Favor posicione a escola manualmente")
+        else:
+            messageDialog(self, "Atenção", "", "Todos os campos Obrigatórios devem estar preenchidos.")
+
 
 
     def excluir(self):
-        excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados desse aluno serão removidos!")
-        if excluir_ :
-            self.dbEscola.apagarDado(self.dbEscola.acharDado('nome', self.lineEditNomeEscola.text())[0])
-            self.limparTextos()    
-
-        else :
-            messageDialog(self, "Não excluido", "", "Ok, a Escola nao foi excluida")
+        if (self.lineEditNomeEscola.text() != "") and (self.lineEditEndereco.text() != ""):
+            excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados dessa escola serão removidos!")
+            if excluir_ :
+                self.dbEscola.apagarDado(self.dbEscola.acharDado('nome', self.escolaEscolhida['nome'])[0])
+                self.limparTextos()    
+                self.listViewSeries.clear()
+            else :
+                messageDialog(self, "Não excluido", "", "Ok, a Escola nao foi excluida")
         
 
     def limparTextos(self):

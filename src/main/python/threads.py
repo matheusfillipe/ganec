@@ -185,7 +185,7 @@ class calcularRotasThread(QtCore.QThread):
                         print("Erro! Escola não consta na tabela de séries, id: " + escola['id'])
                         continue
                     id=id[0]            
-                    serie=db.getDado(id)
+                    serie=db.getDadoComId(id)
                     if serie[SERIES_ATTR[3]] <= serie[SERIES_ATTR[2]]: #salvar mais proxima no dicionário do aluno
                         count=True
                         serie[SERIES_ATTR[3]]+=1
@@ -193,7 +193,8 @@ class calcularRotasThread(QtCore.QThread):
                         listaDeAlunos[j]['escola']=escola['id']
 
             dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})  
-
+            print(listaDeAlunos[j]['escola'])
+            print(aluno['serie'])
             serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", listaDeAlunos[j]['escola']) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
             serieDados=dbSeries.getDado(serieId)
             dbSeries.update(serieId, {"vagas": serieDados['vagas']+1})

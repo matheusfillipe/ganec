@@ -21,10 +21,10 @@ DB_ADD_ALUNO="alunos"
 DB_ADD_ESCOLA="escolas"
 
 
-#CONSTANTEs DB
+#CONSTANTES DB
 
-CAMINHO = {'aluno':"aluno.db", 'escola':"escola.db", 'strings':'strings.db'}
-TABLE_NAME = {'aluno':"ALUNOS", 'escola':"ESCOLAS", 'series':'SERIES'}
+CAMINHO = {'aluno':"aluno.db", 'escola':"escola.db", 'strings':'strings.db', 'ano':"ano.db"}
+TABLE_NAME = {'aluno':"ALUNOS", 'escola':"ESCOLAS", 'series':'SERIES', 'ano':'ANO'}
 
 ATRIBUTOS = {
 	'aluno':["nome",
@@ -53,7 +53,9 @@ ATRIBUTOS = {
 		'series':['idDaEscola',
 			  'serie', 
 			  'vagas', 
-			  'nDeAlunos']
+			  'nDeAlunos'],
+		
+		'ano':['ano']
 }
 
 ATRIBUTOS_STRING = {
@@ -79,7 +81,7 @@ ATRIBUTOS_STRING = {
 }
 
 SEPARADOR_SERIES = ","
-CSV_SEPARATOR=";"
+CSV_SEPARATOR=","
 
 #UTILS
 

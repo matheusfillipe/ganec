@@ -13,17 +13,14 @@ from customWidgets import *
 
 #
 class Escola(persistent.Persistent):
-    def __init__(self, nome="", rua="", numero="", bairro= "", modalidade= "", lat=0, long = 0, series = "", id = 0):
+    def __init__(self, nome="", endereco="", modalidade= "", lat=0, long = 0, series = "", id = 0):
         self.nomeEscola = nome
-        self.ruaEscola = rua
-        self.numeroEscola = numero
-        self.nomeBairro = bairro
+        self.endereco = endereco
         self.lat = lat
         self.long = long
         self.series = series
         self.id = id
-        enderecoo = rua + numero + bairro 
-        self.listaDeDados=[nome, enderecoo, lat, long]
+        self.listaDeDados=[nome, self.endereco, lat, long]
         self.DB = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         self.DBSerie=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
         
@@ -38,30 +35,28 @@ class Escola(persistent.Persistent):
         return [escola['nome'] for escola in db.todosOsDados()] 
 
     def salvar(self):
-        coordenadas = self.latLongAluno()
+        coordenadas = self.latLongEscola()
         self.lat = coordenadas[0]
         self.long = coordenadas[1]
-        self.escola = self.definirEscola()
         dicionarioDeDados = self.montarDicionario()
-        self.DB.salvarDado(dicionarioDeDados)
-        return coordenadas
+        id=self.DB.salvarDado(dicionarioDeDados)
+        return coordenadas, id
     
     def editar(self, id):
         coordenadas = self.latLongEscola()
         if coordenadas != False:
             self.lat = coordenadas[0]
             self.long = coordenadas[1]
-            self.escola = self.definirEscola()
             dicionarioDeDados = self.montarDicionario()
-            self.DB.update(id, dicionarioDeDados)
-            return True
+            it=self.DB.update(id, dicionarioDeDados)
+            return True, id
         else:
             self.lat = 0
             self.long = 0
             self.escola = 0
             dicionarioDeDados = self.montarDicionario()
-            self.DB.update(id, dicionarioDeDados)
-            return False
+            id=self.DB.update(id, dicionarioDeDados)
+            return False, id
     
     def dados(self, listaIds):
         return  self.DB.getDados(listaIds)
@@ -75,8 +70,8 @@ class Escola(persistent.Persistent):
             return False
 
     def montarDicionario(self):
-        enderecoEscola = self.ruaEscola + self.numeroEscola + self.nomeBairro
-        self.listaDeDados=[self.nomeEscola, enderecoEscola, self.lat, self.long, self.series]
+        series = SEPARADOR_SERIES.join(self.series)
+        self.listaDeDados=[self.nomeEscola, self.endereco, self.lat, self.long, series]
         dicionario = {}
         j=0
         for i in ATRIBUTOS['escola']:
@@ -95,38 +90,52 @@ class Turma(persistent.Persistent):
         self.vagas=0
         self.alunos=0
         self.escola=str(escola)
-        self.series=self.createDb()
+        self.nomeEscola = str(escola)
+        self.dbSeries=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+        self.dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola']) 
+        self.series=self.createDb() 
+
         if self.series:
             self.serie=[serie for serie in self.series if serie['serie']==nome]
             if len(self.serie)!=0:
                 self.serie=self.serie[-1]
             else:
                 print("Serie não encontrada:  Escola "+self.escola["nome"]+" ", self.series[0]["serie"])
-                self.serie=False        
+                self.serie=False      
 
     def createDb(self):
-        self.dbSeries=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-        self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])  
-        id=self.dbEscola.acharDadoExato('nome',self.escola)
-        if len(id)>0:
-            self.escola=self.dbEscola.getDadoComId(id[-1])
+        self.id=self.dbEscola.acharDadoExato('nome',self.nomeEscola)
+        if len(self.id)>0:
+            self.escola=self.dbEscola.getDadoComId(self.id[-1])
             return self.dbSeries.getDadosComId(self.dbSeries.acharDadoExato('idDaEscola',self.escola['id']))    
         else:
             print("Falhar ao achar escola")
             return False
 
-    def _update(self, dict):
-        if hasattr(self, 'serie'):
-            self.dbSeries.update(self.serie["id"], dict)
+    def _update(self, dicte):
+        if hasattr(self, 'serie') and self.serie:
+            self.dbSeries.update(self.serie["id"], dicte)
         else:
+            self.idEscola=self.dbEscola.acharDado('nome', self.nomeEscola)[0]
             d={'vagas': 0,'nDeAlunos': 0}
-            d.update(dict)
+            d.update(dicte)
             self.dbSeries.salvarDado({
-            'idDaEscola': self.escola['id'],
+            'idDaEscola': self.idEscola,
             'serie':  self.nome, 
             'vagas':  d['vagas'], 
             'nDeAlunos': d['nDeAlunos']
             })
+    
+    def _atualizar(self, dict):
+        self.idEscola=self.dbEscola.acharDado('nome', self.nomeEscola)[0]
+        d={'serie': "", 'vagas': 0,'nDeAlunos': 0}
+        d.update(dict)
+        self.dbSeries.salvarDado({
+        'idDaEscola': self.escola['id'],
+        'serie':  d['serie'], 
+        'vagas':  d['vagas'], 
+        'nDeAlunos': d['nDeAlunos']
+        })
 
     def _increment(self, n=1):
         '''
@@ -174,9 +183,9 @@ class Turma(persistent.Persistent):
         t._decrement(n)
 
     @classmethod
-    def update(cls, serie, escola, dict):
+    def update(cls, serie, escola, dicte):
         t=Turma(serie, escola)
-        t._update(dict)
+        t._update(dicte)
 
 
     @classmethod
@@ -197,9 +206,9 @@ class Modalidade(persistent.Persistent):
         self.turmas.append(turma)
 
 class ListaModalidades(persistent.Persistent):
-    def __init__(self, item=[Modalidade(nome="", turmas=[Turma(nome="")])]):                    
+    def __init__(self, item=[Modalidade(nome="", turmas=[])]):                    
         self.modalidades=item
-    def append(self,modalidade:Modalidade=Modalidade(nome="", turmas=[Turma(nome="")])):
+    def append(self,modalidade:Modalidade=Modalidade(nome="", turmas=[])):
         self.modalidades.append(modalidade)
     def get(self,i):
         return self.modalidades[i]

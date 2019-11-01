@@ -13,14 +13,13 @@ from customWidgets import *
 
 #
 class Escola(persistent.Persistent):
-    def __init__(self, nome="", rua="", numero="", bairro= "", modalidade= "", lat=0, long = 0, series = "", id = 0):
+    def __init__(self, nome="", rua="", numero="", bairro= "", modalidade= "", lat=0, long = 0, id = 0):
         self.nomeEscola = nome
         self.ruaEscola = rua
         self.numeroEscola = numero
         self.nomeBairro = bairro
         self.lat = lat
         self.long = long
-        self.series = series
         self.id = id
         enderecoo = rua + numero + bairro 
         self.listaDeDados=[nome, enderecoo, lat, long]
@@ -47,7 +46,7 @@ class Escola(persistent.Persistent):
         return coordenadas
     
     def editar(self, id):
-        coordenadas = self.latLongEscola()
+        coordenadas = self.latLongAluno()
         if coordenadas != False:
             self.lat = coordenadas[0]
             self.long = coordenadas[1]
@@ -75,8 +74,8 @@ class Escola(persistent.Persistent):
             return False
 
     def montarDicionario(self):
-        enderecoEscola = self.ruaEscola + self.numeroEscola + self.nomeBairro
-        self.listaDeDados=[self.nomeEscola, enderecoEscola, self.lat, self.long, self.series]
+        enderecoEscola = self.nomeEscola.text() + self.ruaEscola.text() + self.numeroEscola.text() + self.nomeBairro.text()
+        self.listaDeDados=[self.nomeEscola, self.enderecoEscola, self.lat, self.long]
         dicionario = {}
         j=0
         for i in ATRIBUTOS['escola']:
@@ -94,14 +93,14 @@ class Turma(persistent.Persistent):
         self.nome=nome
         self.vagas=0
         self.alunos=0
-        self.escola=str(escola)
+        self.escola=escola
         self.series=self.createDb()
         if self.series:
             self.serie=[serie for serie in self.series if serie['serie']==nome]
             if len(self.serie)!=0:
                 self.serie=self.serie[-1]
             else:
-                print("Serie não encontrada:  Escola "+self.escola["nome"]+" ", self.series[0]["serie"])
+                print("Serie não encontrada:  Escola"+self.escola+" ", self.series)
                 self.serie=False        
 
     def createDb(self):
@@ -122,10 +121,10 @@ class Turma(persistent.Persistent):
             d={'vagas': 0,'nDeAlunos': 0}
             d.update(dict)
             self.dbSeries.salvarDado({
-            'idDaEscola': self.escola['id'],
-            'serie':  self.nome, 
-            'vagas':  d['vagas'], 
-            'nDeAlunos': d['nDeAlunos']
+             'idDaEscola': self.escola['id'],
+			  'serie':  self.nome, 
+			  'vagas':  d['vagas'], 
+			  'nDeAlunos': d['nDeAlunos']
             })
 
     def _increment(self, n=1):

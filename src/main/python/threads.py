@@ -24,8 +24,6 @@ SERIES_ATTR= ['idDaEscola' ,'serie' ,'vagas', 'nDeAlunos']
 DELIMITADOR_CSV=';'
 
 from data.config import *
-cidade=Config.cidade()
-
 
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
@@ -141,6 +139,7 @@ class calcularRotasThread(QtCore.QThread):
         listaDeEscolas=dbE.todosOsDadosComId()
         dbA= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
         listaDeAlunos=dbA.todosOsDadosComId()
+        dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])        
         configFolder=confPath()
         osmpath=osmFilePath()  #???
         if not osmpath:
@@ -193,11 +192,14 @@ class calcularRotasThread(QtCore.QThread):
                         db.update(id, serie)                     
                         listaDeAlunos[j]['escola']=escola['id']
 
-            dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})
-            #TODO imcrementar turmas 
+            dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})  
 
-class Runner(QtCore.QThread):
-    
+            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", listaDeAlunos[j]['escola']) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
+            serieDados=dbSeries.getDado(serieId)
+            dbSeries.update(serieId, {"vagas": serieDados['vagas']+1})
+           
+
+class Runner(QtCore.QThread):    
     def __init__(self, target, *args, **kwargs):
         super().__init__()
         self._target = target

@@ -185,10 +185,8 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
                 self.iface.varManager.removeDatabase()
             except:
                 pass
-            try:
-                os.rmdir(str(confPath()))
-            except:
-                pass
+            import shutil
+            shutil.rmtree(str(confPath()), ignore_errors=True)
             messageDialog(self, message="O programa irá reiniciar")
             self.close()
             self.iface.restartProgram()                
@@ -344,9 +342,20 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             dados=deepcopy(res)
             a=Aluno()
             for i, r in enumerate(res):            
-                dados[i].update({"idade": a.calcularIdade(r['dataNasc'])})
+                dados[i].update({"idade": a.calcularIdade(r['dataNasc'])})            
             db = self.dbAluno
-            db.salvarDados(dados)   
+            newDados=[]
+            for dado in dados:
+                try:
+                    ids=self.dbEscola.acharDado("nome", dado["escola"])[-1]
+                    if len(ids)==0:
+                        if yesNoDialog(message="A escola com nome: "+str(aluno['escola']+" não está cadastrada, deseja cadastrar?")):
+                            self.dbEscola.salvarDado({"nome": dado['escola']})
+                    dado['escola']=ids
+                except:
+                    pass
+                newDados.append(dado)
+            db.salvarDados(newDados)   
 
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -497,7 +506,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog.exec_()
         self.update()
 
-
     def newEscolaDialog(self):  
         self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
         dialog=NewEscolaDialog(self)             
@@ -584,4 +592,4 @@ def main(*args):
 
 if __name__ == '__main__':
     currentExitCode=main(sys.argv)
-    sys.exit(currentExitCode)
+    sys.exit(currentExitCode)    

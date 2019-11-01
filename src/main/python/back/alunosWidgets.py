@@ -12,8 +12,6 @@ EDITAR_ALUNO, _ = uic.loadUiType("./src/main/python/ui/widgets/editarOuExcluir.u
 ALUNO_BUSCA, _ = uic.loadUiType("./src/main/python/ui/widgets/alunoBusca.ui")
 
 from data.config import *
-#cidade=Config.cidade()
-cidade = "Carmo do Paranaiba"
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
@@ -72,8 +70,6 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
         self.setupUi(self)
         self.aluno = self.iface.aluno
 
-        self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-
         self.lineEditNome : QtWidgets.QLineEdit
         self.lineEditRG : QtWidgets.QLineEdit
         self.lineEditCPF : QtWidgets.QLineEdit
@@ -84,14 +80,12 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
         self.lineEditNumero : QtWidgets.QLineEdit
         self.lineEditBairro : QtWidgets.QLineEdit
         self.lineEditComplemento : QtWidgets.QLineEdit
-        self.lineEditMatricula : QtWidgets.QLineEdit
-        #self.comboBoxEscolas : QtWidgets.QComboBox
-        self.comboBoxSerie.addItems(Escola.todasAsSeries())
-        '''self.comboBoxEscolas.addItems(Escola.todasAsEscolas())
-        self.comboBoxSerie.addItems(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES)for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in [self.comboBoxEscolas.currentIndex()]],[]))))     
-        '''
+        self.lineEditMatricula : QtWidgets.QLineEdit        
+        self.comboBoxSerie : QtWidgets.QComboBox
+        self.comboBoxSerie.addItems(Escola.todasAsSeries())        
         self.pushButtonAdiconar.clicked.connect(self.salvarDados)
         self.toolButtonEditarAlunos.clicked.connect(self.editarAluno)
+      
 
     def salvarDados(self):
         self.iface.mapWidget.deleteMarker("alunoNovo")
@@ -125,7 +119,8 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
                 stringDados = stringDados + "\nComplemento: " + endereco[3]
                 endereco_ = endereco_ + ", Complemento " + complemento
             
-            endereco_ = endereco_ + ", " + cidade
+            endereco_ = endereco_ + ", " + Config.cidade()
+
 
             aluno = Aluno(nome, matricula, dataNasc, RG, CPF, nomeDaMae, nomeDoPai, telefone, endereco_, serie)
             coordenada = aluno.salvar()
@@ -216,6 +211,9 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         if hasattr(self, "invalid"):
                 messageDialog(title="ERRO", message="Você deve cadastrar as escolas!")
         return super().exec_()
+
+       
+
 
     def buscarOsAlunos(self):
         self.listViewAlunos.clear()
@@ -321,6 +319,7 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
                 messageDialog(self, "Editado", "", "Aluno editado com sucesso!")
             elif deuCerto == 2:
                 messageDialog(self, "ERRO", "", "Favor posicione o aluno manualmente")
+                #colocar para posicionar manualmente!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 self.iface.alunoId=aluno_.id
                 self.iface.mapWidget.centerAt(self.iface.config.get().lat, self.iface.config.get().lng)
                 self.iface.mapWidget.addMarker("alunoNovo",self.iface.config.get().lat,self.iface.get().lng,
@@ -357,3 +356,49 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
     def closeEvent(self, QCloseEvent):
         self.iface.mapWidget.deleteMarker("alunoNovo") 
         return super().closeEvent(QCloseEvent)
+
+if __name__=="__main__":    
+    from collections import OrderedDict
+    dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+    dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+    series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
+    print("Escolas dos alunos: ",[aluno['escola'] for aluno in dbAlunos.todosOsDados()])
+    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+    print("Series: ",series)
+    PULO=1 #muda para -1 para descer de séries
+    exit()
+
+    for aluno in dbAlunos.todosOsDadosComId():
+        ## Move o aluno para a próxima serie
+        serie=aluno['serie']
+        serieIndex=series.index(serie)
+        nextSerieIndex=serieIndex+PULO
+        escolaId=aluno['escola']
+        try:
+            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
+        except:
+            print("Aluno com id "+str(aluno['id'])+" sem escola!")
+            continue #aluno sem escola!
+        serieDados=dbSeries.getDado(serieId)
+        escola=dbEscola.getDado(escolaId)
+
+        if nextSerieIndex>=len(series): #ALUNO FORMOU
+            serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
+        elif nextSerieIndex<=0 or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
+            serie="SEM_ESCOLA"
+        elif serie=="SEM_ESCOLA" or serie=="FORMADO":
+            continue
+        else:
+            serie=series[nextSerieIndex]            
+            novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)][-1]
+            novaSerieDados=dbSeries.getDado(novaSerieId)
+            dbSeries.update(novaSerieId, {"vagas": novaSerieDados['vagas']+1})  #Adiciona o aluno a nova vaga
+
+        dbAlunos.update(aluno['id'], {"serie":serie})
+
+        ## remove a vaga do aluno na tabela de series antiga
+        dbSeries.update(serieId, {"vagas": serieDados['vagas']-1})
+
+
+    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])

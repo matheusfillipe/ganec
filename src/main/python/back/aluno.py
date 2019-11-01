@@ -13,7 +13,6 @@ from pathlib import Path
 import customWidgets
 
 from data.config import *
-#cidade=Config.cidade()
 
 class Aluno(persistent.Persistent):
     def __init__(self, name="", matricula="", dataDeNascimento="", RG = "", CPF = "", nomeMae="", nomePai="", telefone = "", endereco = "", serie = "", escola = "", idade = 0, lat=0, long = 0, id = 0):
@@ -65,12 +64,6 @@ class Aluno(persistent.Persistent):
             dicionarioDeDados = self.montarDicionario()
             self.DB.update(id, dicionarioDeDados)
             return False
-
-    def subirSerie(self):
-        pass
-
-    def descerSerie(self):
-        pass
     
     def dados(self, listaIds):
         return  self.DB.getDados(listaIds)

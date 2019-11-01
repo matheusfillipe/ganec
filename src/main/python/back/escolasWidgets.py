@@ -13,9 +13,6 @@ NEW_ESCOLA_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaForm.u
 EDITAR_ESCOLA, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaEditar.ui")
 VAGAS_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/vagas.ui")
 
-#cidade=Config.cidade()
-cidade = "Carmo do Paranaiba"
-
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
@@ -176,9 +173,10 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
 
 class NewEscolaDialog(QtWidgets.QDialog):
     def __init__(self, iface):
-        super(QtWidgets.QDialog, self).__init__(None)
-        iface : MainWindow
+        super(QtWidgets.QDialog, self).__init__(None)  
         self.iface = iface
+        self.iface=iface
+        iface : MainWindow
         self.widget=NewEscolaWidget(iface, self)
         self.layout=QtWidgets.QGridLayout(self)
         self.setLayout(self.layout)
@@ -194,119 +192,64 @@ class NewEscolaDialog(QtWidgets.QDialog):
 class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):   
     def __init__(self, iface):
         super(QtWidgets.QDialog, self).__init__(None)
-        iface : MainWindow
-        self.iface = iface
         self.setupUi(self)
-
-        #daqui para baixo modifiquei muitas coisas para tentar arrumar o de editar e excluiur as escolas.
-        #################################################################################################
+        self.iface = iface
+        self.iface=iface
+        iface : MainWindow
 
         self.label : QtWidgets.QLabel
         self.lineEditNomeEscola : QtWidgets.QLineEdit
-        self.listViewEscolas : QtWidgets.QListWidget
-        self.listViewSeries : QtWidgets.QListWidget
+        self.listViewEscolas : QtWidgets.QListView
         self.pushButtonEditar : QtWidgets.QPushButton
         self.pushButtonExcluir : QtWidgets.QPushButton
 
-        self.series = []
-        self.widgets = []
-        self.todasSeries=Escola.todasAsSeries()
+        self.setupUi(self)
+        self.gridLayout_2 : QtWidgets.QGridLayout
+        self.widget=NewEscolaWidget(iface, self, False)
+        self.widget.buttonOk.hide()
+        self.widget.buttonCancelar.hide()
+        self.widget.buttonEditar.hide()     
 
-        self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])  
-        self.dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-
-        for i in self.dbEscola.todosOsDados():
-            self.listViewEscolas.addItem(i['nome'] + "\n\n")
-
+        self.gridLayout.addWidget(self.widget)
+        self.lineEditNomeEscola.textChanged.connect(self.buscaEscolas)
         self.listViewEscolas.itemClicked.connect(self.setarEscola)
-        self.pushButtonExcluir.clicked.connect(self.excluir)
         self.pushButtonEditar.clicked.connect(self.editar)
+        self.pushButtonExcluir.clicked.connect(self.excluir)
 
-        self.comboBoxSeries.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
 
-        self.pushButtonAddSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSeries.currentText()))
-    
-    #Funções de editar excluir e adicionar os widgets de aluinos;
+    def buscaEscolas(self):
+        self.listViewEscolas.clear()
+        escola = self.lineEditNomeEscola.text()
+        if escola != "":
+            listaDeIds = self.iface.dbEscola .acharDado('nome', escola)
+            resultado = self.db.getDadosComId(listaDeIds)
+        else:
+            resultado = []
+        self.resultado=resultado
+        for i in resultado:
+            strr = "Nome: " + i['nome'] + "  \nSeries: " + i['series']+"\n\n"
+            self.lineEditNomeEscola.addItem(strr)
 
-    def addTurma(self, text):
-        itemN = QtWidgets.QListWidgetItem() 
-        widget = WidgetVagas(self)
-        widget.labelSerie.setText(text)
-        itemN.setSizeHint(widget.sizeHint())    
-        self.listViewSeries.addItem(itemN)
-        self.listViewSeries.setItemWidget(itemN, widget)
-        widget.btnRemover.clicked.connect(lambda: self.series.remove(text))
-        widget.btnRemover.clicked.connect(lambda: self.removeFromListWidget(itemN))
-        self.series.append(text)
-        self.widgets.append(widget)
-        self.listViewSeries.scrollToBottom()
-
-    def removeFromListWidget(self, item):
-        i=self.listViewSeries.row(item)
-        self.listViewSeries.takeItem(i)
-        del self.widgets[i]
 
     def setarEscola(self, i):
-        self.escolaEscolhida=self.dbEscola.acharDado('nome', self.listViewEscolas.currentItem().text().split("\n\n")[0])
-        self.escolaEscolhida=self.dbEscola.getDados(self.escolaEscolhida)[0]
-        self.lineEditNomeEscola.setText(self.escolaEscolhida['nome'])
-        self.lineEditEndereco.setText(self.escolaEscolhida['endereco'])
-        self.listViewSeries.clear()
-        self.series = []
-        seriesAdd = []
-        series = self.escolaEscolhida['series'].split(SEPARADOR_SERIES)
-        for i in series:
-            if i not in seriesAdd:
-                seriesAdd.append(i)
-        seriesAdd.sort()
-        for i in seriesAdd:
-            self.addTurma(i)
+        self.escola=self.resultado[i]
+        self.widget.setEscola(self.escola) 
 
 
     def editar(self):
-        series = self.series[0]
-        seriesAns = []
-        j=0
-        for i in self.series:
-           if(j>=1):
-               seriesAns.append(i)
-           j+=1 
-
-        for i in seriesAns:
-            series += "," + i
-
-        print(series)
-
-        escola_ = Escola(self.lineEditNomeEscola.text(), self.lineEditEndereco.text(), "", "", series = series)
-        deuCerto = escola_.editar(self.dbEscola.acharDado('nome', self.escolaEscolhida['nome'])[0])
-
-        x,y=self.iface.centro()
-        self.iface.mapWidget.addMarker("escola",x,y)
-        self.limparTextos()
-        self.listViewSeries.clear()
-        self.series = []
-        if deuCerto:
-            messageDialog(self, "Editada", "", "Escola editada com sucesso!")
-        else:
-            messageDialog(self, "ERRO", "", "Favor posicione a escola manualmente")
+        if hasattr(self, "escola"):
+            escola=self.escola
+            #TODO verificar mudança de endereço e modificar lat long e salvar vagas e alunos
+            self.iface.dbEscola.update(escola['id'], escola)
+            x,y=self.iface.centro()
+            self.iface.mapWidget.addMarker("escola",x,y)
 
 
     def excluir(self):
-        excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados desse aluno serão removidos!")
-        if excluir_ :
-            self.dbEscola.apagarDado(self.dbEscola.acharDado('nome', self.lineEditNomeEscola.text())[0])
-            self.limparTextos()    
-
-        else :
-            messageDialog(self, "Não excluido", "", "Ok, a Escola nao foi excluida")
-        
-
-    def limparTextos(self):
-        self.lineEditNomeEscola.setText("")
-        self.lineEditEndereco.setText("")
-        self.listViewEscolas.clear()
-        for i in self.dbEscola.todosOsDados():
-            self.listViewEscolas.addItem(i['nome'] + "\n\n")
+        if hasattr(self, "escola"):
+            escola=self.escola
+            self.iface.dbEscola.apagarDado(escola['id'])
+            self.clear()
 
 
 def test():

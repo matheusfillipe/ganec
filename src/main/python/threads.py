@@ -266,7 +266,7 @@ class Overlay(QWidget):
         r=max(25, 2*3.1416*R/N-10)
         d=5        
         self.label.move(12, self.height()/2+R+r+12)
-        self.label.setFont(QtGui.QFont("Arial", int(max(min(18*self.height()/350, 35),10)), QtGui.QFont.Bold))
+        self.label.setFont(QtGui.QFont("Arial", int(max(min(16*self.height()/350, 24),10)), QtGui.QFont.Bold))
 
         for i in range(N):
             I=int(self.counter / 5) % N

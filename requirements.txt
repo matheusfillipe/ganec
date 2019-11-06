@@ -38,7 +38,7 @@ pyflakes==2.1.1
 PyInstaller==3.4
 pyparsing==2.4.0
 pyperclip==1.7.0
-pyproj
+pyproj==1.9.6
 PyQt5==5.12
 PyQt5-sip==4.19.15
 PyQtWebEngine==5.12.1

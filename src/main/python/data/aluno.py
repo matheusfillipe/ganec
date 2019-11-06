@@ -41,7 +41,7 @@ class Aluno(persistent.Persistent):
         coordenadas = self.latLongAluno()
         self.lat = coordenadas[0]
         self.long = coordenadas[1]
-        self.escola = self.definirEscola()
+        #self.escola = self.definirEscola()
         dicionarioDeDados = self.montarDicionario()
         self.id=self.DB.salvarDado(dicionarioDeDados)
         return coordenadas, self.id
@@ -54,7 +54,7 @@ class Aluno(persistent.Persistent):
         if coordenadas != False:
             self.lat = coordenadas[0]
             self.long = coordenadas[1]
-            self.escola = self.definirEscola()
+            #self.escola = self.definirEscola()
             dicionarioDeDados = self.montarDicionario()
             #print(dicionarioDeDados['escola'])
             self.DB.update(id, dicionarioDeDados)

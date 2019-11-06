@@ -10,9 +10,17 @@ from lib.constants import *
 from lib.database import VariableManager, QInterface
 
 
-CSV_DIALOG, _ = uic.loadUiType("./src/main/python/ui/dialogs/importCsv.ui")
-MODALIDADES_DIALOD, _ = uic.loadUiType("./src/main/python/ui/dialogs/modalidades.ui")
-NEW_MODALIDADE_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/modalidadeForm.ui")
+try:
+    I=0
+    CSV_DIALOG, _ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/importCsv.ui")
+    MODALIDADES_DIALOD, _ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/modalidades.ui")
+    NEW_MODALIDADE_WIDGET, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/modalidadeForm.ui")
+except:
+    I=1
+    CSV_DIALOG, _ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/importCsv.ui")
+    MODALIDADES_DIALOD, _ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/modalidades.ui")
+    NEW_MODALIDADE_WIDGET, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/modalidadeForm.ui")
+
 delimiter = CSV_SEPARATOR
 SEPARADOR_CSV=CSV_SEPARATOR
 
@@ -178,24 +186,30 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
         if len(columnIndexes) != len(self.dataNamesList):
             messageDialog(title="Atenção!", message="Por favor selectione o mesmo número de colunas que de campos necessários \n Você seleciou "+str(len(columnIndexes))+", mas são necessários "+str(len(self.dataNamesList)))
             return False
+        import codecs
+        types_of_encoding = ["utf8", "cp1252"]
+        for encoding_type in types_of_encoding:
+      #      try:
+                with codecs.open(self.filepath, 'r',  encoding= encoding_type, errors ='replace') as fi:
+                    for i, r in enumerate(csv.reader(fi, delimiter=delimiter, dialect='excel')):
+                        if self.checkBox.isChecked() and first:
+                            first=False
+                            continue
+                        first=False
+                        dado = {}
+                        j=0
+                        for field, dName in zip([f for index, f in enumerate(r) if index in columnIndexes], 
+                                                                [cb.currentText() for cb in self.cbList]):
+                            if dName=="":
+                                messageDialog(title="Atenção!", message="Por favor atribua valores para cada coluna")
+                                return False
+                            dado[dName]=field
+                        result.append(dado)
 
-        with open(self.filepath, 'r') as fi:
-            for i, r in enumerate(csv.reader(fi, delimiter=delimiter, dialect='excel')):
-                if self.checkBox.isChecked() and first:
-                    first=False
-                    continue
-                first=False
-                dado = {}
-                j=0
-                for field, dName in zip([f for index, f in enumerate(r) if index in columnIndexes], 
-                                                        [cb.currentText() for cb in self.cbList]):
-                    if dName=="":
-                        messageDialog(title="Atenção!", message="Por favor atribua valores para cada coluna")
-                        return False
-                    dado[dName]=field
-                result.append(dado)
-        return result
-    
+        #    except:
+         #       continue
+        return result  
+
     def openFile(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo/Planilha CSV (*.csv)")[0]
         if filename in ["", None]: return False

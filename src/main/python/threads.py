@@ -160,6 +160,8 @@ class calcularRotasThread(QtCore.QThread):
 
         for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
             self.countChanged.emit(int(j/len(listaDeAlunos)*100))
+            if aluno['escola']: #Se o aluno esta matriculado, ignora
+                continue
             alunoFolder=alunosFolder / Path(str(aluno['id']))
             alunoFolder.mkdir(parents=True, exist_ok=True)
             escolas=[escola for escola in listaDeEscolas if aluno[SERIE] in escola[ESCOLA_SERIES].split(",") ]  #lista de posíveis escolas destino
@@ -168,8 +170,8 @@ class calcularRotasThread(QtCore.QThread):
             for i, escola in enumerate(escolas):
                 ptB=[escola['long'], escola['lat']]
                 parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno: "+str(aluno['id'])), target=net.addNode(ptB, "escola: "+str(escola['id'])))
-                res.append([parts, dist, i])
-            
+                serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escola['id']) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]   
+                res.append([parts, dist, i])         
             res.sort(key=lambda d: d[1])
             count=False
             for i, r in enumerate(res):      #mínima --> salvar todos geojson com todas com cor variando, blue para a mais proxima    
@@ -178,27 +180,24 @@ class calcularRotasThread(QtCore.QThread):
                 saveFile=alunoFolder / Path(str(escola['id'])+".geojson")            
                 net.save_geojson(str(saveFile), COLORS[i if i < len(COLORS) else -1])
 
-                if not count:
-                    db=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-                    id=db.acharDado(SERIES_ATTR[0], escola['id'])
+                if not count:            
+                    id=dbSeries.acharDado(SERIES_ATTR[0], escola['id'])
                     if len(id)==0:
                         print("Erro! Escola não consta na tabela de séries, id: " + escola['id'])
                         continue
                     id=id[0]            
-                    serie=db.getDadoComId(id)
-                    if serie[SERIES_ATTR[3]] <= serie[SERIES_ATTR[2]]: #salvar mais proxima no dicionário do aluno
+                    serie=dbSeries.getDadoComId(id)
+                    if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]): #salvar mais proxima no dicionário do aluno
                         count=True
-                        serie[SERIES_ATTR[3]]+=1
-                        db.update(id, serie)                     
+                        serie[SERIES_ATTR[3]]=int(serie[SERIES_ATTR[3]])+1
+                        dbSeries.update(id, serie)
                         listaDeAlunos[j]['escola']=escola['id']
+                        dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})
 
-            dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})  
-            print(listaDeAlunos[j]['escola'])
-            print(aluno['serie'])
-            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", listaDeAlunos[j]['escola']) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
-            serieDados=dbSeries.getDado(serieId)
-            dbSeries.update(serieId, {"vagas": serieDados['vagas']+1})
-           
+            print("ADICIONANDO  Aluno: " + str(aluno["nome"]))
+            print("Escola:   " + str(listaDeAlunos[j]['escola']))
+            print("Serie:    " + str(aluno['serie']))
+
 
 class Runner(QtCore.QThread):    
     def __init__(self, target, *args, **kwargs):

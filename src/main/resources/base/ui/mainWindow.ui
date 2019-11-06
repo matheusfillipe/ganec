@@ -245,13 +245,35 @@
    </widget>
    <widget class="QMenu" name="menuComputar">
     <property name="title">
-     <string>Ca&amp;lcular</string>
+     <string>Editar</string>
     </property>
-    <addaction name="actionCalcular_Rotas_2"/>
-    <addaction name="actionRecalcular_endere_os_de_alunos"/>
-    <addaction name="actionRecalcular_endere_os_de_escolas"/>
-    <addaction name="actionAvan_ar_todos_os_alunos_em_um_ano"/>
-    <addaction name="actionRetornar_todos_os_alunoes_um_ano"/>
+    <widget class="QMenu" name="menuZonameanto">
+     <property name="title">
+      <string>Zonameanto</string>
+     </property>
+     <addaction name="actionCalcular_Rotas_2"/>
+     <addaction name="actionRecalcular_endere_os_de_alunos"/>
+     <addaction name="actionRecalcular_endere_os_de_escolas"/>
+    </widget>
+    <widget class="QMenu" name="menuDeslocar_Turmas">
+     <property name="title">
+      <string>Deslocar Turmas</string>
+     </property>
+     <addaction name="actionAvan_ar_todos_os_alunos_em_um_ano"/>
+     <addaction name="actionRetornar_todos_os_alunoes_um_ano"/>
+    </widget>
+    <widget class="QMenu" name="menuSelecionado">
+     <property name="title">
+      <string>Selecionado</string>
+     </property>
+     <addaction name="actionRemover_Escola"/>
+     <addaction name="actionAvan_ar_uma_turma"/>
+     <addaction name="actionRetornar_uma_turma"/>
+     <addaction name="actionRemover"/>
+    </widget>
+    <addaction name="menuSelecionado"/>
+    <addaction name="menuZonameanto"/>
+    <addaction name="menuDeslocar_Turmas"/>
    </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
@@ -378,6 +400,26 @@
   <action name="actionRetornar_todos_os_alunoes_um_ano">
    <property name="text">
     <string>Retornar todos os alunos um ano</string>
+   </property>
+  </action>
+  <action name="actionRemover_Escola">
+   <property name="text">
+    <string>Remover Escola</string>
+   </property>
+  </action>
+  <action name="actionAvan_ar_uma_turma">
+   <property name="text">
+    <string>Avançar uma turma</string>
+   </property>
+  </action>
+  <action name="actionRetornar_uma_turma">
+   <property name="text">
+    <string>Retornar uma turma</string>
+   </property>
+  </action>
+  <action name="actionRemover">
+   <property name="text">
+    <string>Remover</string>
    </property>
   </action>
  </widget>

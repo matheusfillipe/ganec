@@ -58,6 +58,9 @@ class Escola(persistent.Persistent):
             id=self.DB.update(id, dicionarioDeDados)
             return False, id
     
+    def salvarCoordenada(self):
+        self.DB.update(self.id, {'lat':self.lat, 'long':self.long})
+    
     def dados(self, listaIds):
         return  self.DB.getDados(listaIds)
 
@@ -70,6 +73,8 @@ class Escola(persistent.Persistent):
             return False
 
     def montarDicionario(self):
+        for i in self.series:
+            print(i)
         series = SEPARADOR_SERIES.join(self.series)
         self.listaDeDados=[self.nomeEscola, self.endereco, self.lat, self.long, series]
         dicionario = {}
@@ -143,12 +148,12 @@ class Turma(persistent.Persistent):
         escola: nome da escola (string)
         n: número a incrementar, adicionar (int)
         '''
-        if self.serie:
-            if self.serie['nDeAlunos']+n>self.serie['vagas']:
+        if self.series:
+            if self.series['nDeAlunos']+n>self.series['vagas']:
                 return False
             else:
-                self.dbSeries.update(self.serie['id'], {'nDeAlunos': self.serie['nDeAlunos']+n})
-                return self.serie['vagas']
+                self.dbSeries.update(self.series['id'], {'nDeAlunos': self.series['nDeAlunos']+n})
+                return self.series['vagas']
 
     def _decrement(self, n=1):
         '''
@@ -156,11 +161,11 @@ class Turma(persistent.Persistent):
         escola: nome da escola (string)
         n: número a decrescer, tirar (int)
         '''
-        if self.serie:
-            if self.serie['nDeAlunos']-n<0:
-                self.dbSeries.update(self.serie['id'], {'nDeAlunos': 0})               
+        if self.series:
+            if self.series['nDeAlunos']-n<0:
+                self.dbSeries.update(self.series['id'], {'nDeAlunos': 0})               
             else:
-                self.dbSeries.update(self.serie['id'], {'nDeAlunos': self.serie['nDeAlunos']-n})
+                self.dbSeries.update(self.series['id'], {'nDeAlunos': self.series['nDeAlunos']-n})
 
     @classmethod
     def increment(cls, serie, escola, n=1):

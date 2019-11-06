@@ -52,11 +52,17 @@ from escolasWidgets import *
 from alunosWidgets import *
 from customWidgets import *
 
-MAIN_WINDOW, _ = uic.loadUiType("./src/main/python/ui/mainWindow.ui")
-SETTINGS_DIALOG,_ = uic.loadUiType("./src/main/python/ui/dialogs/settingsDialog.ui")
+try: 
+    I=0
+    MAIN_WINDOW, _ = uic.loadUiType(BASEPATHS[I]+"ui/mainWindow.ui")
+    SETTINGS_DIALOG,_ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/settingsDialog.ui")
+except:
+    I=1
+    MAIN_WINDOW, _ = uic.loadUiType(BASEPATHS[I]+"ui/mainWindow.ui")
+    SETTINGS_DIALOG,_ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/settingsDialog.ui")
+   
 
 RESET=0   
-
 
 class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
@@ -203,6 +209,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.app : QtWidgets.QApplication
         self.app=app 
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
+        self.listaBusca=[]
         if RESET:
             #self.varManager.removeDatabase()
             self.close()
@@ -244,6 +251,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionExportar_imagem.triggered.connect(self.exportImg)
         self.actionAvan_ar_todos_os_alunos_em_um_ano.triggered.connect(lambda: pular(1))
         self.actionRetornar_todos_os_alunoes_um_ano.triggered.connect(lambda: pular(-1))
+        self.actionRemover_Escola.triggered.connect(self.SremoverEscola)
+        self.actionAvan_ar_uma_turma.triggered.connect(self.SacanvaTurma)
+        self.actionRetornar_uma_turma.triggered.connect(self.SretornaTurma)
+        self.actionRemover.triggered.connect(self.SremoverAlunos)
 
         self.progressBar.hide() 
 
@@ -262,6 +273,55 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
         self.update()
 
+
+        self.addMarkerEscolas()
+
+
+    def SremoverEscola(self):
+        for aluno in self.listaBusca:
+            if aluno['escola']:
+                self.dbAluno.update(aluno['id'], {"escola": ""})
+            
+    def SacanvaTurma(self):
+        for aluno in self.listaBusca:
+            if aluno['escola']:
+                from collections import OrderedDict
+                escola=self.dbEscola.getDadoComId(aluno['escola'])
+                series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
+                serie=self.dbSeries.getDadoComId(serieId)
+                self.dbSeries.update(serieId, {"nDeAlunos": serie["nDeAlunos"]-1})  #Achei a serie e remove a vaga
+                if aluno["serie"]=="FORMADO":
+                    nextSerieName=series[-1]
+                else:
+                    n=series.index(serie)+1
+                    nextSerieName = "FORMADO" if n > len(series)-1 else series[n] #proxima serie
+                self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
+
+              
+
+    def SretornaTurma(self):
+        for aluno in self.listaBusca:
+            if aluno['escola']:
+                from collections import OrderedDict
+                escola=self.dbEscola.getDadoComId(aluno['escola'])
+                series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
+                serie=self.dbSeries.getDadoComId(serieId)
+                self.dbSeries.update(serieId, {"nDeAlunos": serie["nDeAlunos"]-1})  #Achei a serie e remove a vaga
+                if aluno["serie"]=="FORMADO":
+                    nextSerieName=series[-1]
+                else: 
+                    n=series.index(serie)-1
+                    nextSerieName = series[0] if n <=0  else series[n] #proxima serie
+                self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
+
+    
+    def SremoverAlunos(self):
+        for aluno in self.listaBusca:
+            self.dbEscola.apagarDado(aluno['id'])
+
+    
     def atualizarAno(self):
         anoAtual=date.today().year
         if len(self.dbAno.todosOsDados())==0:
@@ -284,6 +344,18 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def updateCenter(self, lat, lng):       
             self.config.get().setInitialPos(lat,lng)
             self.config.save(DB_CONFIG)
+
+    def addMarkerEscolas(self):
+        #self.idEscolasMarker = []
+        for i in self.dbEscola.todosOsDados():
+            #self.idEscolasMarker.append(self.dbEscola.acharDado('nome', i['nome'])[0])
+            #print("Latitude: " + str(i['lat']) + " Longitude: " + str(i['long']))
+            self.mapWidget.centerAt(i['lat'], i['long'])
+            self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_blue.png",
+            draggable=True,
+            title=i['nome']
+            ))
 
     def addMap(self):
         if self.config.get().map==3:
@@ -320,7 +392,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.start()   
         self.loadingLabel.setText("Computando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   
-    
+        self.update()
+   
     def recalcularAlunos(self):
         db= self.dbAluno
         for aluno in db.todosOsDadosComId():
@@ -365,15 +438,27 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             newDados=[]
             for dado in dados:
                 dado[CSV_ALUNOS[8]]+=", "+Config.cidade()
-                try:
-                    ids=self.dbEscola.acharDado("nome", dado["escola"])[-1]
-                    if len(ids)==0:
-                        if yesNoDialog(message="A escola com nome: "+str(aluno['escola']+" não está cadastrada, deseja cadastrar?")):
-                            self.dbEscola.salvarDado({"nome": dado['escola']})
-                    dado['escola']=ids
-                except:
-                    pass
+                ids=self.dbEscola.acharDado("nome", dado["escola"])
+                if len(ids)==0:
+                    if yesNoDialog(message="A escola com nome: "+str(dado['escola']+" não está cadastrada, deseja cadastrar?")):
+                        eid=self.dbEscola.salvarDado({"nome": dado['escola'], "series": dado["serie"]})
+                        self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
+                else:
+                    eid=ids[-1]
+                    try:
+                        serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", eid) if id in self.dbSeries.acharDadoExato("serie", dado['serie'])][-1]
+                        serie=self.dbSeries.getDado(serieId)
+                        if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]):
+                            self.dbSeries.update(serieId,{"nDeAlunos": serie["nDeAlunos"]+1})
+                        else:
+                            eid=""
+                    except:
+                        messageDialog("Escola " + str(dado["escola"])+" não possui a serie "+dado["serie"])
+                        eid=""
+
+                dado['escola']=eid
                 newDados.append(dado)
+
             db.salvarDados(newDados)   
 
         except Exception as e:
@@ -424,12 +509,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.progressBar.hide()
 
 
-    def buscarAluno(self):        
+    def buscarAluno(self): 
+
+        self.addMarkerEscolas()
+
         self.idadeMinima = self.spinBoxIdadeMinima.value()
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
         busca = self.lineEditAluno.text()
-        self.listaParaExportar=[]
+        self.listaParaExportar=self.listaBusca=[]
         
         try:
             listaDeIdsBusca = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
@@ -448,7 +536,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 self.listViewBusca.addItem(itemN)                    
                 self.listViewBusca.setItemWidget(itemN, widget)
                 d=deepcopy(i)  #remover coisas inúteis para csv
-                d.pop("id")  # ... ?
+                self.listaBusca.append(d)
+                d.pop("id")  # ... ?                
                 self.listaParaExportar.append(d)
                 j += 1
 
@@ -490,14 +579,47 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, id)
             v.salvarCoordenada()          
             self.listViewBusca.clear()
+
+            self.mapWidget.deleteMarker("aluno")
+            aluno=self.resultado[self.listViewBusca.currentRow()]
+            self.mapWidget.centerAt(lat, long)
+            self.mapWidget.addMarker("aluno", lat, long, **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+            draggable=True,
+            title=aluno['nome']
+            ))
+
             self.buscarAluno()  
         elif n=="alunoNovo":
             v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, self.alunoId)
             v.salvarCoordenada()           
             self.listViewBusca.clear()
+
+            self.mapWidget.deleteMarker("alunoNovo")
+            aluno=self.resultado[self.listViewBusca.currentRow()]
+            self.mapWidget.centerAt(lat, long)
+            self.mapWidget.addMarker("alunoNovo", lat, long, **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+            draggable=True,
+            title=aluno['nome']
+            ))
+
             self.buscarAluno()              
         elif n=="escola":
-            self.dbEscola.update(self.escolaId, {'lat':lat, 'long':long})
+            #self.dbEscola.update(self.escolaId, {'lat':lat, 'long':long})
+            self.mapWidget.centerAt(lat, long)
+            self.mapWidget.addMarker("alunoNovo", lat, long, **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+            draggable=True,
+            title=aluno['nome']
+            ))
+        else:
+            print(n)
+            idEscola = self.dbEscola.acharDado('nome', n)
+            print(idEscola)
+            print(self.dbEscola.getDadoComId(idEscola[0]))
+            v = Escola(lat = lat, long = long, id=idEscola[0])
+            v.salvarCoordenada()
    
     def newAlunoDialog(self): 
         self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
@@ -524,7 +646,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
- 
+        self.update()
+
     def saveConfig(self):  
         self.dialog[-1].db.update(self.dialog[-1].db.acharDado('nome', 'cidade')[0], {'string': self.dialog[-1].lineEdit_2.text()})   
         cfg=self.config.get()
@@ -534,7 +657,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.mapWidget.hide()
             self.horizontalLayout_4.removeWidget(self.mapWidget)
             self.addMap()
-            
+        self.update()
+           
     def modalidadesDialog(self):
         self.modalidades=self.varManager.read(ListaModalidades(),DB_MODALIDADES_BASE)    
         dialog=ModalidadesDialog(self)
@@ -543,6 +667,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
+        self.update()
 
     def adicionarCaminho(self, aluno):
         self.mapWidget.clearPaths()
@@ -573,6 +698,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[]))))
         self.dropDownSeries.todos.setChecked(False)
         self.dropDownSeries.todos.setChecked(True)
+        self.addMarkerEscolas()
 
 
 def main(*args):
@@ -586,7 +712,8 @@ def main(*args):
             path=QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0] / Path(NAME)
             path.mkdir(parents=True, exist_ok=True)  
             CONF_PATH=str(path)
-            win.showMaximized()     
+            print(CONF_PATH)
+            win.showMaximized()
             currentExitCode=app.exec_()          
             if not app.restart:
                 break        

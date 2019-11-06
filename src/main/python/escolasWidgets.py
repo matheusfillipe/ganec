@@ -9,10 +9,16 @@ from data.config import *
 from threads import nogui, Overlay
 
 
-NEW_ESCOLA_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaForm.ui")
-EDITAR_ESCOLA, _ = uic.loadUiType("./src/main/python/ui/widgets/escolaEditar.ui")
-VAGAS_WIDGET, _ = uic.loadUiType("./src/main/python/ui/widgets/vagas.ui")
-
+try:
+    I=0
+    NEW_ESCOLA_WIDGET, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/escolaForm.ui")
+    EDITAR_ESCOLA, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/escolaEditar.ui")    
+    VAGAS_WIDGET, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/vagas.ui")
+except:
+    I=1
+    NEW_ESCOLA_WIDGET, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/escolaForm.ui")
+    EDITAR_ESCOLA, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/escolaEditar.ui")    
+    VAGAS_WIDGET, _ = uic.loadUiType(BASEPATHS[I]+"ui/widgets/vagas.ui")
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
@@ -101,8 +107,15 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         db=self.db
         self.series=[]
         self.widgets=[]
-        self.todasSeries=Escola.todasAsSeries()
-        self.comboBoxSerie.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
+        self.todasAsSeries=[]
+        #self.todasSeries=Escola.todasAsSeries()
+        for i in self.dbSeries.todosOsDados():
+            self.todasAsSeries.append(i['serie'])
+        self.todasAsSeries = list(set(self.todasAsSeries))
+        print(self.todasAsSeries)
+        for i in self.todasAsSeries:
+            self.comboBoxSerie.addItem(i)   
+        #self.comboBoxSerie.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
         self.buttonOk.clicked.connect(self.salvarDadosEscola)
         self.pushButtonAdicionarSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSerie.currentText()))
         self.numeroDeAlunos = []
@@ -165,7 +178,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
                 w = ""
             self.geolocate.emit(escola, True, cor, id)
         else:
-            self.geolocate.emit(escola, False, [], id)
+            self.geolocate.emit(escola, False, (1,0), 0)
 
         self.overlay.stoped.emit() #para o overlay quando a tarefa estiver pronta
       
@@ -193,12 +206,12 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
             messageDialog(self, "Atenção", "", "Todos os campos Obrigatórios devem estar preenchidos.")
 
 
-    def setEscola(self, escola):
+    '''def setEscola(self, escola):
         self.lineEditNome.setText(escola['nome'])         
         self.lineEditRua.setText(escola['endereco'].split(",")[0])
         self.lineEditNumero.setText(escola['endereco'].split(",")[1])
         self.lineEditBairro.setText(escola['endereco'].split(",")[2:])
-        [self.addTurma(turma) for turma in escola['series'].split(SEPARADOR_SERIES)]
+        [self.addTurma(turma) for turma in escola['series'].split(SEPARADOR_SERIES)]'''
 
     def clear(self):
         self.lineEditNome.setText("") 
@@ -232,9 +245,6 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         self.iface = iface
         self.setupUi(self)
 
-        #daqui para baixo modifiquei muitas coisas para tentar arrumar o de editar e excluiur as escolas.
-        #################################################################################################
-
         self.label : QtWidgets.QLabel
         self.lineEditNomeEscola : QtWidgets.QLineEdit
         self.listViewEscolas : QtWidgets.QListWidget
@@ -244,7 +254,7 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
 
         self.series = []
         self.widgets = []
-        self.todasSeries=Escola.todasAsSeries()
+        #self.todasSeries=Escola.todasAsSeries()
 
         self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])  
         self.dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
@@ -256,7 +266,15 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         self.pushButtonExcluir.clicked.connect(self.excluir)
         self.pushButtonEditar.clicked.connect(self.editar)
 
-        self.comboBoxSeries.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
+        self.todasAsSeries=[]
+        #self.todasSeries=Escola.todasAsSeries()
+        for i in self.dbSeries.todosOsDados():
+            self.todasAsSeries.append(i['serie'])
+        self.todasAsSeries = list(set(self.todasAsSeries))
+        print(self.todasAsSeries)
+        for i in self.todasAsSeries:
+            self.comboBoxSeries.addItem(i)   
+        #self.comboBoxSeries.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
 
         self.pushButtonAddSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSeries.currentText()))
 
@@ -321,7 +339,7 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
     def editar(self, a=None):
         self.overlay.started.emit()
         if (self.lineEditNomeEscola.text() != "") and (self.lineEditEndereco.text() != ""):
-            series = SEPARADOR_SERIES.join(self.series)
+            series = self.series
             self.series = []
             j=0
             for i in self.dbSeries.acharDado('idDaEscola', self.dbEscola.acharDado('nome', self.escolaEscolhida['nome'])[0]):

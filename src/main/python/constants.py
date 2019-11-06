@@ -112,8 +112,7 @@ CSV_ALUNOS=["nome",
 			 "nomeDoPai", 
 			 "telefone", 
 			 "endereco", 
-			 "serie",
-			 "escola"
+			 "serie"
              ]
 
 CSV_ESCOLAS=['nome', 'endereco', 'series']

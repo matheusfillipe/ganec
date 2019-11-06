@@ -69,7 +69,8 @@ ATRIBUTOS_STRING = {
 			 "Nome da Mãe", 
 			 "Nome do Pai", 
 			 "Telefone", 
-			 "Endereço"],
+			 "Endereço",
+			 "escola"],
 
 	'escola':["Buscar por:", 
 			  "Nome",

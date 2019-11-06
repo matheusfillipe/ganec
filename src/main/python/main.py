@@ -453,7 +453,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                         else:
                             eid=""
                     except:
-                        messageDialog("Escola " + str(dado["escola"])+" não possui a serie "+dado["serie"])
+                        messageDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]))
                         eid=""
 
                 dado['escola']=eid
@@ -487,10 +487,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             dbs= self.dbSeries
             for r in res:
                 r[CSV_ESCOLAS[1]]+=", "+Config.cidade()
-                id=db.salvarDado(r)
+                ide=db.salvarDado(r)
                 for s in r['series'].split(","): 
                  # dbs.salvarDado(dbs.toDict([id,s,0,0]))    
-                   Turma.update(s,r['nome'],{'vagas': 10})        
+                  # Turma.update(s,r['nome'],{'vagas': 10})        
+                    self.dbSeries.salvarDado({"idDaEscola":ide,
+                    'serie': s, 
+			        'vagas':100 , 
+			        'nDeAlunos': 0,
+                    })
 
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
@@ -499,15 +504,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()         
         self.calc.finished.connect(self.cleanProgress)       
-        self.loadingLabel.setText("Computando localização das Escolas")      
-        self.update()
+        self.loadingLabel.setText("Computando localização das Escolas")              
+       
 
 
     def cleanProgress(self):
         self.progressBar.setValue(0)
         self.loadingLabel.setText("")
         self.progressBar.hide()
-
+        self.update()
 
     def buscarAluno(self): 
 

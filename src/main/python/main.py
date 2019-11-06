@@ -297,7 +297,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                     n=series.index(serie)+1
                     nextSerieName = "FORMADO" if n > len(series)-1 else series[n] #proxima serie
                 self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
-
               
 
     def SretornaTurma(self):
@@ -439,7 +438,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             for dado in dados:
                 dado[CSV_ALUNOS[8]]+=", "+Config.cidade()
                 ids=self.dbEscola.acharDado("nome", dado["escola"])
-                if not dado['escola']:
+                if dado['escola']:
                     if len(ids)==0:
                         if yesNoDialog(message="A escola com nome: "+str(dado['escola']+" não está cadastrada, deseja cadastrar?")):
                             eid=self.dbEscola.salvarDado({"nome": dado['escola'], "series": dado["serie"]})
@@ -454,10 +453,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                             else:
                                 eid=""
                         except:
-                            messageDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]))
-                            eid=""
-
+                            if yesNoDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]+ " \nDeseja criar?")):
+                                eid=ids[-1]
+                                self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
+                            else:
+                                eid=""
                     dado['escola']=eid
+                else:
+                    dado['escola']=""
                 newDados.append(dado)
 
             db.salvarDados(newDados)   

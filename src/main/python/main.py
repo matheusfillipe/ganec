@@ -439,24 +439,25 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             for dado in dados:
                 dado[CSV_ALUNOS[8]]+=", "+Config.cidade()
                 ids=self.dbEscola.acharDado("nome", dado["escola"])
-                if len(ids)==0:
-                    if yesNoDialog(message="A escola com nome: "+str(dado['escola']+" não está cadastrada, deseja cadastrar?")):
-                        eid=self.dbEscola.salvarDado({"nome": dado['escola'], "series": dado["serie"]})
-                        self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
-                else:
-                    eid=ids[-1]
-                    try:
-                        serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", eid) if id in self.dbSeries.acharDadoExato("serie", dado['serie'])][-1]
-                        serie=self.dbSeries.getDado(serieId)
-                        if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]):
-                            self.dbSeries.update(serieId,{"nDeAlunos": serie["nDeAlunos"]+1})
-                        else:
+                if not dado['escola']:
+                    if len(ids)==0:
+                        if yesNoDialog(message="A escola com nome: "+str(dado['escola']+" não está cadastrada, deseja cadastrar?")):
+                            eid=self.dbEscola.salvarDado({"nome": dado['escola'], "series": dado["serie"]})
+                            self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
+                    else:
+                        eid=ids[-1]
+                        try:
+                            serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", eid) if id in self.dbSeries.acharDadoExato("serie", dado['serie'])][-1]
+                            serie=self.dbSeries.getDado(serieId)
+                            if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]):
+                                self.dbSeries.update(serieId,{"nDeAlunos": serie["nDeAlunos"]+1})
+                            else:
+                                eid=""
+                        except:
+                            messageDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]))
                             eid=""
-                    except:
-                        messageDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]))
-                        eid=""
 
-                dado['escola']=eid
+                    dado['escola']=eid
                 newDados.append(dado)
 
             db.salvarDados(newDados)   
@@ -469,7 +470,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.start()   
         self.loadingLabel.setText("Computando localização dos alunos")   
         self.calc.finished.connect(self.cleanProgress)         
-        self.update()
 
 
     def onCountChanged(self, value):
@@ -506,8 +506,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.finished.connect(self.cleanProgress)       
         self.loadingLabel.setText("Computando localização das Escolas")              
        
-
-
     def cleanProgress(self):
         self.progressBar.setValue(0)
         self.loadingLabel.setText("")
@@ -695,14 +693,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                     self.mapWidget.addPath(geo, self.dbEscola.getDado(file.stem)['nome'])
 
     def update(self):
-        self.dropDownEscolas.repopulate(Escola.todasAsEscolas())
-        self.dropDownEscolas.todos.setChecked(False)
-        self.dropDownEscolas.todos.setChecked(True)
+        self.dropDownEscolas.repopulate(Escola.todasAsEscolas())    
+        #self.dropDownEscolas.todos.setChecked(True)
         indices=self.dropDownEscolas.selectedIndexes()
         self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
-        for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[]))))
-        self.dropDownSeries.todos.setChecked(False)
-        self.dropDownSeries.todos.setChecked(True)
+        for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[]))))       
+        #self.dropDownSeries.todos.setChecked(True)
         self.addMarkerEscolas()
 
 

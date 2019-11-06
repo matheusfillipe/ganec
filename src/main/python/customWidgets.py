@@ -188,10 +188,10 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
             return False
         import codecs
         for encoding_type in types_of_encoding:
-      #      try:
+            try:
                 result=[]
                 with codecs.open(self.filepath, 'r',  encoding= encoding_type, errors ='replace') as fi:
-                    for i, r in enumerate(csv.reader(fi, delimiter=delimiter)):
+                    for i, r in enumerate(csv.reader(fi, delimiter=delimiter)):                        
                         if self.checkBox.isChecked() and first:
                             first=False
                             continue
@@ -200,14 +200,16 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
                         j=0
                         for field, dName in zip([f for index, f in enumerate(r) if index in columnIndexes], 
                                                                 [cb.currentText() for cb in self.cbList]):
+                            field=str(field)
                             if dName=="":
                                 messageDialog(title="Atenção!", message="Por favor atribua valores para cada coluna")
                                 return False
                             dado[dName]=u"%s"%field
                         result.append(dado)
+                break
+            except:
+                continue
 
-        #    except:
-         #       continue
         return result  
 
     def openFile(self):
@@ -217,33 +219,38 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
         self.tableWidget : QtWidgets.QTableWidget
         import codecs
         for encoding_type in types_of_encoding:    
-            with codecs.open(self.filepath, 'r', encoding= encoding_type, errors ='replace') as fi:
-                for i,r in enumerate(csv.reader(fi, delimiter=delimiter)):        
-                    for j,field in enumerate(r):
-                        if i==0:
-                            self.header.append(field)                        
-                            continue
-                        if i>=1:
-                            if i==1 and j==0:
-                                self.tableWidget.setRowCount(10)                      
-                                self.tableWidget.setColumnCount(len(self.header))
-                                self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectColumns)
-                                self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-                                #self.tableWidget.setHorizontalHeaderLabels((str(i+1) for i in range(len(self.header)) ))
-                                self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
-                                self.tableWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-                                self.tableWidget.horizontalHeader().setStretchLastSection(True)                          
+            try:
+                with codecs.open(self.filepath, 'r', encoding= encoding_type, errors ='replace') as fi:
+                    for i,r in enumerate(csv.reader(fi, delimiter=delimiter)):        
+                        for j,field in enumerate(r):
+                            field=str(field)
+                            if i==0:
+                                self.header.append(field)                        
+                                continue
+                            if i>=1:
+                                if i==1 and j==0:
+                                    self.tableWidget.setRowCount(10)                      
+                                    self.tableWidget.setColumnCount(len(self.header))
+                                    self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectColumns)
+                                    self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+                                    #self.tableWidget.setHorizontalHeaderLabels((str(i+1) for i in range(len(self.header)) ))
+                                    self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+                                    self.tableWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                                    self.tableWidget.horizontalHeader().setStretchLastSection(True)                          
 
-                                for k,f in enumerate(self.header):        
-                                    tableItem=QtWidgets.QTableWidgetItem(u"%s" % str(f))
-                                    tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
-                                    self.tableWidget.setItem(0,k,tableItem)
+                                    for k,f in enumerate(self.header):        
+                                        tableItem=QtWidgets.QTableWidgetItem(u"%s" % str(f))
+                                        tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
+                                        self.tableWidget.setItem(0,k,tableItem)
 
-                            tableItem=QtWidgets.QTableWidgetItem(u"%s" % str(u"%s"%field))
-                            tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
-                            self.tableWidget.setItem(i,j,tableItem)
-                    if i>10:
-                        break
+                                tableItem=QtWidgets.QTableWidgetItem(u"%s" % str(u"%s"%field))
+                                tableItem.setFlags(tableItem.flags() ^ Qt.ItemIsEditable)
+                                self.tableWidget.setItem(i,j,tableItem)
+                        if i>10:
+                            break
+                break
+            except:
+                continue
         self.stretchTable(self.tableWidget)
         return len(self.dataNamesList)<=len(self.header)
 

@@ -453,11 +453,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                             else:
                                 eid=""
                         except:
-                            if yesNoDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]+ " \nDeseja criar?")):
+                          #  if yesNoDialog(message="Escola " + str(dado["escola"])+" não possui a serie "+str(dado["serie"]+ " \nDeseja criar?")):
+                          #      eid=ids[-1]
+                          #      self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
+                          #  else:
                                 eid=ids[-1]
-                                self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
-                            else:
-                                eid=""
+                                
                     dado['escola']=eid
                 else:
                     dado['escola']=""

@@ -160,7 +160,7 @@ class calcularRotasThread(QtCore.QThread):
 
         for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
             self.countChanged.emit(int(j/len(listaDeAlunos)*100))
-            if aluno['escola']: #Se o aluno esta matriculado, ignora
+            if aluno['escola'] and aluno['serie'] in dbE.getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola o suporta, ignora
                 continue
             alunoFolder=alunosFolder / Path(str(aluno['id']))
             alunoFolder.mkdir(parents=True, exist_ok=True)
@@ -181,7 +181,7 @@ class calcularRotasThread(QtCore.QThread):
                 net.save_geojson(str(saveFile), COLORS[i if i < len(COLORS) else -1])
 
                 if not count:            
-                    id=dbSeries.acharDado(SERIES_ATTR[0], escola['id'])
+                    id=dbSeries.acharDadoExato(SERIES_ATTR[0], escola['id'])
                     if len(id)==0:
                         print("Erro! Escola não consta na tabela de séries, id: " + escola['id'])
                         continue

@@ -558,6 +558,7 @@ def pular(PULO):
     print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
     print("Series: ",series)
     #PULO=1 #muda para -1 para descer de séries
+    return
 
     for aluno in dbAlunos.todosOsDadosComId():
         ## Move o aluno para a próxima serie

@@ -271,8 +271,9 @@
      <addaction name="actionRetornar_uma_turma"/>
      <addaction name="actionRemover"/>
     </widget>
-    <addaction name="menuSelecionado"/>
+    <addaction name="actionRecalcular_Series"/>
     <addaction name="menuZonameanto"/>
+    <addaction name="menuSelecionado"/>
     <addaction name="menuDeslocar_Turmas"/>
    </widget>
    <addaction name="menuArquivo"/>
@@ -420,6 +421,11 @@
   <action name="actionRemover">
    <property name="text">
     <string>Remover</string>
+   </property>
+  </action>
+  <action name="actionRecalcular_Series">
+   <property name="text">
+    <string>Recalcular Series</string>
    </property>
   </action>
  </widget>

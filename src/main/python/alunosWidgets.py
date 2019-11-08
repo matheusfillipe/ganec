@@ -6,7 +6,6 @@ from sqlitedb import DB
 from data.aluno import *
 from data.escola import *
 from threads import nogui, Overlay
-from collections import OrderedDict
 
 try:
     I=0
@@ -61,7 +60,14 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
         self.aluno=aluno
         self.pushButton : QtWidgets.QPushButton
         self.pushButton.clicked.connect(lambda : editarAlunoDialog(parent, aluno['id']).exec_())
-        self.label.setText("Nome: " + aluno['nome'] + "\nMãe: " + aluno['nomeDaMae'] + "\nPai: " + aluno['nomeDoPai'] + "\nMatrícula: "+aluno['matricula'])
+        self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        strr = "Nome: " + aluno['nome'] + "\nMãe: " + aluno['nomeDaMae'] + "\nPai: " + aluno['nomeDoPai'] + "\nEscola: "
+        if aluno['escola']!="" and aluno['escola']!=None:
+            strr+=self.dbEscola.getDadoComId(aluno['escola'])['nome']
+        else:
+            strr+="--"
+        self.label.setText(strr) 
+        
 
     def mouseDoubleClickEvent(self, QMouseEvent):
         if QMouseEvent.button() == QtCore.Qt.LeftButton:

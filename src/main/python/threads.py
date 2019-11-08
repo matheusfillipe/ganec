@@ -65,6 +65,24 @@ def osmFilePath():
         return False
 
 
+def correctSeries():
+    dbAluno = DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+
+    for serie in dbSeries.todosOsDadosComId():
+        dbSeries.update(serie["id"], {"nDeAlunos": 0})
+    for aluno in dbAluno.todosOsDadosComId():
+        id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
+        if len(id)==0:
+            print("Erro! Escola não consta na tabela de séries, id: " + aluno['escola'])
+            continue
+        seriesDados=dbSeries.getDadosComId(id)
+        id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
+        if len(id)==0:
+            print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(aluno['escola']))
+            continue
+        serie=dbSeries.getDadoComId(id)
+        dbSeries.update(serie['id'], {"nDeAlunos":serie["nDeAlunos"]+1})
 
 
 class imageThread(QtCore.QThread):
@@ -192,7 +210,11 @@ class calcularRotasThread(QtCore.QThread):
                     if len(id)==0:
                         print("Erro! Escola não consta na tabela de séries, id: " + escola['id'])
                         continue
-                    id=id[0]            
+                    seriesDados=dbSeries.getDadosComId(id)
+                    id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
+                    if len(id)==0:
+                        print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(escola['id']))
+                        continue
                     serie=dbSeries.getDadoComId(id)
                     if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]): #salvar mais proxima no dicionário do aluno
                         count=True
@@ -204,6 +226,7 @@ class calcularRotasThread(QtCore.QThread):
             print("ADICIONANDO  Aluno: " + str(aluno["nome"]))
             print("Escola:   " + str(listaDeAlunos[j]['escola']))
             print("Serie:    " + str(aluno['serie']))
+
 
 
 class Runner(QtCore.QThread):    

@@ -202,12 +202,14 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
 
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
+    operatonFinished=pyqtSignal()
 
     def __init__(self, app):         
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.app : QtWidgets.QApplication
         self.app=app 
+        self.operatonFinished.connect(self.cleanProgress)
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         self.listaBusca=[]
         if RESET:
@@ -255,6 +257,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAvan_ar_uma_turma.triggered.connect(self.SacanvaTurma)
         self.actionRetornar_uma_turma.triggered.connect(self.SretornaTurma)
         self.actionRemover.triggered.connect(self.SremoverAlunos)
+        self.actionRecalcular_Series.triggered.connect(self.serieRecalc)
 
         self.progressBar.hide() 
 
@@ -272,10 +275,16 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
          for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
 
         self.update()
+    
 
+    def serieRecalc(self):
+        self.loadingLabel.setText("Recalculando número de alunos em cada série")   
+        self.serieRecalcThread()
 
-        self.addMarkerEscolas()
-
+    @nogui
+    def serieRecalcThread(self):
+        correctSeries()
+        self.operatonFinished.emit()
 
     def SremoverEscola(self):
             for aluno in self.listaBusca:
@@ -518,15 +527,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.update()
 
     def buscarAluno(self): 
-
-        self.addMarkerEscolas()
-
         self.idadeMinima = self.spinBoxIdadeMinima.value()
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
         busca = self.lineEditAluno.text()
-        self.listaParaExportar=self.listaBusca=[]
-        
+        self.listaParaExportar=self.listaBusca=[]        
         try:
             listaDeIdsBusca = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
             listaDeIdsSeries = sum([self.dbAluno.acharDadoExato('serie', serie) for serie in self.dropDownSeries.selectedTexts()], [])              
@@ -553,11 +558,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 j += 1
 
             if j==0:
-                self.listViewBusca.addItem("Nenhum aluno foi encontrado")
-                
+                self.listViewBusca.addItem("Nenhum aluno foi encontrado")             
+
         except Exception as e:
             print(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
             self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento")
+
+        self.update()
 
             
     def exportarBusca(self):
@@ -703,7 +710,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                     self.mapWidget.addPath(geo, self.dbEscola.getDado(file.stem)['nome'])
 
     def update(self):
-        self.dropDownEscolas.repopulate(Escola.todasAsEscolas())    
+        self.listViewBusca.clear()
+        escolas = []
+        for i in Escola.todasAsEscolas():
+            escolas.append(i)
+        escolas.append("Sem Escola")
+        self.dropDownEscolas.repopulate(escolas)    
         #self.dropDownEscolas.todos.setChecked(True)
         indices=self.dropDownEscolas.selectedIndexes()
         self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 

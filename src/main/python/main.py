@@ -523,7 +523,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.progressBar.hide()
         self.update()
 
-    def buscarAluno(self): 
+
+    def buscarAluno(self):     
         self.idadeMinima = self.spinBoxIdadeMinima.value()
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
@@ -544,12 +545,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             j = 0
             for i in resultado:
                 itemN = QtWidgets.QListWidgetItem() 
-                widget = alunoBusca(self, i)                   
+                widget = alunoBusca(self, i) 
                 itemN.setSizeHint(widget.sizeHint())  
                 self.listViewBusca.addItem(itemN)                    
                 self.listViewBusca.setItemWidget(itemN, widget)
                 d=deepcopy(i)  #remover coisas inúteis para csv
-                self.listaBusca.append(d)
+                self.listaBusca.append(deepcopy(d))
                 d.pop("id")  # ... ?                
                 self.listaParaExportar.append(d)
                 j += 1
@@ -561,9 +562,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             print(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
             self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento")
 
-        self.update()
-
-            
+        
+        
     def exportarBusca(self):
         if len(self.listaParaExportar) > 0:
             exportCsv(self.listaParaExportar)

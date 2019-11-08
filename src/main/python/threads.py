@@ -74,12 +74,12 @@ def correctSeries():
     for aluno in dbAluno.todosOsDadosComId():
         id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
         if len(id)==0:
-            print("Erro! Escola não consta na tabela de séries, id: " + aluno['escola'])
+            print("Erro! Escola não consta na tabela de séries, id: " + str(aluno['escola']))
             continue
         seriesDados=dbSeries.getDadosComId(id)
         id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
         if len(id)==0:
-            print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(aluno['escola']))
+            print("Erro! A série "+aluno['serie']+" não pertence a escola de id: "+str(aluno['escola']))
             continue
         serie=dbSeries.getDadoComId(str(id[-1]))
         dbSeries.update(serie['id'], {"nDeAlunos":str(int(serie["nDeAlunos"])+1)})

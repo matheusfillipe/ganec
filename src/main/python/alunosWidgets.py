@@ -208,7 +208,7 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
     geolocate=pyqtSignal(Aluno, bool, int, str, str)
     def __init__(self, iface, alunoId=None):
         QtWidgets.QWidget.__init__(self)       
-        self.alunoId=None
+        self.alunoId=alunoId
         self.setupUi(self)
         self.iface=iface
         self.alunoSet = {'serie':None}
@@ -286,13 +286,16 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         self.listViewAlunos : QtWidgets.QListWidget
 
         #if id is None:
-        self.nomeAntes = self.resultado[self.listViewAlunos.currentRow()]['nome']
+        if id is None:
+            self.nomeAntes = self.resultado[self.listViewAlunos.currentRow()]['nome']
+            id = self.db.acharDado('nome', self.nomeAntes)[-1]
 
         id = self.db.acharDado('nome', self.nomeAntes)[-1]
         #id = self.listViewAlunos.currentRow()
         #id = self.resultado[id]["id"]
         self.id=id
         aluno = self.iface.dbAluno.getDado(id)
+        self.dbAluno = self.iface.dbAluno
 
         '''else:
             aluno=self.iface.dbAluno.getDado(id)
@@ -385,7 +388,7 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             comboSeries=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
             self.comboBoxSerie.addItems(comboSeries)
 
-    @nogui
+    #@nogui
     def editar(self, a=None):
         self.iface.mapWidget.deleteMarker("alunoNovo") 
         self.overlay.started.emit()
@@ -406,7 +409,6 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             dados.append(self.comboBoxSerie.currentText())
             dados.append(self.comboBoxEscola.currentText())
             serieEditar = self.comboBoxSerie.currentText()
-            print(serieEditar)
             if self.comboBoxEscola.currentText() != "Sem escola":
                 escolaEditar = self.comboBoxEscola.currentText()
             else:
@@ -417,51 +419,87 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             id = self.id
 
             #print("SSerie " + serieEditar)
-            #print("EEscola "+ escolaEditar)
-
-            idDaSerie = -1
-            idDaSerieAnterior = -1
-            serieAnterior = ""
+            print("EEscola "+ escolaEditar)
 
             if escolaEditar != "" and escolaEditar != None:
-                for i in self.dbSeries.acharDadoExato('idDaEscola', self.dbEscola.acharDadoExato('nome', escolaEditar)[-1]):
-                    if self.dbSeries.getDadoComId(i)['serie'] == serieEditar:
-                        idDaSerie = i
-                        break
-            else:
-                idDaSerie = self.dbSeries.acharDadoExato('serie', self.comboBoxSerie.currentText())[-1]
-            if idDaSerie>-1:
-                serie = self.dbSeries.getDadoComId(idDaSerie)
-            
-            for i in self.dbSeries.acharDadoExato('idDaEscola', self.alunoAnterior['escola']):
-                if self.dbSeries.getDadoComId(i)['serie'] == self.alunoAnterior['serie']:
-                    idDaSerieAnterior = i
-                    break
-            if idDaSerieAnterior>-1:
-                serieAnterior = self.dbSeries.getDadoComId(idDaSerieAnterior)
-
-            if (serie['nDeAlunos'] + 1)<=serie['vagas'] and idDaSerie>-1:
-                dados[9] = serieEditar
-                if escolaEditar != "" and escolaEditar != None:
-                    dados[10] = self.dbEscola.acharDadoExato('nome', escolaEditar)[-1]
+                serieAnterior = self.alunoSet['serie']
+                if self.alunoSet['escola'] != "" and self.alunoSet['escola'] != None:
+                    escolaAnterior = self.dbEscola.getDadoComId(self.alunoSet['escola'])['nome']
                 else:
-                    dados[10] = ""
+                    escolaAnterior = ""
+
+                if (escolaAnterior == "" or escolaAnterior == None) and escolaEditar!=escolaAnterior:
+                    print("Sem escola anterior mais cadastrando em uma")
+                    idEscolaEditar     = self.dbEscola.acharDadoExato('nome',       escolaEditar)[-1]
+                    idDaSerieEditar1   = self.dbSeries.acharDadoExato('idDaEscola', idEscolaEditar)
+                    idDaSerieEditar2   = self.dbSeries.acharDadoExato('serie',      serieEditar)
+                    idDaSerieEditar    = [i for i in idDaSerieEditar1 if i in idDaSerieEditar2]
+
+                    escolaEditar_ =   self.dbEscola.getDadoComId(idEscolaEditar)
+                    serieEditar_ =    self.dbSeries.getDadoComId(idDaSerieEditar[-1])
+
+                    if int(serieEditar_['nDeAlunos'])+1<=serieEditar_['vagas']:
+                        self.dbSeries.update(serieEditar_['id'], {'nDeAlunos': (int(serieEditar_['nDeAlunos'])+1)})
+                        dados[9] = serieEditar_['serie']
+                        dados[10] = escolaEditar_['id']
+                        aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
+                        deuCerto = aluno_.editar(id)
+                    else:
+                            messageDialog(title="ERRO", message="Essa serie nessa escola já esta cheia")
+                else:
+                    print("Com escola anterior e cadastrando em uma nova")
+                    idEscolaAnterior   = self.dbEscola.acharDadoExato('nome',       escolaAnterior)[-1]
+                    idEscolaEditar     = self.dbEscola.acharDadoExato('nome',       escolaEditar)[-1]
+                    idDaSerieAnterior1 = self.dbSeries.acharDadoExato('idDaEscola', idEscolaAnterior)
+                    idDaSerieAnterior2 = self.dbSeries.acharDadoExato('serie',      serieAnterior)
+                    idDaSerieAnterior  = [i for i in idDaSerieAnterior1 if i in idDaSerieAnterior2]
+                    idDaSerieEditar1   = self.dbSeries.acharDadoExato('idDaEscola', idEscolaEditar)
+                    idDaSerieEditar2   = self.dbSeries.acharDadoExato('serie',      serieEditar)
+                    idDaSerieEditar    = [i for i in idDaSerieEditar1 if i in idDaSerieEditar2]
+
+                    escolaEditar_ =   self.dbEscola.getDadoComId(idEscolaEditar)
+                    escolaAnterior_ = self.dbEscola.getDadoComId(idEscolaAnterior)
+                    serieEditar_ =    self.dbSeries.getDadoComId(idDaSerieEditar[-1])
+                    serieAnterior_ =  self.dbSeries.getDadoComId(idDaSerieAnterior[-1])
+
+                    self.dbSeries.update(serieAnterior_['id'], {'nDeAlunos': (int(serieAnterior_['nDeAlunos'])-1)})
+                    if int(serieEditar_['nDeAlunos'])+1<=serieEditar_['vagas']:
+                        self.dbSeries.update(serieEditar_['id'], {'nDeAlunos': (int(serieEditar_['nDeAlunos'])+1)})
+                        dados[9] = serieEditar_['serie']
+                        dados[10] = escolaEditar_['id']
+                        aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
+                        deuCerto = aluno_.editar(id)
+                    else:
+                            messageDialog(title="ERRO", message="Essa serie nessa escola já esta cheia")
+            else:
+                print("sem escola cadastrando em uma")
+                idEscolaAnterior   = self.dbEscola.acharDadoExato('nome',       escolaAnterior)[-1]
+                idDaSerieAnterior1 = self.dbSeries.acharDadoExato('idDaEscola', idEscolaAnterior)
+                idDaSerieAnterior2 = self.dbSeries.acharDadoExato('serie',      serieAnterior)
+                idDaSerieAnterior  = [i for i in idDaSerieAnterior1 if i in idDaSerieAnterior2]
+
+                escolaAnterior_ = self.dbEscola.getDadoComId(idEscolaAnterior)
+                serieAnterior_ =  self.dbSeries.getDadoComId(idDaSerieAnterior[-1])
+
+                self.dbSeries.update(serieAnterior_['id'], {'nDeAlunos': (int(serieAnterior_['nDeAlunos'])-1)})
+                dados[9] = serieEditar_['serie']
+                dados[10] = ""
                 aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
                 deuCerto = aluno_.editar(id)
-                if serieAnterior != "":
-                    if (serieAnterior['serie'] != serie['serie'] or self.alunoAnterior['escola']!=dados[10]):
-                        self.dbSeries.update(idDaSerieAnterior, {'nDeAlunos':(serieAnterior['nDeAlunos']-1)})
-                        self.dbSeries.update(idDaSerie, {'nDeAlunos':(serie['nDeAlunos'] + 1)})
-                    else:
-                        print("Series e escolas iguais")
-                else:
-                    print("Sem escola")
-                self.geolocate.emit(aluno_, True, deuCerto, serieEditar, escolaEditar)
-            else:
-                 messageDialog(title="ERRO", message="Essa serie nessa escola já esta cheia") 
+                    
         else:
             self.geolocate.emit(Aluno(), False , 0, "", "")
+
         self.overlay.stoped.emit()
+        self.listViewAlunos.clear()
+        self.lineEditNome.setText("")
+        self.lineEditMatricula.setText("")
+        self.lineEditRG.setText("")
+        self.lineEditCPF.setText("")
+        self.lineEditMae.setText("")
+        self.lineEditPai.setText("")
+        self.lineEditTelefone.setText("")
+        self.lineEditEndereco.setText("")
 
     def onGeolocate(self, aluno_, preenchido, deuCerto, serieEditar, escolaEditar):
         if preenchido:
@@ -498,25 +536,22 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
 
 
     def excluir(self):
-        if self.lineEditRG.text() != "":
-            excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados desse aluno serão removidos!")
-            if excluir_ :
-                id=self.id
-                self.db.apagarDado(id)
-                self.listViewAlunos.clear() 
-                self.lineEditNome.setText("")
-                self.lineEditMatricula.setText("")
-                self.lineEditRG.setText("")
-                self.lineEditCPF.setText("")
-                self.lineEditMae.setText("")
-                self.lineEditPai.setText("")
-                self.lineEditTelefone.setText("")
-                self.lineEditEndereco.setText("")
-                self.labelId.setText("ID: ")
-            else :
-                messageDialog(self, "Não excluido", "", "Ok, o aluno nao foi excluido")
-        else: 
-            messageDialog(self, "ID do aluno", "", "Nenhum aluno com esse ID")
+        excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados desse aluno serão removidos!")
+        if excluir_ :
+            id=self.id
+            self.db.apagarDado(self.db.acharDadoExato('nome', self.nomeAntes)[-1])
+            self.listViewAlunos.clear() 
+            self.lineEditNome.setText("")
+            self.lineEditMatricula.setText("")
+            self.lineEditRG.setText("")
+            self.lineEditCPF.setText("")
+            self.lineEditMae.setText("")
+            self.lineEditPai.setText("")
+            self.lineEditTelefone.setText("")
+            self.lineEditEndereco.setText("")
+            self.labelId.setText("ID: ")
+        else :
+            messageDialog(self, "Não excluido", "", "Ok, o aluno nao foi excluido")
 
     def closeEvent(self, QCloseEvent):
         self.iface.mapWidget.deleteMarker("alunoNovo") 

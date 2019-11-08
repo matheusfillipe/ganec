@@ -7,7 +7,7 @@ from data.escola import *
 from data.aluno import *
 from data.config import *
 from threads import nogui, Overlay
-
+from collections import OrderedDict
 
 try:
     I=0
@@ -109,10 +109,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         self.widgets=[]
         self.todasAsSeries=[]
         #self.todasSeries=Escola.todasAsSeries()
-        for i in self.dbSeries.todosOsDados():
-            self.todasAsSeries.append(i['serie'])
-        self.todasAsSeries = list(set(self.todasAsSeries))
-        print(self.todasAsSeries)
+        self.todasAsSeries = list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.db.todosOsDados()],[])))
         for i in self.todasAsSeries:
             self.comboBoxSerie.addItem(i)   
         #self.comboBoxSerie.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
@@ -268,14 +265,9 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
 
         self.todasAsSeries=[]
         #self.todasSeries=Escola.todasAsSeries()
-        for i in self.dbSeries.todosOsDados():
-            self.todasAsSeries.append(i['serie'])
-        self.todasAsSeries = list(set(self.todasAsSeries))
-        print(self.todasAsSeries)
+        self.todasAsSeries=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
         for i in self.todasAsSeries:
             self.comboBoxSeries.addItem(i)   
-        #self.comboBoxSeries.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
-
         self.pushButtonAddSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSeries.currentText()))
 
         self.overlay = Overlay(self,"Geolocalizando...")  

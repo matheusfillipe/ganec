@@ -160,8 +160,15 @@ class calcularRotasThread(QtCore.QThread):
 
         for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
             self.countChanged.emit(int(j/len(listaDeAlunos)*100))
-            if aluno['escola'] and aluno['serie'] in dbE.getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola o suporta, ignora
+            try:
+                if aluno['escola'] and aluno['serie'] in dbE.getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola o suporta, ignora
+                    continue
+            except Exception as e:
+                import traceback     
+                print("Erro: "+str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+                print("ALUNO: "+str(aluno))
                 continue
+                
             alunoFolder=alunosFolder / Path(str(aluno['id']))
             alunoFolder.mkdir(parents=True, exist_ok=True)
             escolas=[escola for escola in listaDeEscolas if aluno[SERIE] in escola[ESCOLA_SERIES].split(",") ]  #lista de posíveis escolas destino

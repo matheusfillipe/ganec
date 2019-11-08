@@ -6,6 +6,7 @@ from sqlitedb import DB
 from data.aluno import *
 from data.escola import *
 from threads import nogui, Overlay
+from collections import OrderedDict
 
 try:
     I=0
@@ -92,13 +93,8 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
         self.lineEditComplemento : QtWidgets.QLineEdit
         self.lineEditMatricula : QtWidgets.QLineEdit
         #self.comboBoxEscolas : QtWidgets.QComboBox
-        self.todasAsSeries=[]
-        for i in self.dbSeries.todosOsDados():
-            self.todasAsSeries.append(i['serie'])
-        self.todasAsSeries = list(set(self.todasAsSeries))
-        print(self.todasAsSeries)
-        for i in self.todasAsSeries:
-            self.comboBoxSerie.addItem(i) 
+        comboSeries=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+        self.comboBoxSerie.addItems(comboSeries)
 
         self.pushButtonAdiconar.clicked.connect(self.salvarDados)
         self.toolButtonEditarAlunos.clicked.connect(self.editarAluno)
@@ -280,15 +276,21 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             row = row + 1
 
     def setarAluno(self, id=None):
-        if id is None:
-            self.listViewAlunos : QtWidgets.QListWidget
-            id = self.listViewAlunos.currentRow()
-            id = self.resultado[id]["id"]
-            self.id=id
-            aluno = self.iface.dbAluno.getDado(id)
-        else:
+        
+        self.listViewAlunos : QtWidgets.QListWidget
+
+        #if id is None:
+        self.nomeAntes = self.resultado[self.listViewAlunos.currentRow()]['nome']
+
+        id = self.db.acharDado('nome', self.nomeAntes)[-1]
+        #id = self.listViewAlunos.currentRow()
+        #id = self.resultado[id]["id"]
+        self.id=id
+        aluno = self.iface.dbAluno.getDado(id)
+
+        '''else:
             aluno=self.iface.dbAluno.getDado(id)
-            self.id=idDaEscola
+            self.id=idDaEscola'''
         
         self.alunoSet = aluno
 
@@ -310,7 +312,8 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         j = 0
         temEscola = False
         for i in self.todasAsEscolas:
-            if aluno['escola'] != None:
+            if aluno['escola'] != None and aluno['escola'] != "":
+                print("escola:" +str(aluno['escola']) + ".")
                 escola =  self.dbEscola.getDadoComId(aluno['escola'])['nome']
             else:
                 escola = None
@@ -373,9 +376,7 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             self.comboBoxSerie.setCurrentIndex(j)
         else:
             comboSeries = []
-            for i in self.dbSeries.todosOsDados():
-                comboSeries.append(i['serie'])
-            comboSeries = list(set(comboSeries))
+            comboSeries=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
             self.comboBoxSerie.addItems(comboSeries)
 
     @nogui
@@ -413,11 +414,16 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             #print("EEscola "+ escolaEditar)
 
             idDaSerie = -1
+            idDaSerieAnterior = -1
+            serieAnterior = ""
 
-            for i in self.dbSeries.acharDadoExato('idDaEscola', self.dbEscola.acharDadoExato('nome', escolaEditar)[-1]):
-                if self.dbSeries.getDadoComId(i)['serie'] == serieEditar:
-                    idDaSerie = i
-                    break
+            if escolaEditar != "" and escolaEditar != None:
+                for i in self.dbSeries.acharDadoExato('idDaEscola', self.dbEscola.acharDadoExato('nome', escolaEditar)[-1]):
+                    if self.dbSeries.getDadoComId(i)['serie'] == serieEditar:
+                        idDaSerie = i
+                        break
+            else:
+                idDaSerie = self.dbSeries.acharDadoExato('serie', self.comboBoxSerie.currentText())[-1]
             if idDaSerie>-1:
                 serie = self.dbSeries.getDadoComId(idDaSerie)
             
@@ -430,16 +436,20 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
 
             if (serie['nDeAlunos'] + 1)<=serie['vagas'] and idDaSerie>-1:
                 dados[9] = serieEditar
-                dados[10] = self.dbEscola.acharDadoExato('nome', escolaEditar)[-1]
+                if escolaEditar != "" and escolaEditar != None:
+                    dados[10] = self.dbEscola.acharDadoExato('nome', escolaEditar)[-1]
+                else:
+                    dados[10] = ""
                 aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
                 deuCerto = aluno_.editar(id)
-                '''print("serie: " + serie['serie'] + " Serie anterior: " + serieAnterior['serie'])
-                print("Escola: "+ str(dados[10]) + " Escola anterior: " + str(self.alunoAnterior['escola']))'''
-                if serieAnterior['serie'] != serie['serie'] or self.alunoAnterior['escola']!=dados[10]:
-                    self.dbSeries.update(idDaSerieAnterior, {'nDeAlunos':(serieAnterior['nDeAlunos']-1)})
-                    self.dbSeries.update(idDaSerie, {'nDeAlunos':(serie['nDeAlunos'] + 1)})
+                if serieAnterior != "":
+                    if (serieAnterior['serie'] != serie['serie'] or self.alunoAnterior['escola']!=dados[10]):
+                        self.dbSeries.update(idDaSerieAnterior, {'nDeAlunos':(serieAnterior['nDeAlunos']-1)})
+                        self.dbSeries.update(idDaSerie, {'nDeAlunos':(serie['nDeAlunos'] + 1)})
+                    else:
+                        print("Series e escolas iguais")
                 else:
-                    print("Series e escolas iguais")
+                    print("Sem escola")
                 self.geolocate.emit(aluno_, True, deuCerto, serieEditar, escolaEditar)
             else:
                  messageDialog(title="ERRO", message="Essa serie nessa escola já esta cheia") 

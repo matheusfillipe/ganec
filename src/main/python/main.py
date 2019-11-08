@@ -278,10 +278,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
 
     def SremoverEscola(self):
-        for aluno in self.listaBusca:
-            if aluno['escola']:
-                self.dbAluno.update(aluno['id'], {"escola": ""})
-            
+            for aluno in self.listaBusca:
+                if aluno['escola'] != "" or aluno['escola'] != None:
+                    self.dbAluno.update(self.dbAluno.acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
+            self.update()
+                
     def SacanvaTurma(self):
         for aluno in self.listaBusca:
             if aluno['escola']:
@@ -318,7 +319,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     
     def SremoverAlunos(self):
         for aluno in self.listaBusca:
-            self.dbEscola.apagarDado(aluno['id'])
+            self.dbAluno.apagarDado(aluno['id'])
 
     
     def atualizarAno(self):
@@ -528,8 +529,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         
         try:
             listaDeIdsBusca = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
-            listaDeIdsSeries = sum([self.dbAluno.acharDadoExato('serie', serie) for serie in self.dropDownSeries.selectedTexts()], [])     
-            listaDeIdsIdade =[i for i in self.dbAluno.acharMaiorQue('idade', self.spinBoxIdadeMinima.value()) if i in self.dbAluno.acharMenorQue('idade', self.spinBoxIdadeMaxima.value())]
+            listaDeIdsSeries = sum([self.dbAluno.acharDadoExato('serie', serie) for serie in self.dropDownSeries.selectedTexts()], [])              
+            listaDeIdsIdade = []
+            for i in range(self.spinBoxIdadeMinima.value(), self.spinBoxIdadeMaxima.value()+1):
+                for j in self.dbAluno.acharDado('idade', i):
+                    listaDeIdsIdade.append(j)
             ids=[i for i in listaDeIdsBusca if i in listaDeIdsSeries and i in listaDeIdsIdade]
             resultado=self.dbAluno.getDadosComId(ids)                
             self.buscaResultado=resultado
@@ -621,12 +625,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             title=aluno['nome']
             ))
         else:
-            print(n)
+            #print(n)
             idEscola = self.dbEscola.acharDado('nome', n)
-            print(idEscola)
-            print(self.dbEscola.getDadoComId(idEscola[0]))
-            v = Escola(lat = lat, long = long, id=idEscola[0])
-            v.salvarCoordenada()
+            #print(idEscola)
+            #print(self.dbEscola.getDadoComId(idEscola[0]))
+            if(len(idEscola)>0):
+                v = Escola(lat = lat, long = long, id=idEscola[0])
+                v.salvarCoordenada()
+             
    
     def newAlunoDialog(self): 
         self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 

@@ -81,8 +81,8 @@ def correctSeries():
         if len(id)==0:
             print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(aluno['escola']))
             continue
-        serie=dbSeries.getDadoComId(id)
-        dbSeries.update(serie['id'], {"nDeAlunos":serie["nDeAlunos"]+1})
+        serie=dbSeries.getDadoComId(str(id[-1]))
+        dbSeries.update(serie['id'], {"nDeAlunos":str(int(serie["nDeAlunos"])+1)})
 
 
 class imageThread(QtCore.QThread):
@@ -194,8 +194,7 @@ class calcularRotasThread(QtCore.QThread):
             res=[] # resultado [[caminho, distancia], ..]
             for i, escola in enumerate(escolas):
                 ptB=[escola['long'], escola['lat']]
-                parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno: "+str(aluno['id'])), target=net.addNode(ptB, "escola: "+str(escola['id'])))
-                serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escola['id']) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]   
+                parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno: "+str(aluno['id'])), target=net.addNode(ptB, "escola: "+str(escola['id'])))                
                 res.append([parts, dist, i])         
             res.sort(key=lambda d: d[1])
             count=False
@@ -206,6 +205,26 @@ class calcularRotasThread(QtCore.QThread):
                 net.save_geojson(str(saveFile), COLORS[i if i < len(COLORS) else -1])
 
                 if not count:            
+                    try: #tentar remover a vaga
+                        if aluno['escola'] and not aluno['serie'] in dbE.getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola não o suporta mais
+                            #remover aluno da série antiga:
+                            id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
+                            if len(id)==0:
+                                print("Erro! Escola não consta na tabela de séries, id: " + aluno['escola'])   
+                            else:                             
+                                seriesDados=dbSeries.getDadosComId(id)
+                                id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
+                                if len(id)==0:
+                                    print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(aluno['escola']))                                
+                                else:
+                                    serie=dbSeries.getDadoComId(str(id[-1]))
+                                    dbSeries.update(serie['id'], {"nDeAlunos":serie["nDeAlunos"]-1})
+
+                    except Exception as e:
+                        import traceback     
+                        print("Erro: "+str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
+                        print("ALUNO: "+str(aluno))        
+ 
                     id=dbSeries.acharDadoExato(SERIES_ATTR[0], escola['id'])
                     if len(id)==0:
                         print("Erro! Escola não consta na tabela de séries, id: " + escola['id'])
@@ -215,11 +234,11 @@ class calcularRotasThread(QtCore.QThread):
                     if len(id)==0:
                         print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(escola['id']))
                         continue
-                    serie=dbSeries.getDadoComId(id)
+                    serie=dbSeries.getDadoComId(str(id[-1]))
                     if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]): #salvar mais proxima no dicionário do aluno
                         count=True
-                        serie[SERIES_ATTR[3]]=int(serie[SERIES_ATTR[3]])+1
-                        dbSeries.update(id, serie)
+                        serie[SERIES_ATTR[3]]=str(int(serie[SERIES_ATTR[3]])+1)
+                        dbSeries.update(id[-1], serie)
                         listaDeAlunos[j]['escola']=escola['id']
                         dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})
 

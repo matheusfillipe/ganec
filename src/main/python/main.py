@@ -157,7 +157,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             dbS.salvarDados(dbSR.todosOsDados())
             self.db.salvarDados(dbSettings.todosOsDados())
 
-            os.rmdir(str(tmpPath()))
+            shutil.rmtree(str(tmpPath()), ignore_errors=True)
 
 
     def restore(self):
@@ -171,7 +171,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             except:
                 pass
             try:
-                os.rmdir(str(confPath()))
+                shutil.rmtree(str(confPath()), ignore_errors=True)
             except:
                 pass
 
@@ -179,10 +179,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             z.extractall(QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0])
             messageDialog(self, message="O programa irá reiniciar")
             self.close()
-            self.iface.restartProgram()                
-
-                 
-
+            self.iface.restartProgram()
         
     def reset(self):        
         reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 

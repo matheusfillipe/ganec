@@ -56,13 +56,25 @@ try:
     I=0
     MAIN_WINDOW, _ = uic.loadUiType(BASEPATHS[I]+"ui/mainWindow.ui")
     SETTINGS_DIALOG,_ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/settingsDialog.ui")
+    SOBRE,_= uic.loadUiType(BASEPATHS[I]+"ui/dialogs/sobre.ui")
+
 except:
     I=1
     MAIN_WINDOW, _ = uic.loadUiType(BASEPATHS[I]+"ui/mainWindow.ui")
     SETTINGS_DIALOG,_ = uic.loadUiType(BASEPATHS[I]+"ui/dialogs/settingsDialog.ui")
-   
+    SOBRE,_= uic.loadUiType(BASEPATHS[I]+"ui/dialogs/sobre.ui")
+  
 
 RESET=0   
+
+class sobreDialog(QtWidgets.QDialog, SOBRE):
+    def __init__(self,iface):
+        QtWidgets.QWidget.__init__(self)
+        SETTINGS_DIALOG.__init__(self)
+        iface : MainWindow
+        self.iface=iface 
+        self.setupUi(self)
+
 
 class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
     def __init__(self,iface):
@@ -258,7 +270,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionRetornar_uma_turma.triggered.connect(self.SretornaTurma)
         self.actionRemover.triggered.connect(self.SremoverAlunos)
         self.actionRecalcular_Series.triggered.connect(self.serieRecalc)
-
+        self.actionAjuda.triggered.connect(self.ajuda)
+        self.actionSobre.triggered.connect(self.sobre)
         self.progressBar.hide() 
 
         self.escolaDropDownLayout : QtWidgets.QHBoxLayout
@@ -276,6 +289,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
         self.update()
     
+    def ajuda(self):
+        import webbrowser
+        webbrowser.open('https://github.com/matheusfillipe/ganec/wiki/Como-Usar')
+
+    def sobre(self):
+        sobreDialog(self).exec_()
 
     def serieRecalc(self):
         self.loadingLabel.setText("Recalculando número de alunos em cada série")   

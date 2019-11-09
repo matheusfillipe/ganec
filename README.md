@@ -2,6 +2,8 @@
 
 Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefeitura de Carmo do Paranaíba, com o intuido de auxiliar na gestão e logística de distribuição dos alunos em função de seus respectivos endereços domiciliares, modalidade escolar e localização das escolas.
 
+* [Como usar](https://github.com/matheusfillipe/ganec/wiki/Como-Usar)
+
 <br>
 <br>
 
@@ -16,7 +18,7 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 |  Implementação da interface utilizando a API do Google Maps para a realização da geolocalização dos dados cadastrados |  |  | **X**  |  |  |
 |Desenvolvimento do algoritmo de distribuição dos alunos, gerando mapas de rotas e tabelas de distribuição em função das escolas destino ou modalidades e do aluno.  |  |  |  | **X** |  |
 |  Função para a extração de dados de matrículas de alunos online e de diferentes formatos de mapa |  |  |  | **X** |  |
-|Implementação da função de filtragem para gerar diversas tabelas em função dos dados cadastrados de alunos e para realização de buscas.  |  |  |  |X  |  |
+|Implementação da função de filtragem para gerar diversas tabelas em função dos dados cadastrados de alunos e para realização de buscas.  |  |  |  |**X**  |  |
 | Sistema de Login (Com suporte para multiplos usuários online, caso seja possível) |  |  |  |  | X |
 | Correções |  |  |  |  |  X|
 | Conclusão |  |  |  |  |  X|
@@ -41,7 +43,7 @@ Protótipo de Layout da janela principal:
 
  ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/1.png)
  ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/2.png)
- ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/DOCS/main.png)
+ ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/DOCS/main.png)
 
 
 <br><br>

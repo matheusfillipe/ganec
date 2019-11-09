@@ -18,7 +18,7 @@ Explicar o que é um csv e como abrir no excel e como gerar
 [//]: # (Isso é um comentário e abaixo é como adicionar uma imagem que esteja na pasta DOCS)
 [//]: # ( Como usar markdown: https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
 
-![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/DOCS/main.png)
+![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/DOCS/main.png)
  
 
 

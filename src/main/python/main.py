@@ -179,7 +179,10 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             z.extractall(QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0])
             messageDialog(self, message="O programa irá reiniciar")
             self.close()
-            self.iface.restartProgram()
+            self.iface.restartProgram()                
+
+                 
+
         
     def reset(self):        
         reply = yesNoDialog(iface=self, message="Tem certeza que deseja remover todos os dados cadastrados?", 
@@ -238,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.spinBoxIdadeMaxima.setValue(50)
         self.spinBoxIdadeMinima.setValue(0)
         self.comboBoxBusca.addItems(ATRIBUTOS['aluno'][:-2])        
-        self.lineEditAluno.textChanged.connect(self.buscarAluno)
+        #self.lineEditAluno.textChanged.connect(self.buscarAluno) #aqui faz pesquisar os alunos sempre que digitar. 
         self.scrollAreaTeste : QtWidgets.QScrollArea
         self.addMap()
         self.dialog=[]
@@ -523,24 +526,56 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.progressBar.hide()
         self.update()
 
-
-    def buscarAluno(self):     
+    def buscarAluno(self): 
         self.idadeMinima = self.spinBoxIdadeMinima.value()
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
         busca = self.lineEditAluno.text()
         self.listaParaExportar=self.listaBusca=[]        
         try:
-            listaDeIdsBusca = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
-            listaDeIdsSeries = sum([self.dbAluno.acharDadoExato('serie', serie) for serie in self.dropDownSeries.selectedTexts()], [])              
-            listaDeIdsIdade = []
-            for i in range(self.spinBoxIdadeMinima.value(), self.spinBoxIdadeMaxima.value()+1):
-                for j in self.dbAluno.acharDado('idade', i):
-                    listaDeIdsIdade.append(j)
-            ids=[i for i in listaDeIdsBusca if i in listaDeIdsSeries and i in listaDeIdsIdade]
+
+            listaDeIdsEscola = []
+            ids = []
+            semEscola = False
+
+            print(self.dropDownSeries.selectedTexts())
+            print(self.dropDownEscolas.selectedTexts())
+
+            series = []
+            for i in self.dropDownSeries.selectedTexts():
+                series.append(str(i))
+            
+            escolas = []
+            for i in self.dropDownEscolas.selectedTexts():
+                if i == "Sem Escola":
+                    semEscola = True
+                else:
+                    semEscola = False
+                escolas.append(str(i))
+            
+            escolas = list(set(escolas))
+            series  = list(set(series ))
+            
+            listaDeIdsNome = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
+            for i in listaDeIdsNome:
+                aluno = self.dbAluno.getDadoComId(i)
+                if aluno['escola'] != "" and aluno['escola'] != None:
+                    for j in escolas:
+                        if self.dbEscola.getDadoComId(aluno['escola'])['nome'] == j:
+                            for k in series:
+                                if aluno['serie'] == k:
+                                    for l in range(self.spinBoxIdadeMinima.value(), self.spinBoxIdadeMaxima.value()+1):
+                                        if aluno['idade'] == l:
+                                            ids.append(i)
+                                            break
+                                    break
+                            break
+                elif semEscola:
+                    ids.append(i)
+
             resultado=self.dbAluno.getDadosComId(ids)                
             self.buscaResultado=resultado
-            self.resultado=resultado            
+            self.resultado=resultado
 
             j = 0
             for i in resultado:
@@ -561,9 +596,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         except Exception as e:
             print(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
             self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento")
-
         
-        
+        #self.update()
+            
     def exportarBusca(self):
         if len(self.listaParaExportar) > 0:
             exportCsv(self.listaParaExportar)
@@ -712,13 +747,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         for i in Escola.todasAsEscolas():
             escolas.append(i)
         escolas.append("Sem Escola")
-        self.dropDownEscolas.repopulate(escolas)    
-        #self.dropDownEscolas.todos.setChecked(True)
-        indices=self.dropDownEscolas.selectedIndexes()
-        self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
-        for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[]))))       
-        #self.dropDownSeries.todos.setChecked(True)
+        self.dropDownEscolas.repopulate(escolas)
+        #indices=self.dropDownEscolas.selectedIndexes()
+        series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+        self.dropDownSeries.repopulate(series)
         self.addMarkerEscolas()
+        self.dropDownEscolas.todos.setChecked(True)
+        self.dropDownSeries.todos.setChecked(True)        
 
 
 def main(*args):
@@ -734,7 +769,7 @@ def main(*args):
             CONF_PATH=str(path)
             print(CONF_PATH)
             win.showMaximized()
-            currentExitCode=app.exec_()          
+            currentExitCode=app.exec_()
             if not app.restart:
                 break        
         except Exception as e:

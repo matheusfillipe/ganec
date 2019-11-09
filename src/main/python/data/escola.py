@@ -43,17 +43,26 @@ class Escola(persistent.Persistent):
         return coordenadas, id
     
     def editar(self, id):
-        coordenadas = self.latLongEscola()
+        coordenadas = True
+        if self.DB.getDadoComId(id)['endereco'] != self.endereco:
+            coordenadas = self.latLongEscola()
         if coordenadas != False:
-            self.lat = coordenadas[0]
-            self.long = coordenadas[1]
+            if coordenadas != True:
+                print("endereço mudou")
+                self.lat = coordenadas[0]
+                self.long = coordenadas[1]
+                print(self.lat)
+                print(self.long)
+            else:
+                print("endereço não mudou")
+                self.lat = self.DB.getDadoComId(id)['lat']
+                self.long = self.DB.getDadoComId(id)['long']
             dicionarioDeDados = self.montarDicionario()
             it=self.DB.update(id, dicionarioDeDados)
             return True, id
         else:
             self.lat = 0
             self.long = 0
-            self.escola = 0
             dicionarioDeDados = self.montarDicionario()
             id=self.DB.update(id, dicionarioDeDados)
             return False, id

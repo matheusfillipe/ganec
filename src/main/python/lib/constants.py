@@ -1,6 +1,6 @@
 #PROJETO LEVEL
 
-NAME="GANEC"
+NAME="ZONEA"
 UI_FILES_PATH="./src/main/python/ui/"
 CONF_PATH=''
 BASEPATHS=["./src/main/resources/base/", "./"]

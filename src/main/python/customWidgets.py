@@ -98,6 +98,7 @@ class dropDown(QtWidgets.QWidget):
             checkBox.stateChanged.connect(lambda: self.selected.emit(self.selectedIndexes()))
             checkableAction = QtWidgets.QWidgetAction(self.toolmenu)
             checkableAction.setDefaultWidget(checkBox)
+            checkableAction.setChecked(True)
             self.toolmenu.addAction(checkableAction)
             self.checks.append(checkBox)
             self.actions.append(checkableAction)

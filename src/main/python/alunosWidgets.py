@@ -59,7 +59,7 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
         self.parent=parent
         self.aluno=aluno
         self.pushButton : QtWidgets.QPushButton
-        self.pushButton.clicked.connect(lambda : editarAlunoDialog(parent, aluno['id']).exec_())
+        self.pushButton.clicked.connect(self.editar)
         self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         strr = "Nome: " + aluno['nome'] + "\nMãe: " + aluno['nomeDaMae'] + "\nPai: " + aluno['nomeDoPai'] + "\nEscola: "
         if aluno['escola']!="" and aluno['escola']!=None:
@@ -67,7 +67,10 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
         else:
             strr+="--"
         self.label.setText(strr) 
-        
+
+    def editar(self):
+        diag=editarAlunoDialog(self.parent, self.aluno['id'])
+        diag.exec_()        
 
     def mouseDoubleClickEvent(self, QMouseEvent):
         if QMouseEvent.button() == QtCore.Qt.LeftButton:
@@ -288,19 +291,15 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         #if id is None:
         if id is None:
             self.nomeAntes = self.resultado[self.listViewAlunos.currentRow()]['nome']
-            id = self.db.acharDado('nome', self.nomeAntes)[-1]
-
-        id = self.db.acharDado('nome', self.nomeAntes)[-1]
+            id = self.db.acharDadoExato('nome', self.nomeAntes)[-1]
+        else:
+            self.nomeAntes = ""
+#            id = self.db.acharDado('nome', self.nomeAntes)[-1]
         #id = self.listViewAlunos.currentRow()
         #id = self.resultado[id]["id"]
         self.id=id
         aluno = self.iface.dbAluno.getDado(id)
-        self.dbAluno = self.iface.dbAluno
-
-        '''else:
-            aluno=self.iface.dbAluno.getDado(id)
-            self.id=idDaEscola'''
-        
+        self.dbAluno = self.iface.dbAluno       
         self.alunoSet = aluno
 
         self.lineEditNome.setText(aluno['nome'])
@@ -459,10 +458,15 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
 
                     escolaEditar_ =   self.dbEscola.getDadoComId(idEscolaEditar)
                     escolaAnterior_ = self.dbEscola.getDadoComId(idEscolaAnterior)
-                    serieEditar_ =    self.dbSeries.getDadoComId(idDaSerieEditar[-1])
-                    serieAnterior_ =  self.dbSeries.getDadoComId(idDaSerieAnterior[-1])
 
+                    serieAnterior_ =  self.dbSeries.getDadoComId(idDaSerieAnterior[-1])
                     self.dbSeries.update(serieAnterior_['id'], {'nDeAlunos': (int(serieAnterior_['nDeAlunos'])-1)})
+
+                    serieEditar_ =    self.dbSeries.getDadoComId(idDaSerieEditar[-1])
+
+                    print(serieEditar_)
+                    print(serieAnterior_)
+
                     if int(serieEditar_['nDeAlunos'])+1<=serieEditar_['vagas']:
                         self.dbSeries.update(serieEditar_['id'], {'nDeAlunos': (int(serieEditar_['nDeAlunos'])+1)})
                         dados[9] = serieEditar_['serie']
@@ -472,17 +476,23 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
                     else:
                             messageDialog(title="ERRO", message="Essa serie nessa escola já esta cheia")
             else:
-                print("sem escola cadastrando em uma")
-                idEscolaAnterior   = self.dbEscola.acharDadoExato('nome',       escolaAnterior)[-1]
-                idDaSerieAnterior1 = self.dbSeries.acharDadoExato('idDaEscola', idEscolaAnterior)
-                idDaSerieAnterior2 = self.dbSeries.acharDadoExato('serie',      serieAnterior)
-                idDaSerieAnterior  = [i for i in idDaSerieAnterior1 if i in idDaSerieAnterior2]
+                print("com escola cadastrando em nenhuma")
+                if self.alunoSet['escola'] != "" and self.alunoSet['escola']:
+                    escolaAnterior = self.dbEscola.getDadoComId(self.alunoSet['escola'])['nome']
+                    serieAnterior = self.alunoSet['serie']
+                    idEscolaAnterior   = self.dbEscola.acharDadoExato('nome',       escolaAnterior)[-1]
+                    idDaSerieAnterior1 = self.dbSeries.acharDadoExato('idDaEscola', idEscolaAnterior)
+                    idDaSerieAnterior2 = self.dbSeries.acharDadoExato('serie',      serieAnterior)
+                    idDaSerieAnterior  = [i for i in idDaSerieAnterior1 if i in idDaSerieAnterior2]
 
-                escolaAnterior_ = self.dbEscola.getDadoComId(idEscolaAnterior)
-                serieAnterior_ =  self.dbSeries.getDadoComId(idDaSerieAnterior[-1])
+                    escolaAnterior_ = self.dbEscola.getDadoComId(idEscolaAnterior)
 
-                self.dbSeries.update(serieAnterior_['id'], {'nDeAlunos': (int(serieAnterior_['nDeAlunos'])-1)})
-                dados[9] = serieEditar_['serie']
+                    serieAnterior_ =  self.dbSeries.getDadoComId(idDaSerieAnterior[-1])
+                    self.dbSeries.update(serieAnterior_['id'], {'nDeAlunos': (int(serieAnterior_['nDeAlunos'])-1)})
+
+                print(serieEditar)
+
+                dados[9] = serieEditar
                 dados[10] = ""
                 aluno_ = Aluno(dados[0],dados[1],dados[2],dados[3],dados[4],dados[5],dados[6],dados[7],dados[8],dados[9], dados[10], id=id)
                 deuCerto = aluno_.editar(id)

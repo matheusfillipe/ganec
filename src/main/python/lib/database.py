@@ -382,7 +382,7 @@ class VariableManager():
         '''
         arguments: Config folder path
         '''
-        dbFolder=Path(cfgDir+"/GANEC")
+        dbFolder=Path(cfgDir+"/ZONEA")
         db=DbHandler(dbFolder)
         self.db=db
 

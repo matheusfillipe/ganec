@@ -279,12 +279,12 @@ def exportCsv(listaDeAlunos):
     listaDeAlunos: lista de Dicionários de alunos
     filename: Caminho do arquivo csv a salvar
     '''
-    filename=QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")
+    filename=QFileDialog.getSaveFileName(filter="Arquivo CSV (*.csv)")[0]
     #filename=["/home/matheus/test.csv"]
-    if not filename[0]: return
-
+    if not filename: return
+    filename = filename if filename.endswith(".csv") else filename+".csv"
     header=list(listaDeAlunos[0].keys())    
-    with open(filename[0], "w") as fo:
+    with open(filename, "w") as fo:
         writer = csv.writer(fo, delimiter=CSV_SEPARATOR, dialect='excel')
         if type(header)==list:
             writer.writerow(header)

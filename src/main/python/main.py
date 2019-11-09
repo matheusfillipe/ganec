@@ -328,7 +328,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     
     def SremoverAlunos(self):
         for aluno in self.listaBusca:
-            self.dbAluno.apagarDado(aluno['id'])
+            if "id" in aluno:
+                self.dbAluno.apagarDado(aluno['id'])
 
     
     def atualizarAno(self):
@@ -531,7 +532,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
         busca = self.lineEditAluno.text()
-        self.listaParaExportar=self.listaBusca=[]        
+        self.listaParaExportar=[]
+        self.listaBusca=[]        
         try:
 
             listaDeIdsEscola = []
@@ -585,8 +587,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 self.listViewBusca.addItem(itemN)                    
                 self.listViewBusca.setItemWidget(itemN, widget)
                 d=deepcopy(i)  #remover coisas inúteis para csv
-                self.listaBusca.append(deepcopy(d))
-                d.pop("id")  # ... ?                
+                self.listaBusca.append(deepcopy(i))
+                d.pop("id")            
+                d['escola']=self.dbEscola.getDado(d['escola'])['nome']
                 self.listaParaExportar.append(d)
                 j += 1
 

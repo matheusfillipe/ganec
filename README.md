@@ -39,10 +39,11 @@ https://www.openstreetmap.org/export#map=14/-19.0032/-46.2906
 
 Protótipo de Layout da janela principal:
 
- ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/assets/1.png)
- ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/assets/2.png)
+ ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/1.png)
+ ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/2.png)
+ ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/DOCS/main.png)
 
- 
+
 <br><br>
 
 

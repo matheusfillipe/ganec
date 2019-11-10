@@ -2,7 +2,7 @@
     "app_name": "ZONEA",
     "author": "Matheus, Felipe, Lucas",
     "main_module": "src/main/python/main.py",
-    "version": "0.9.3",
+    "version": "0.9.4",    
     "hidden_imports":  ["data", "pyproj.datadir"]
     
 }

@@ -273,6 +273,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAjuda.triggered.connect(self.ajuda)
         self.actionSobre.triggered.connect(self.sobre)
         self.actionDist_ncia.triggered.connect(self.distTool)
+        self.actionAlunos_n_o_localizados.triggered.connect(self.alunosNLocalizados)
+        self.actionMostrar_Escolas.triggered.connect(self.hideEscolas)
+        self.actionMostar_Alunos.triggered.connect(self.showAlunos)
         
         self.progressBar.hide() 
 
@@ -297,6 +300,39 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def sobre(self):
         sobreDialog(self).exec_()
+
+    def showEscolas(self):
+        self.actionMostrar_Escolas.triggered.disconnect()
+        self.actionMostrar_Escolas.triggered.connect(self.hideEscolas)
+        self.actionMostrar_Escolas.setText("Esconder Escolas")
+        self.addMarkerEscolas()       
+
+
+    def hideEscolas(self):
+        self.actionMostrar_Escolas.triggered.disconnect()
+        self.actionMostrar_Escolas.triggered.connect(self.showEscolas)     
+        self.actionMostrar_Escolas.setText("Mostrar Escolas")
+        for i in self.dbEscola.todosOsDados():
+            self.mapWidget.deleteMarker(i['nome']) 
+
+    def showAlunos(self):
+        self.actionMostar_Alunos.triggered.disconnect()
+        self.actionMostar_Alunos.triggered.connect(self.hideAlunos)
+        self.actionMostar_Alunos.setText("Esconder Alunos")
+        for i in self.dbAluno.todosOsDados():
+            self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+            draggable=True,
+            title=i['nome']
+            ))
+
+    def hideAlunos(self):
+        self.actionMostar_Alunos.triggered.disconnect()
+        self.actionMostar_Alunos.triggered.connect(self.showAlunos) 
+        self.actionMostrar_Alunos.setText("Mostrar Alunos")
+        for i in self.dbAluno.todosOsDados():
+            self.mapWidget.deleteMarker(i['nome']) 
+
 
     def distTool(self):
         self.listViewBusca : QtWidgets.QListWidget
@@ -588,15 +624,49 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.progressBar.hide()
         self.update()
 
+    def alunosNLocalizados(self):
+        self.listViewBusca.clear()
+        busca = self.lineEditAluno.text()
+        self.listaParaExportar=[]
+        self.listaBusca=[]         
+        ids=[]
+        center=[float(self.config.get().lat), float(self.config.get().lng)]
+        for aluno in self.dbAluno.todosOsDadosComId():
+            if [float(aluno['lat']), float(aluno['long'])] == center:
+                ids.append(aluno['id'])
+            
+        resultado=self.dbAluno.getDadosComId(ids)                
+        self.buscaResultado=resultado
+        self.resultado=resultado
+
+        j = 0
+        for i in resultado:
+            itemN = QtWidgets.QListWidgetItem() 
+            widget = alunoBusca(self, i) 
+            itemN.setSizeHint(widget.sizeHint())  
+            self.listViewBusca.addItem(itemN)                    
+            self.listViewBusca.setItemWidget(itemN, widget)
+            d=deepcopy(i)  #remover coisas inúteis para csv
+            self.listaBusca.append(deepcopy(i))
+            d.pop("id")            
+            d['escola']=self.dbEscola.getDado(d['escola'])['nome']
+            self.listaParaExportar.append(d)
+            j += 1
+
+        if j==0:
+            self.listViewBusca.addItem("Nenhum aluno foi encontrado")             
+
+
+        
+
     def buscarAluno(self): 
         self.idadeMinima = self.spinBoxIdadeMinima.value()
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
         busca = self.lineEditAluno.text()
         self.listaParaExportar=[]
-        self.listaBusca=[]        
+        self.listaBusca=[]                
         try:
-
             listaDeIdsEscola = []
             ids = []
             semEscola = False

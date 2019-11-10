@@ -285,6 +285,8 @@
      <addaction name="actionRetornar_uma_turma"/>
      <addaction name="actionRemover"/>
     </widget>
+    <addaction name="actionMostrar_Escolas"/>
+    <addaction name="actionMostar_Alunos"/>
     <addaction name="menuZonameanto"/>
     <addaction name="menuSelecionado"/>
     <addaction name="menuDeslocar_Turmas"/>
@@ -293,6 +295,7 @@
     <property name="title">
      <string>Ferramentas</string>
     </property>
+    <addaction name="actionAlunos_n_o_localizados"/>
     <addaction name="actionRecalcular_Series"/>
     <addaction name="actionDist_ncia"/>
    </widget>
@@ -472,6 +475,27 @@
   <action name="actionGeojson">
    <property name="text">
     <string>Geojson</string>
+   </property>
+  </action>
+  <action name="actionAlunos_n_o_localizados">
+   <property name="text">
+    <string>Alunos não localizados</string>
+   </property>
+  </action>
+  <action name="actionMostrar_Escolas">
+   <property name="text">
+    <string>EsconderEscolas</string>
+   </property>
+   <property name="toolTip">
+    <string>Mostrar todas as Escolas no mapa</string>
+   </property>
+  </action>
+  <action name="actionMostar_Alunos">
+   <property name="text">
+    <string>Mostar Alunos</string>
+   </property>
+   <property name="toolTip">
+    <string>Mostar Todos Alunos no mapa</string>
    </property>
   </action>
  </widget>

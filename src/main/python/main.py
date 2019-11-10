@@ -262,6 +262,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.spinBoxIdadeMinima.setValue(0)
         self.comboBoxBusca.addItems(ATRIBUTOS['aluno'][:-2])        
         #self.lineEditAluno.textChanged.connect(self.buscarAluno) #aqui faz pesquisar os alunos sempre que digitar. 
+        self.lineEditAluno.editingFinished.connect(self.buscarAluno) #aqui faz pesquisar os alunos sempre que enter 
         self.scrollAreaTeste : QtWidgets.QScrollArea
         self.addMap()
         self.dialog=[]

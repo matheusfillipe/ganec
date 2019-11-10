@@ -255,6 +255,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.pushButtonBusca.clicked.connect(self.buscarAluno)
         self.actionExportarBusca.triggered.connect(self.exportarBusca)
         self.listViewBusca.itemClicked.connect(self.setarEndereco)
+        self.actionApagar_todas_Escolas.triggered.connect(lambda: shutil.rmtree(str(confPath()/Path(CAMINHO['escola'])), ignore_errors=True) 
+        if yesNoDialog(message="Tem certeza que deseja apagar todos os escolas?") else lambda: 0)
+        self.actionApagar_todos_Alunos.triggered.connect(lambda: shutil.rmtree(str(confPath()/Path(CAMINHO['escola'])), ignore_errors=True) 
+        if yesNoDialog(message="Tem certeza que deseja apagar todos os alunos?") else lambda: 0)
+        
         self.idEscola = 0
 
         self.latLongAns = ["a"]

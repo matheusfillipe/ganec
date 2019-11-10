@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1274</width>
+    <width>1256</width>
     <height>839</height>
    </rect>
   </property>
@@ -198,7 +198,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1274</width>
+     <width>1256</width>
      <height>32</height>
     </rect>
    </property>
@@ -276,19 +276,23 @@
      <addaction name="actionAvan_ar_todos_os_alunos_em_um_ano"/>
      <addaction name="actionRetornar_todos_os_alunoes_um_ano"/>
     </widget>
-    <widget class="QMenu" name="menuSelecionado">
+    <widget class="QMenu" name="menuExibir">
      <property name="title">
-      <string>Selecionado</string>
+      <string>Exibir</string>
      </property>
-     <addaction name="actionRemover_Escola"/>
-     <addaction name="actionAvan_ar_uma_turma"/>
-     <addaction name="actionRetornar_uma_turma"/>
-     <addaction name="actionRemover"/>
+     <addaction name="actionMostrar_Escolas"/>
+     <addaction name="actionMostar_Alunos"/>
     </widget>
-    <addaction name="actionMostrar_Escolas"/>
-    <addaction name="actionMostar_Alunos"/>
+    <widget class="QMenu" name="menuExcluir">
+     <property name="title">
+      <string>Excluir</string>
+     </property>
+     <addaction name="actionApagar_todas_Escolas"/>
+     <addaction name="actionApagar_todos_Alunos"/>
+    </widget>
+    <addaction name="menuExibir"/>
     <addaction name="menuZonameanto"/>
-    <addaction name="menuSelecionado"/>
+    <addaction name="menuExcluir"/>
     <addaction name="menuDeslocar_Turmas"/>
    </widget>
    <widget class="QMenu" name="menuFerramentas">
@@ -484,7 +488,7 @@
   </action>
   <action name="actionMostrar_Escolas">
    <property name="text">
-    <string>Esconder Escolas</string>
+    <string>Mostrar Escolas</string>
    </property>
    <property name="toolTip">
     <string>Mostrar todas as Escolas no mapa</string>
@@ -496,6 +500,16 @@
    </property>
    <property name="toolTip">
     <string>Mostar Todos Alunos no mapa</string>
+   </property>
+  </action>
+  <action name="actionApagar_todas_Escolas">
+   <property name="text">
+    <string>Excluir todas Escolas</string>
+   </property>
+  </action>
+  <action name="actionApagar_todos_Alunos">
+   <property name="text">
+    <string>Excluir todos Alunos</string>
    </property>
   </action>
  </widget>

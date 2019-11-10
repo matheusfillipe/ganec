@@ -272,6 +272,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionRecalcular_Series.triggered.connect(self.serieRecalc)
         self.actionAjuda.triggered.connect(self.ajuda)
         self.actionSobre.triggered.connect(self.sobre)
+        self.actionDist_ncia.triggered.connect(self.distTool)
+        
         self.progressBar.hide() 
 
         self.escolaDropDownLayout : QtWidgets.QHBoxLayout
@@ -295,6 +297,49 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def sobre(self):
         sobreDialog(self).exec_()
+
+    def distTool(self):
+        self.listViewBusca : QtWidgets.QListWidget
+        selectedIndexes=self.listViewBusca.selectedIndexes()
+        center=[self.config.get().lat, self.config.get().lng]
+        if selectedIndexes:
+            aluno=self.listaBusca[selectedIndexes[-1].row()]
+            ptA=[aluno['lat'], aluno['long']]
+            if aluno['escola']:
+                i=self.dbEscola.getDado(aluno['escola'])
+                ptB=[i['lat'], i['long']]
+            else:
+               ptB=deepcopy(center)                           
+        else:
+            ptA=deepcopy(center)            
+            ptB=deepcopy(center)            
+       
+        w, net=basicWin(ptA, ptB, osmFilePath())
+        for i in self.dbEscola.todosOsDados():                    
+            w.addMarker(i['nome'], i['lat'], i['long'], **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_blue.png",
+            draggable=False,
+            title=i['nome']
+            ))
+        w : QtWebEngineWidgets.QWebEngineView
+        try:
+            self.actionImagem.triggered.disconnect()       
+            self.separator.triggered.disconnect()       
+            self.actionGoogle_Maps_KML.triggered.disconnect()       
+            self.actionShapefile.triggered.disconnect()       
+        except:
+            pass
+        self.menuMapa.setEnabled(True)        
+        self.actionImagem.triggered.connect(lambda:  w.saveImage(self.saveFile("png") if _ else lambda: 0))       
+        self.actionGeojson.triggered.connect(lambda:  net.save_geojson(self.saveFile("geojson") if _ else lambda: 0))
+        self.actionGoogle_Maps_KML.triggered.connect(lambda: net.save_kml(self.saveFile("kml")  if _ else lambda: 0))
+        self.actionShapefile.triggered.connect(lambda: net.save_shp(self.saveFile("shp")  if _ else lambda: 0) )
+        w.closed.connect(lambda: self.menuMapa.setEnabled(False))
+
+    def saveFile(self, filter):
+        file=QFileDialog.getSaveFileName(filter="Arquivo "+ filter +" (*."+filter+")")[0]
+        file = file if file.endswith(filter) else file+"."+filter   
+        return file if file else False
 
     def serieRecalc(self):
         self.loadingLabel.setText("Recalculando número de alunos em cada série")   
@@ -377,9 +422,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def addMarkerEscolas(self):
         #self.idEscolasMarker = []
         for i in self.dbEscola.todosOsDados():
-            #self.idEscolasMarker.append(self.dbEscola.acharDado('nome', i['nome'])[0])
-            #print("Latitude: " + str(i['lat']) + " Longitude: " + str(i['long']))
-            self.mapWidget.centerAt(i['lat'], i['long'])
             self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
             icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_blue.png",
             draggable=True,

@@ -217,9 +217,9 @@ class netHandler():
         from urllib import urlopen
         #fp = urlopen( "http://api.openstreetmap.org/api/0.6/map?bbox=%f,%f,%f,%f"%(left,bottom,right,top) )
         #fp = urlopen( "http://www.overpass-api.de/api/xapi?way[highway=*][bbox=%f,%f,%f,%f]"%(left,bottom,right,top) )
-        print("trying to download osm data from "+str(left),str(bottom),str(right),str(top)+" with highways of categories"+highway_cat)
+        #print("trying to download osm data from "+str(left),str(bottom),str(right),str(top)+" with highways of categories"+highway_cat)
         try:    
-            print("downloading osm data from "+str(left),str(bottom),str(right),str(top)+" with highways of categories"+highway_cat)
+            #print("downloading osm data from "+str(left),str(bottom),str(right),str(top)+" with highways of categories"+highway_cat)
             fp = urlopen( "http://www.overpass-api.de/api/xapi?way[highway=%s][bbox=%f,%f,%f,%f]"%(highway_cat,left,bottom,right,top) )
             #slooww only ways,and in ways only "highways" (i.e. roads)
             #fp = urlopen( "http://open.mapquestapi.com/xapi/api/0.6/way[highway=*][bbox=%f,%f,%f,%f]"%(left,bottom,right,top) )
@@ -302,12 +302,12 @@ class netHandler():
             x, y=lenghs[0][3]
             #plotNode(n1)
             #plotNode(n2)
-            print("Found inline point: ",x,",",y, "nodes:  ",n1," ",n2, " dist: ")                                
+            #print("Found inline point: ",x,",",y, "nodes:  ",n1," ",n2, " dist: ")                                
             
         else:       
             n2=nodes[2]
             x, y=self.getPart(name)
-            print("FAILED TO GET POINT ON HIGHWAY!!!")
+            #print("FAILED TO GET POINT ON HIGHWAY!!!")
             
         return n1, n2, x, y
 
@@ -338,7 +338,7 @@ class netHandler():
             z,j,p2=project(self.parts[i+1])
             dist=np.linalg.norm(np.array(p1)-np.array(p2))
             d.append(dist)
-        # print(dist*11319.490793)        
+        # #print(dist*11319.490793)        
         return sum(d)
 
     def getLength(self, u, v, d=None):
@@ -394,5 +394,5 @@ class netHandler():
 def test(filepath, ptA, ptB):
     net=netHandler(osmpath=filepath)        
     parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"), target=net.addNode(ptB, "escola"))
-    print("DIST: ", dist)
+    #print("DIST: ", dist)
    

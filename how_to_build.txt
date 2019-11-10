@@ -1,0 +1,22 @@
+STEPS TO BUILD A INSTALLER (Tested on windows and Linux)
+
+1. Install python 3.6 or the currently supported version for fbs: https://build-system.fman.io/troubleshooting  (3.6 is the current)
+2. git clone https://github.com/matheusfillipe/ganec.git && pip install virtualenv   -- Python's default virtual env seems to have problems
+3. cd ganec && virtualenv venv && source venv/scripts/activate (or just run the activate.bat on windows) -- Create the python vevn and activate.bat
+4. pip install -r requirents.txt  -- install libs (if one fails install manually, the only special one is pyproj version 1.9.6 has to be kept outadated... or not?)
+5. Create a file named constants.py inside src/main/python/lib/hidden and add your google maps api to a variable API_KEY (API_KEY=KSDJHIAFUE???)
+6. Test run with "fbs run" on the active venv. 
+7. fbs freeze && fbs installer  (or the installer.bat inside scripts folder if on windows) -- the installer will be created in the target folder
+8. You might use fbs freeze --debug to get useful info
+
+
+IMPORTANT NOTES:
+
+Do not add a __init__.py on the src/main/python folder
+https://github.com/mherrmann/fbs-tutorial
+Google maps API is paid having a monthly credit which is well enough for what this program does currently. 
+The route finding API isn't used, only the map view and geolocating. Path finding is done with OSM and networkx here, so that it be free to use. 
+!!! If on windows don't forget to add Python to your system path and to install NSI and add it to path to build an installer !!!!
+https://nsis.sourceforge.io/Download
+
+If you get "failed to import" or "Module not found" on the fbs freeze --debug command or running it, you might add it to src/build/settings/base.json hidden imports.

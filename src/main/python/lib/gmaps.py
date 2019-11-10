@@ -218,6 +218,8 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     markerDoubleClicked = QtCore.pyqtSignal(str, float, float)
     markerRightClicked = QtCore.pyqtSignal(str, float, float)
 
+    closed = QtCore.pyqtSignal()
+
     def __init__(self, api_key=API_KEY, parent=None, lat=None, lng=None):
         super(QGoogleMap, self).__init__(parent)
         self._api_key = api_key
@@ -233,6 +235,10 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         self.initialized = False
 
         self._manager = QtNetwork.QNetworkAccessManager(self)
+    
+    def closeEvent(self, CloseEvent):
+        self.closed.emit()
+        return super().closeEvent(CloseEvent)
 
     def saveImage(self, filepath):
         p = QtGui.QGuiApplication.primaryScreen()
@@ -387,66 +393,84 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
             "gmap_deleteMarker("
             "key={!r} "
             "); ".format(key))
-ptA=0
-ptB=0
+ptAg=[0,0]
+ptBg=[0,0]
 net=0
 count=0
-
-def test():
-    global ptA, ptB, net
-    import sys
+def basicWin(ptA, ptB, filepath):
     from lib.osmNet import netHandler
-    app = QtWidgets.QApplication(sys.argv)
+    import tempfile   
+    global ptAg
+    ptAg=[ptA[1],ptA[0]]
+    global ptBg
+    ptBg=[ptB[1],ptB[0]]
+
+    f=tempfile.gettempdir()
     w = QGoogleMap(api_key=API_KEY)
-    w.resize(640, 480)
     w.show()
+    w.resize(900, 720)
     w.waitUntilReady()
     w.setZoom(16)
-    lat, lng = w.centerAtAddress("Prefeitura de Carmo do Parnaíba - Praça Misael. Luiz de Carvalho - Centro, Carmo do Paranaíba - MG")
-    if lat is None and lng is None:
-        lng, lat = -46.30973, -19.00009 
-    w.centerAt(lat, lng)
-    ptB=[lng, lat]
+    w.centerAt(ptA[0], ptA[1])
+    
 
-    w.addMarker("MyDragableMark", lat, lng, **dict(
-        icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_red.png",
+    w.addMarker("Aluno", ptA[0], ptA[1], **dict(
+        icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
         draggable=True,
-        title="Move me!"
-    ))
-    ptA=[lng, lat]
-   
-    filepath='/home/matheus/map.osm'
+        title="Aluno"
+    ))   
+    w.addMarker("Escola", ptB[0], ptB[1], **dict(
+        icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_yellow.png",
+        draggable=True,
+        title="Escola Atribuída"
+    ))   
+ 
+
     net=netHandler(osmpath=filepath)
     
     def update(n, x, y):
-        global net
-        global ptA, ptB, count
-        if n=='MyDragableMark':
-            ptA=[y,x]
+        global count
+        global ptAg
+        global ptBg
+        if n=='Aluno':
+            ptAg=[y,x]
         else:
-            ptB=[y,x]
-        if ptA == ptB:
+            ptBg=[y,x]
+        if ptAg == ptBg:
             return
-        print("ptA", ptA)
-        print("ptB", ptB)
-        parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno"+str(count)), target=net.addNode(ptB, "escola"+str(count)))
+           
+        parts, dist = net.shortest_path(source=net.addNode(ptAg, "aluno"+str(count)), target=net.addNode(ptBg, "escola"+str(count)))
         print("DIST: ", dist)    
         w.clearPaths()       
         count+=1
-        with open(net.save_geojson("/home/matheus/test.geojson"), 'r') as file:
+        with open(net.save_geojson(f+"/temp.geojson"), 'r') as file:
             geo = file.read().replace("\"","\'")    
       #  print(geo)
         w.addPath(geo)
-        net.save_kml("/home/matheus/test.kml")
-        w.saveImage("/home/matheus/test.jpg")
+       # net.save_kml("/home/matheus/test.kml")
+       # w.saveImage("/home/matheus/test.jpg")
+        #return ptAg, ptBg
 
     w.mapMoved.connect(print)
     w.mapClicked.connect(print)
     w.mapRightClicked.connect(print)
     w.mapDoubleClicked.connect(print)
-    w.markerMoved.connect(update)
+    w.markerMoved.connect(lambda n,x,y: update(n,x,y))
+    w.markerClicked.connect(lambda n,x,y: update(n,x,y) if n!="Aluno" else lambda: 0)
+    update("Aluno", ptA[0], ptA[1])
+    return w,net
 
-    app.exec_()   
-        
+ 
+def test():
+    global ptAg, ptBg, net
+    import sys
+    lng, lat = -46.30973, -19.00009 
+    filepath='/home/matheus/map.osm'
+    app = QtWidgets.QApplication(sys.argv)
+    ptB=[lat, lng]
+    ptA=[lat, lng]  
+    basicWin(ptA, ptB, filepath)
+    app.exec_()         
+
 if __name__ == '__main__':
     test()

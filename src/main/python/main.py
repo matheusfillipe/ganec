@@ -92,6 +92,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.backupBtn : QtWidgets.QPushButton
         self.restaurarBtn : QtWidgets.QPushButton
         self.lineEdit_2 : QtWidgets.QLineEdit
+        self.ceptxt : QtWidgets.QLineEdit
 
         self.backupBtn.clicked.connect(self.backup)
         self.restaurarBtn.clicked.connect(self.importar)
@@ -123,6 +124,13 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         except:
             self.db.salvarDado({'nome': 'cidade', 'string': ''})
             self.lineEdit_2.setText("")
+
+        try:
+            self.ceptxt.setText(db.getDado(db.acharDado('nome','cep')[-1])['string'])
+        except:
+            self.db.salvarDado({'nome': 'cep', 'string': ''})
+            self.ceptxt.setText("")
+
 
     def setOsm(self):
         db=self.db
@@ -329,7 +337,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def hideAlunos(self):
         self.actionMostar_Alunos.triggered.disconnect()
         self.actionMostar_Alunos.triggered.connect(self.showAlunos) 
-        self.actionMostrar_Alunos.setText("Mostrar Alunos")
+        self.actionMostar_Alunos.setText("Mostrar Alunos")
         for i in self.dbAluno.todosOsDados():
             self.mapWidget.deleteMarker(i['nome']) 
 
@@ -475,6 +483,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         elif self.config.get().map==0:
             w=QGoogleMap(lat=self.config.get().lat, lng=self.config.get().lng)
             w.markerMoved.connect(self.markerMovido)
+            db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
+            try:
+                w.setPostalCode(db.getDado(db.acharDado('nome','cep')[-1])['string'])
+            except:
+                pass
         else:
             w=QtWidgets.QLabel("Problema no banco de dados! Tente limpar as configurações")
         self.mapWidget=w
@@ -836,6 +849,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def saveConfig(self):  
         self.dialog[-1].db.update(self.dialog[-1].db.acharDado('nome', 'cidade')[0], {'string': self.dialog[-1].lineEdit_2.text()})   
+        self.dialog[-1].db.update(self.dialog[-1].db.acharDado('nome', 'cep')[0], {'string': self.dialog[-1].ceptxt.text()})             
+        try:
+            self.mapWidget.setPostalCode(self.dialog[-1].ceptxt.text())
+        except:
+            pass
         cfg=self.config.get()
         if not cfg.isApplied:      
             self.config.get().apply()

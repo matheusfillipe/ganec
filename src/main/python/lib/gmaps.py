@@ -160,16 +160,22 @@ HTML2 = '''
 '''
 HTML=HTML+JS+HTML2
 
+postal_code=""
 
 class GeoCoder(QtNetwork.QNetworkAccessManager):
     class NotFoundError(Exception):
         pass
 
     def geocode(self, location, api_key):
+        global postal_code
         url = QtCore.QUrl("https://maps.googleapis.com/maps/api/geocode/xml")
         query = QtCore.QUrlQuery()
         query.addQueryItem("key", api_key)
         query.addQueryItem("address", location)
+        if postal_code:
+            query.addQueryItem("components", "country:BR|postal_code:"+str(postal_code))       
+        else:
+            query.addQueryItem("components", "country:BR")       
         url.setQuery(query)
         request = QtNetwork.QNetworkRequest(url)
         reply = self.get(request)
@@ -235,6 +241,10 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         self.initialized = False
 
         self._manager = QtNetwork.QNetworkAccessManager(self)
+    
+    def setPostalCode(self, post):
+        global postal_code
+        postal_code=post
     
     def closeEvent(self, CloseEvent):
         self.closed.emit()

@@ -80,10 +80,10 @@ class WidgetVagas(QtWidgets.QWidget, VAGAS_WIDGET):
         return self.idEscola
 
     def setarVagas(self, n):
-        self.spinBoxVagas.setValue(n)
+        self.spinBoxVagas.setValue(int(n))
 
     def setarAlunos(self, n):
-        self.spinBoxNumAlunos.setValue(n)
+        self.spinBoxNumAlunos.setValue(int(n))
  
 class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
 

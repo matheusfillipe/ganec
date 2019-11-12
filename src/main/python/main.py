@@ -549,7 +549,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.loadingLabel.setText("Computando localização das Escolas")     
         self.update()
 
-
     def imporAlunoCsv(self):
         dialog=csvDialog(CSV_ALUNOS)
         dialog.exec_()
@@ -827,23 +826,28 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
              
    
     def newAlunoDialog(self): 
-        self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
-        dialog=NewAlunoDialog(self)             
-        #dialog.setModal(True)
-        self.dialog.append(dialog)
-        dialog.show()
-        dialog.exec_()
-        self.update()
-
-
-    def newEscolaDialog(self):  
-        self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
-        dialog=NewEscolaDialog(self)             
-        #dialog.setModal(True)
-        self.dialog.append(dialog)
-        dialog.show()
-        dialog.exec_()
-        self.update()
+        if Config.cidade():
+            self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
+            dialog=NewAlunoDialog(self)             
+            #dialog.setModal(True)
+            self.dialog.append(dialog)
+            dialog.show()
+            dialog.exec_()
+            self.update()
+        else:
+            messageDialog(self, "Sem cidade", "Vá em Opcões>Configurações>Cidade", "Ainda não tem uma cidade selecionada")
+        
+    def newEscolaDialog(self):
+        if Config.cidade():
+            self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
+            dialog=NewEscolaDialog(self)             
+            #dialog.setModal(True)
+            self.dialog.append(dialog)
+            dialog.show()
+            dialog.exec_()
+            self.update()
+        else:
+            messageDialog(self, "Sem cidade", "Vá em Opcões>Configurações>Cidade", "Ainda não tem uma cidade selecionada")
 
     def settingDialog(self):
         dialog=SettingsDialog(self)

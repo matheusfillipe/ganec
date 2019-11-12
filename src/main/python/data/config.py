@@ -23,7 +23,10 @@ class Config(persistent.Persistent):
     @classmethod 
     def cidade(cls):
         db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
-        return db.getDado(db.acharDado('nome','cidade')[-1])['string']
+        try:
+            return db.getDado(db.acharDado('nome','cidade')[-1])['string']
+        except:
+            return False
 
     def __eq__(self, value):        
         return self.map==value.map and self.text==value.text and self.text2==value.text2

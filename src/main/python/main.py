@@ -223,6 +223,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
 
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     operatonFinished=pyqtSignal()
+    searchFinished=pyqtSignal(list, list)
 
     def __init__(self, app):         
         QtWidgets.QMainWindow.__init__(self)
@@ -255,9 +256,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.pushButtonBusca.clicked.connect(self.buscarAluno)
         self.actionExportarBusca.triggered.connect(self.exportarBusca)
         self.listViewBusca.itemClicked.connect(self.setarEndereco)
-        self.actionApagar_todas_Escolas.triggered.connect(lambda: shutil.rmtree(str(confPath()/Path(CAMINHO['escola'])), ignore_errors=True) 
+        rmfile=lambda path: path.unlink() and self.update() if path.is_file() else 0
+        self.actionApagar_todas_Escolas.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['escola'])) 
         if yesNoDialog(message="Tem certeza que deseja apagar todos os escolas?") else lambda: 0)
-        self.actionApagar_todos_Alunos.triggered.connect(lambda: shutil.rmtree(str(confPath()/Path(CAMINHO['aluno'])), ignore_errors=True) 
+        self.actionApagar_todos_Alunos.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['aluno'])) 
         if yesNoDialog(message="Tem certeza que deseja apagar todos os alunos?") else lambda: 0)
         
         self.idEscola = 0
@@ -290,6 +292,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAlunos_n_o_localizados.triggered.connect(self.alunosNLocalizados)
         self.actionMostrar_Escolas.triggered.connect(self.hideEscolas)
         self.actionMostar_Alunos.triggered.connect(self.showAlunos)
+
+        self.listViewBusca.overlay=Overlay(self.listViewBusca, "")
+        #overlay=self.listViewBusca.overlay
+        #overlay.move(overlay.x()+overlay.width()/2,overlay.y())
+        self.searchFinished.connect(self.onSearchFinished)        
         
         self.progressBar.hide() 
 
@@ -640,7 +647,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.progressBar.setValue(0)
         self.loadingLabel.setText("")
         self.progressBar.hide()
-        self.update()
+       #self.update()
 
     def alunosNLocalizados(self):
         self.listViewBusca.clear()
@@ -667,31 +674,32 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             d=deepcopy(i)  #remover coisas inúteis para csv
             self.listaBusca.append(deepcopy(i))
             d.pop("id")            
-            d['escola']=self.dbEscola.getDado(d['escola'])['nome']
+            if d['escola']:
+                d['escola']=self.dbEscola.getDado(d['escola'])['nome']
             self.listaParaExportar.append(d)
             j += 1
 
         if j==0:
             self.listViewBusca.addItem("Nenhum aluno foi encontrado")             
-
-
         
 
     def buscarAluno(self): 
         self.idadeMinima = self.spinBoxIdadeMinima.value()
         self.idadeMaxima = self.spinBoxIdadeMaxima.value()
         self.listViewBusca.clear()
-        busca = self.lineEditAluno.text()
         self.listaParaExportar=[]
-        self.listaBusca=[]                
+        self.listaBusca=[]   
+        self.listViewBusca.overlay.resize(QtCore.QSize(self.listViewBusca.width(),500))
+        self.buscarAlunosThread()
+    
+    @nogui
+    def buscarAlunosThread(self):
+        self.listViewBusca.overlay.started.emit()
+        busca = self.lineEditAluno.text()
         try:
             listaDeIdsEscola = []
             ids = []
             semEscola = False
-
-            print(self.dropDownSeries.selectedTexts())
-            print(self.dropDownEscolas.selectedTexts())
-
             series = []
             for i in self.dropDownSeries.selectedTexts():
                 series.append(str(i))
@@ -723,31 +731,41 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                             break
                 elif semEscola:
                     ids.append(i)
+            resultado=self.dbAluno.getDadosComId(ids)  
+            escolas=[]              
+            for i in resultado:
+                e=deepcopy(i)
+                if i['escola']:         
+                    e['escola']=self.dbEscola.getDado(i['escola'])['nome']                
+                escolas.append(e)            
+        except:           
+            resultado=[-1]
+            escolas=[]            
 
-            resultado=self.dbAluno.getDadosComId(ids)                
+        self.searchFinished.emit(resultado, escolas)
+        self.listViewBusca.overlay.stoped.emit()
+
+    def onSearchFinished(self, resultado, escolas):
+        if len(resultado)==1 and resultado[0]==-1:
+            self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento ou houve um problema com o banco de dados")
+        else:            
             self.buscaResultado=resultado
             self.resultado=resultado
-
             j = 0
-            for i in resultado:
+            for i, e in zip(resultado, escolas):
                 itemN = QtWidgets.QListWidgetItem() 
                 widget = alunoBusca(self, i) 
                 itemN.setSizeHint(widget.sizeHint())  
                 self.listViewBusca.addItem(itemN)                    
                 self.listViewBusca.setItemWidget(itemN, widget)
-                d=deepcopy(i)  #remover coisas inúteis para csv
+                d=deepcopy(e)  #remover coisas inúteis para csv
                 self.listaBusca.append(deepcopy(i))
-                d.pop("id")            
-                d['escola']=self.dbEscola.getDado(d['escola'])['nome']
+                d.pop("id")   
                 self.listaParaExportar.append(d)
                 j += 1
-
             if j==0:
-                self.listViewBusca.addItem("Nenhum aluno foi encontrado")             
+                self.listViewBusca.addItem("Nenhum aluno foi encontrado.")             
 
-        except Exception as e:
-            print(str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
-            self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento")
         
         #self.update()
             

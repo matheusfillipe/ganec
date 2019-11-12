@@ -285,7 +285,7 @@ class Overlay(QWidget):
         self.setPalette(palette)
         self.label=QtWidgets.QLabel(text, self)
         self.label.setAlignment(Qt.AlignHCenter)
-        self.label.setFont(QtGui.QFont("Arial", 18, QtGui.QFont.Bold))
+        self.label.setFont(QtGui.QFont("Arial", 14, QtGui.QFont.Bold))
         self.label.setStyleSheet('color: rgb(240,240,240); ')  #border: 2px solid gray;')
         gf=QtWidgets.QGraphicsDropShadowEffect(self)
         gf.setXOffset(2);
@@ -314,7 +314,7 @@ class Overlay(QWidget):
         r=max(25, 2*3.1416*R/N-10)
         d=5        
         self.label.move(12, self.height()/2+R+r+12)
-        self.label.setFont(QtGui.QFont("Arial", int(max(min(16*self.height()/350, 24),10)), QtGui.QFont.Bold))
+        self.label.setFont(QtGui.QFont("Arial", int(max(min(14*self.height()/350, 24),10)), QtGui.QFont.Bold))
 
         for i in range(N):
             I=int(self.counter / 5) % N

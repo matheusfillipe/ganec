@@ -102,7 +102,7 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
         self.lineEditComplemento : QtWidgets.QLineEdit
         self.lineEditMatricula : QtWidgets.QLineEdit
         #self.comboBoxEscolas : QtWidgets.QComboBox
-        comboSeries=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+        comboSeries=SERIES
         self.comboBoxSerie.addItems(comboSeries)
 
         self.pushButtonAdiconar.clicked.connect(self.salvarDados)
@@ -246,7 +246,10 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         self.geolocate.connect(self.onGeolocate)
     
     def resizeEvent(self, event):        
-        self.overlay.resize(event.size()) 
+        try:
+            self.overlay.resize(event.size()) 
+        except:
+            pass
         event.accept()
 
     def show(self):

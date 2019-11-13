@@ -65,13 +65,18 @@ def osmFilePath():
         return False
 
 
-def correctSeries():
+def correctSeries(countChanged):
     dbAluno = DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
     dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-
-    for serie in dbSeries.todosOsDadosComId():
+    count=0
+    series = dbSeries.todosOsDadosComId()
+    alunos=dbAluno.todosOsDadosComId()
+    for serie in series:
+        countChanged.emit(int(count/(len(alunos)+len(series))*100))
         dbSeries.update(serie["id"], {"nDeAlunos": 0})
-    for aluno in dbAluno.todosOsDadosComId():
+        count+=1
+    for aluno in alunos:
+        countChanged.emit(int(count/(len(alunos)+len(series))*100))
         id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
         if len(id)==0:
             print("Erro! Escola não consta na tabela de séries, id: " + str(aluno['escola']))
@@ -83,6 +88,7 @@ def correctSeries():
             continue
         serie=dbSeries.getDadoComId(str(id[-1]))
         dbSeries.update(serie['id'], {"nDeAlunos":str(int(serie["nDeAlunos"])+1)})
+        count+=1
 
 
 class imageThread(QtCore.QThread):

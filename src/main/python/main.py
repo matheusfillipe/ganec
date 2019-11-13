@@ -224,6 +224,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     operatonFinished=pyqtSignal()
     searchFinished=pyqtSignal(list, list)
+    countChanged=pyqtSignal(int)
 
     def __init__(self, app):         
         QtWidgets.QMainWindow.__init__(self)
@@ -292,7 +293,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAlunos_n_o_localizados.triggered.connect(self.alunosNLocalizados)
         self.actionMostrar_Escolas.triggered.connect(self.hideEscolas)
         self.actionMostar_Alunos.triggered.connect(self.showAlunos)
-
+        self.countChanged.connect(self.onCountChanged)
         self.listViewBusca.overlay=Overlay(self.listViewBusca, "")
         #overlay=self.listViewBusca.overlay
         #overlay.move(overlay.x()+overlay.width()/2,overlay.y())
@@ -404,7 +405,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     @nogui
     def serieRecalcThread(self):
-        correctSeries()
+        correctSeries(self.countChanged)
         self.operatonFinished.emit()
 
     def SremoverEscola(self):

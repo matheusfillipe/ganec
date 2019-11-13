@@ -253,6 +253,7 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
     def saveImage(self, filepath):
         p = QtGui.QGuiApplication.primaryScreen()
         p.grabWindow(self.winId()).save(filepath, 'jpg')
+        return filepath
 
     def show(self):
         self.waitUntilReady()

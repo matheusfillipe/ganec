@@ -279,13 +279,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionCalcular_Rotas_2.triggered.connect(self.calcularRotas)
         self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)
         self.actionRecalcular_endere_os_de_escolas.triggered.connect(self.recalcularEscolas)
-        self.actionExportar_imagem.triggered.connect(self.exportImg)
+        self.actionExportar_imagem.triggered.connect(lambda: self.exportImg(self.mapWidget))
         self.actionAvan_ar_todos_os_alunos_em_um_ano.triggered.connect(lambda: pular(1))
         self.actionRetornar_todos_os_alunoes_um_ano.triggered.connect(lambda: pular(-1))
-        self.actionRemover_Escola.triggered.connect(self.SremoverEscola)
-        self.actionAvan_ar_uma_turma.triggered.connect(self.SacanvaTurma)
+        self.actionRemover_todos.triggered.connect(self.SremoverEscola)
+        self.actionAvan_ar_uma_Turma.triggered.connect(self.SacanvaTurma)
         self.actionRetornar_uma_turma.triggered.connect(self.SretornaTurma)
-        self.actionRemover.triggered.connect(self.SremoverAlunos)
+        self.actionRemover_Escola.triggered.connect(self.SremoverAlunos)
         self.actionRecalcular_Series.triggered.connect(self.serieRecalc)
         self.actionAjuda.triggered.connect(self.ajuda)
         self.actionSobre.triggered.connect(self.sobre)
@@ -293,10 +293,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAlunos_n_o_localizados.triggered.connect(self.alunosNLocalizados)
         self.actionMostrar_Escolas.triggered.connect(self.hideEscolas)
         self.actionMostar_Alunos.triggered.connect(self.showAlunos)
+        self.actionAlunos_4.triggered.connect(lambda: self.verificarOsm() and editarAlunoDialog(self).exec_())
+        self.actionEscolas_2.triggered.connect(lambda: self.verificarOsm() and editarEscolaDialog(self).exec_())
+
         self.countChanged.connect(self.onCountChanged)
         self.listViewBusca.overlay=Overlay(self.listViewBusca, "")
-        #overlay=self.listViewBusca.overlay
-        #overlay.move(overlay.x()+overlay.width()/2,overlay.y())
+        
+
         self.searchFinished.connect(self.onSearchFinished)        
         
         self.progressBar.hide() 
@@ -314,7 +317,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
          self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
          for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
 
-        self.updateScreen()
+        self.updateScreen() 
     
     def ajuda(self):
         import webbrowser
@@ -357,6 +360,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
 
     def distTool(self):
+        if not self.verificarOsm(): return
         self.listViewBusca : QtWidgets.QListWidget
         selectedIndexes=self.listViewBusca.selectedIndexes()
         center=[self.config.get().lat, self.config.get().lng]
@@ -388,7 +392,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         except:
             pass
         self.menuMapa.setEnabled(True)        
-        self.actionImagem.triggered.connect(lambda:  w.saveImage(self.saveFile("png") if _ else lambda: 0))       
+        self.actionImagem.triggered.connect(lambda:  self.exportImg(w))
         self.actionGeojson.triggered.connect(lambda:  net.save_geojson(self.saveFile("geojson") if _ else lambda: 0))
         self.actionGoogle_Maps_KML.triggered.connect(lambda: net.save_kml(self.saveFile("kml")  if _ else lambda: 0))
         self.actionShapefile.triggered.connect(lambda: net.save_shp(self.saveFile("shp")  if _ else lambda: 0) )
@@ -419,7 +423,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             if aluno['escola']:
                 from collections import OrderedDict
                 escola=self.dbEscola.getDadoComId(aluno['escola'])
-                series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+                series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
                 serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
                 serie=self.dbSeries.getDadoComId(serieId)
                 self.dbSeries.update(serieId, {"nDeAlunos": serie["nDeAlunos"]-1})  #Achei a serie e remove a vaga
@@ -436,7 +440,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             if aluno['escola']:
                 from collections import OrderedDict
                 escola=self.dbEscola.getDadoComId(aluno['escola'])
-                series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+                series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
                 serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
                 serie=self.dbSeries.getDadoComId(serieId)
                 self.dbSeries.update(serieId, {"nDeAlunos": serie["nDeAlunos"]-1})  #Achei a serie e remove a vaga
@@ -485,6 +489,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             draggable=True,
             title=i['nome']
             ))
+    
+    def verificarOsm(self):
+        osmpath=osmFilePath()  #???
+        if not Path(osmpath).is_file() or Path(osmpath).suffix!=".osm":
+            messageDialog(self, message="Aruivo de mapa  (.osm) não foi configurado!")
+            return False
+        else:
+            return True
+ 
 
     def addMap(self):
         if self.config.get().map==3:
@@ -512,13 +525,18 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def centro(self):
         return [self.config.get().lat, self.config.get().lng]
 
-    def exportImg(self):
-        filename=QFileDialog.getSaveFileName(filter="Salvar Imagem (*.jpg)")[0]
-        filename=filename if filename.endswith(".jpg") else filename+",jpg"        
-        self.calc = imageThread(self, filename)
-        self.calc.start()   
- 
+    def raiseWindow(self, view):
+        view.setWindowState(view.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+        view.activateWindow() 
 
+    def exportImg(self,w):
+        import tempfile
+        temp=tempfile.gettempdir() + "/" "temp"
+        w.saveImage(temp)                
+        filename=self.saveFile("jpg")
+        if not filename: return      
+        shutil.move(temp, filename)                
+   
     def calcularRotas(self):
         self.calc = calcularRotasThread()
         self.calc.countChanged.connect(self.onCountChanged)
@@ -558,6 +576,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.updateScreen()
 
     def imporAlunoCsv(self):
+        if not self.verificarOsm(): return
         dialog=csvDialog(CSV_ALUNOS)
         dialog.exec_()
         res=dialog.result
@@ -616,6 +635,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
 
     def imporEscolaCsv(self):
+        if not self.verificarOsm(): return
         dialog=csvDialog(CSV_ESCOLAS)
         dialog.exec_()
         res=dialog.result
@@ -771,25 +791,29 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         #self.updateScreen()
             
     def exportarBusca(self):
-        if len(self.listaParaExportar) > 0:
+        if hasattr(self, "listaParaExportar") and len(self.listaParaExportar)>0:
             exportCsv(self.listaParaExportar)
         else:
-            messageDialog(self, "Problema ao salvar arquivo", "", "Nenhum aluno corresponde a busca")
+            messageDialog(self, "Problema ao salvar arquivo", "", "Nenhum aluno encontrado na lista de busca")
+        
 
-    def setarEndereco(self):       
-        self.mapWidget.deleteMarker("aluno")
-        aluno=self.resultado[self.listViewBusca.currentRow()]
-        self.mapWidget.centerAt(aluno['lat'], aluno['long'])
-        self.mapWidget.addMarker("aluno", aluno['lat'], aluno['long'], **dict(
-        icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
-        draggable=True,
-        title=aluno['nome']
-        ))
-        self.latLongAns = [aluno['lat'], aluno['long']]
-        if self.checkBox.isChecked():
-            self.adicionarTodosCaminhos(aluno)
-        else:
-            self.adicionarCaminho(aluno)
+    def setarEndereco(self): 
+        try:      
+            self.mapWidget.deleteMarker("aluno")
+            aluno=self.resultado[self.listViewBusca.currentRow()]
+            self.mapWidget.centerAt(aluno['lat'], aluno['long'])
+            self.mapWidget.addMarker("aluno", aluno['lat'], aluno['long'], **dict(
+            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+            draggable=True,
+            title=aluno['nome']
+            ))
+            self.latLongAns = [aluno['lat'], aluno['long']]
+            if self.checkBox.isChecked():
+                self.adicionarTodosCaminhos(aluno)
+            else:
+                self.adicionarCaminho(aluno)
+        except:
+            self.mapWidget.centerAt(self.config.get().lat, self.config.get().lng)
     
 
     def markerMovido(self, n, lat, long):
@@ -845,6 +869,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
              
    
     def newAlunoDialog(self): 
+        if not self.verificarOsm(): return
         if Config.cidade():
             self.aluno=self.varManager.read(Aluno(), DB_ADD_ALUNO) 
             dialog=NewAlunoDialog(self)             
@@ -857,6 +882,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             messageDialog(self, "Sem cidade", "Vá em Opcões>Configurações>Cidade", "Ainda não tem uma cidade selecionada")
         
     def newEscolaDialog(self):
+        if not self.verificarOsm(): return
         if Config.cidade():
             self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
             dialog=NewEscolaDialog(self)             
@@ -930,7 +956,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         escolas.append("Sem Escola")
         self.dropDownEscolas.repopulate(escolas)
         #indices=self.dropDownEscolas.selectedIndexes()
-        series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+        series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
         self.dropDownSeries.repopulate(series)
         self.addMarkerEscolas()
         self.dropDownEscolas.todos.setChecked(True)

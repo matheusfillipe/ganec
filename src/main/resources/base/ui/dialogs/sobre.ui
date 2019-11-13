@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>210</height>
+    <width>688</width>
+    <height>256</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,7 +22,7 @@
      <property name="plainText">
       <string>Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefeitura de Carmo do Paranaíba, com o intuido de auxiliar na gestão e logística de distribuição dos alunos em função de seus respectivos endereços domiciliares, modalidade escolar e localização das escolas.
 
-Contado:</string>
+Informações: https://github.com/matheusfillipe/ganec</string>
      </property>
     </widget>
    </item>

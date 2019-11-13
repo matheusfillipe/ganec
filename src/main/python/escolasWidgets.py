@@ -109,7 +109,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         self.widgets=[]
         self.todasAsSeries=[]
         #self.todasSeries=Escola.todasAsSeries()
-        self.todasAsSeries = list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.db.todosOsDados()],[])))
+        self.todasAsSeries = SERIES
         for i in self.todasAsSeries:
             self.comboBoxSerie.addItem(i)   
         #self.comboBoxSerie.addItems([serie for serie in self.todasSeries if not (serie in self.series)])
@@ -266,9 +266,8 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         self.pushButtonExcluir.clicked.connect(self.excluir)
         self.pushButtonEditar.clicked.connect(self.editar)
 
-        self.todasAsSeries=[]
         #self.todasSeries=Escola.todasAsSeries()
-        self.todasAsSeries=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+        self.todasAsSeries=SERIES
         for i in self.todasAsSeries:
             self.comboBoxSeries.addItem(i)   
         self.pushButtonAddSerie.clicked.connect(lambda: self.addTurma(self.comboBoxSeries.currentText()))

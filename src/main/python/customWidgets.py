@@ -4,6 +4,7 @@ import csv
 from PyQt5.QtWidgets import QFileDialog
 from pathlib import Path
 import docx
+import os 
 
 from sqlitedb import DB
 from lib.constants import *
@@ -116,10 +117,11 @@ class dropDown(QtWidgets.QWidget):
        #  self.setMinimumHeight(10)
        #  self.setMinimumWidth(100)
 
-
     def repopulate(self, lista):
         for act in self.actions:
             self.toolmenu.removeAction(act)
+        self.actions=[]
+        self.checks=[]
      
         for i in lista:            
             checkBox = QtWidgets.QCheckBox(str(i), self.toolmenu)
@@ -323,23 +325,41 @@ def exportCsv(listaDeAlunos):
     if yesNoDialog(message="Criar tabela no word?"):
         exportDoc(filename)
     
-@nogui
+#@nogui
 def exportDoc(filename, k=None):
-    doc = docx.Document()
+    try:
+        I=0
+        doc = docx.Document(BASEPATHS[I]+"templates/default.docx")
+    except:
+        I=1
+        doc = docx.Document(BASEPATHS[I]+"templates/default.docx")
+
     with open(filename, newline='') as f:
-        csv_reader = csv.reader(f) 
-        csv_headers = next(csv_reader)
+        indexes = [0,2,5,6,7,8,9]
+        csv_headers=["Nome", "Nascimento", "Mãe", "Pai", "Telefone", "Endereço", "Turma"]
+        csv_reader = csv.reader(f)       
         csv_cols = len(csv_headers)
         table = doc.add_table(rows=2, cols=csv_cols)
         hdr_cells = table.rows[0].cells
-
-        for i in range(csv_cols):
+        for i in range(csv_cols):           
             hdr_cells[i].text = csv_headers[i]
-
+        headers=len(next(csv_reader))
         for row in csv_reader:
             row_cells = table.add_row().cells
-            for i in range(csv_cols):
-                row_cells[i].text = row[i]
+            for i in range(headers):
+                if i in indexes:
+                    row_cells[indexes.index(i)].text = row[i]
+
+        paragraph =hdr_cells[0].paragraphs[0]
+        run = paragraph.runs
+        for row in table.rows:
+            for cell in row.cells:
+                paragraphs = cell.paragraphs
+                for paragraph in paragraphs:
+                    for run in paragraph.runs:
+                        font = run.font                   
+                        font.name = 'Times New Roman'
+                        font.size= docx.shared.Pt(10)
 
     doc.add_page_break()        
     doc.save(filename[:-4]+".docx")

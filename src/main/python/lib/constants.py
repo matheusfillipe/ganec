@@ -5,6 +5,11 @@ UI_FILES_PATH="./src/main/python/ui/"
 CONF_PATH=''
 BASEPATHS=["./src/main/resources/base/", "./"]
 
+SERIES=['Berçário','Maternal','1º Periodo','2º Periodo',
+'1º Ano','2º Ano','3º Ano','4º Ano','5º Ano','6º Ano','7º Ano','8º Ano','9º Ano',
+'1M','2M','3M']
+
+
 #UI CONSTANTS
 
 UI_FILTER1=["Alunos", "Escolas"]
@@ -28,58 +33,58 @@ CAMINHO = {'aluno':"aluno.db", 'escola':"escola.db", 'strings':'strings.db', 'an
 TABLE_NAME = {'aluno':"ALUNOS", 'escola':"ESCOLAS", 'series':'SERIES', 'ano':'ANO'}
 
 ATRIBUTOS = {
-	'aluno':["nome",
-			 "matricula", 
-			 "dataNasc", 
-			 "RG", 
-			 "CPF", 
-			 "nomeDaMae", 
-			 "nomeDoPai", 
-			 "telefone", 
-			 "endereco", 
-			 "serie", 
-			 "escola", 
-			 "idade", 
-			 "lat", 
-			 "long"],
+    'aluno':["nome",
+             "matricula", 
+             "dataNasc", 
+             "RG", 
+             "CPF", 
+             "nomeDaMae", 
+             "nomeDoPai", 
+             "telefone", 
+             "endereco", 
+             "serie", 
+             "escola", 
+             "idade", 
+             "lat", 
+             "long"],
 
-		'escola':["nome",
-				 "endereco" ,
-		  		 "lat",
-		   		 "long",
-				 "series"],
+        'escola':["nome",
+                 "endereco" ,
+                   "lat",
+                    "long",
+                 "series"],
 
-		'modalidade':[],
-		
-		'series':['idDaEscola',
-			  'serie', 
-			  'vagas', 
-			  'nDeAlunos'],
-		
-		'ano':['ano']
+        'modalidade':[],
+        
+        'series':['idDaEscola',
+              'serie', 
+              'vagas', 
+              'nDeAlunos'],
+        
+        'ano':['ano']
 }
 
 ATRIBUTOS_STRING = {
-	'aluno':["Buscar por:", 
-			 "Nome", 
-			 "Matrícula", 
-			 "Data de Nascimento", 
-			 "RG", 
-			 "CPF", 
-			 "Nome da Mãe", 
-			 "Nome do Pai", 
-			 "Telefone", 
-			 "Endereço",
-			 "escola"],
+    'aluno':["Buscar por:", 
+             "Nome", 
+             "Matrícula", 
+             "Data de Nascimento", 
+             "RG", 
+             "CPF", 
+             "Nome da Mãe", 
+             "Nome do Pai", 
+             "Telefone", 
+             "Endereço",
+             "escola"],
 
-	'escola':["Buscar por:", 
-			  "Nome",
-			  "Endereco", 
-			  "Series"],
+    'escola':["Buscar por:", 
+              "Nome",
+              "Endereco", 
+              "Series"],
 
-	'modalidade':["Buscar por:"],
+    'modalidade':["Buscar por:"],
 
-	'series':["Buscar por:"]
+    'series':["Buscar por:"]
 }
 
 SEPARADOR_SERIES = ","
@@ -88,33 +93,33 @@ CSV_SEPARATOR=","
 #UTILS
 
 dataEmNumero = {
-	'jan':1,
-	'fev':2,
-	'mar':3,
-	'abr':4,
-	'mai':5,
-	'jun':6,
-	'jul':7,
-	'ago':8,
-	'set':9,
-	'out':10,
-	'nov':11,
-	'dez':12
+    'jan':1,
+    'fev':2,
+    'mar':3,
+    'abr':4,
+    'mai':5,
+    'jun':6,
+    'jul':7,
+    'ago':8,
+    'set':9,
+    'out':10,
+    'nov':11,
+    'dez':12
 }
 
 #CSV DATA IMPORTS
 
 CSV_ALUNOS=["nome",
-			 "matricula", 
-			 "dataNasc", 
-			 "RG", 
-			 "CPF", 
-			 "nomeDaMae", 
-			 "nomeDoPai", 
-			 "telefone", 
-			 "endereco", 
-			 "serie",
-			 "escola"
+             "matricula", 
+             "dataNasc", 
+             "RG", 
+             "CPF", 
+             "nomeDaMae", 
+             "nomeDoPai", 
+             "telefone", 
+             "endereco", 
+             "serie",
+             "escola"
              ]
 
 CSV_ESCOLAS=['nome', 'endereco', 'series']

@@ -58,8 +58,8 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
         self.label : QtWidgets.QLabel
         self.parent=parent
         self.aluno=aluno
-        self.pushButton : QtWidgets.QPushButton
-        self.pushButton.clicked.connect(self.editar)
+       # self.pushButton : QtWidgets.QPushButton
+       # self.pushButton.clicked.connect(self.editar)
         self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         strr = "Nome: " + aluno['nome'] + "\nMãe: " + aluno['nomeDaMae'] + "\nPai: " + aluno['nomeDoPai'] + "\nEscola: "
         if aluno['escola']!="" and aluno['escola']!=None:
@@ -573,7 +573,7 @@ def pular(PULO):
     dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
     dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
     dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-    series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
+    series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
     print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
     print("Series: ",series)
     #PULO=1 #muda para -1 para descer de séries
@@ -615,7 +615,7 @@ def pular(PULO):
     dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
     dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
     dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-    series=list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
+    series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
     print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
     print("Series: ",series)
     #PULO=1 #muda para -1 para descer de séries

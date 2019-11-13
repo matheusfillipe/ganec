@@ -132,6 +132,9 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
     def editarDialog(self):
         d=editarEscolaDialog(self.iface)
         d.exec_()
+        self.close()
+        messageDialog(self, "Atenção", "", "Feche esta janela e abra de novo para cadastrar novas escolas")
+
 
     def addTurma(self, text):
         itemN = QtWidgets.QListWidgetItem() 

@@ -8,6 +8,7 @@ cycler==0.10.0
 decorator==4.4.0
 Dijkstar==2.4.0
 docutils==0.15.2
+python-docx==0.8.10
 entrypoints==0.3
 fbs==0.7.9
 flake8==3.7.7

@@ -4,9 +4,13 @@ from datetime import date
 import persistent
 from lib.constants import *
 from lib.hidden.constants import API_KEY
+from PyQt5 import QtCore
 from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
 from sqlitedb import *
+import os
 
+from data.config import Config
+from lib.database import VariableManager
 from lib.osm import MapWidget
 from lib.gmaps import *
 from pathlib import Path
@@ -36,9 +40,15 @@ class Aluno(persistent.Persistent):
         self.DB = DB(str(customWidgets.confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
         self.DBSeries=DB(str(customWidgets.confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
         self.DBSettings=DB(str(customWidgets.confPath()/Path('settings.db')),"strings", ['nome', 'string'])
-
+    
     def salvar(self):
         coordenadas = self.latLongAluno()
+        if not coordenadas:
+            if not hasattr(self,"center"):
+                self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
+                self.config=self.varManager.read(Config(),DB_CONFIG)  
+                self.center=[self.config.get().lat, self.config.get().lng]     
+            coordenadas = self.center
         self.lat = coordenadas[0]
         self.long = coordenadas[1]
         dicionarioDeDados = self.montarDicionario()

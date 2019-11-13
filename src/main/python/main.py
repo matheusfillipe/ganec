@@ -256,7 +256,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.pushButtonBusca.clicked.connect(self.buscarAluno)
         self.actionExportarBusca.triggered.connect(self.exportarBusca)
         self.listViewBusca.itemClicked.connect(self.setarEndereco)
-        rmfile=lambda path: path.unlink() and self.update() if path.is_file() else 0
+        rmfile=lambda path: path.unlink() and self.updateScreen() if path.is_file() else 0
         self.actionApagar_todas_Escolas.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['escola'])) 
         if yesNoDialog(message="Tem certeza que deseja apagar todos os escolas?") else lambda: 0)
         self.actionApagar_todos_Alunos.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['aluno'])) 
@@ -313,7 +313,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
          self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
          for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
 
-        self.update()
+        self.updateScreen()
     
     def ajuda(self):
         import webbrowser
@@ -411,7 +411,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             for aluno in self.listaBusca:
                 if aluno['escola'] != "" or aluno['escola'] != None:
                     self.dbAluno.update(self.dbAluno.acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
-            self.update()
+            self.updateScreen()
                 
     def SacanvaTurma(self):
         for aluno in self.listaBusca:
@@ -525,7 +525,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.start()   
         self.loadingLabel.setText("Computando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   
-        self.update()
+        self.updateScreen()
    
     def recalcularAlunos(self):
         db= self.dbAluno
@@ -539,7 +539,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.start()   
         self.loadingLabel.setText("Computando localização dos alunos")   
         self.calc.finished.connect(self.cleanProgress)   
-        self.update()
+        self.updateScreen()
 
 
     def recalcularEscolas(self):
@@ -554,7 +554,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.start()         
         self.calc.finished.connect(self.cleanProgress)       
         self.loadingLabel.setText("Computando localização das Escolas")     
-        self.update()
+        self.updateScreen()
 
     def imporAlunoCsv(self):
         dialog=csvDialog(CSV_ALUNOS)
@@ -647,7 +647,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.progressBar.setValue(0)
         self.loadingLabel.setText("")
         self.progressBar.hide()
-       #self.update()
+       #self.updateScreen()
 
     def alunosNLocalizados(self):
         self.listViewBusca.clear()
@@ -767,7 +767,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 self.listViewBusca.addItem("Nenhum aluno foi encontrado.")             
 
         
-        #self.update()
+        #self.updateScreen()
             
     def exportarBusca(self):
         if len(self.listaParaExportar) > 0:
@@ -851,7 +851,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.dialog.append(dialog)
             dialog.show()
             dialog.exec_()
-            self.update()
+            self.updateScreen()
         else:
             messageDialog(self, "Sem cidade", "Vá em Opcões>Configurações>Cidade", "Ainda não tem uma cidade selecionada")
         
@@ -863,7 +863,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.dialog.append(dialog)
             dialog.show()
             dialog.exec_()
-            self.update()
+            self.updateScreen()
         else:
             messageDialog(self, "Sem cidade", "Vá em Opcões>Configurações>Cidade", "Ainda não tem uma cidade selecionada")
 
@@ -873,7 +873,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
-        self.update()
+        self.updateScreen()
 
     def saveConfig(self):  
         self.dialog[-1].db.update(self.dialog[-1].db.acharDado('nome', 'cidade')[0], {'string': self.dialog[-1].lineEdit_2.text()})   
@@ -889,7 +889,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.mapWidget.hide()
             self.horizontalLayout_4.removeWidget(self.mapWidget)
             self.addMap()
-        self.update()
+        self.updateScreen()
            
     def modalidadesDialog(self):
         self.modalidades=self.varManager.read(ListaModalidades(),DB_MODALIDADES_BASE)    
@@ -899,7 +899,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dialog.append(dialog)
         dialog.show()
         dialog.exec_()
-        self.update()
+        self.updateScreen()
 
     def adicionarCaminho(self, aluno):
         self.mapWidget.clearPaths()
@@ -921,7 +921,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                         geo = fp.read().replace("\"","\'")
                     self.mapWidget.addPath(geo, self.dbEscola.getDado(file.stem)['nome'])
 
-    def update(self):
+    def updateScreen(self):
         self.listViewBusca.clear()
         escolas = []
         for i in Escola.todasAsEscolas():

@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets, QtGui, uic, QtCore
 import csv
 from PyQt5.QtWidgets import QFileDialog
 from pathlib import Path
+import docx
 
 
 from sqlitedb import DB
@@ -291,6 +292,26 @@ def exportCsv(listaDeAlunos):
         for dic in listaDeAlunos:
             r=list(dic.values())
             writer.writerow(r)
+    
+    if yesNoDialog(message="Criar tabela no word?"):
+        doc = docx.Document()
+        with open(filename, newline='') as f:
+            csv_reader = csv.reader(f) 
+            csv_headers = next(csv_reader)
+            csv_cols = len(csv_headers)
+            table = doc.add_table(rows=2, cols=csv_cols)
+            hdr_cells = table.rows[0].cells
+
+            for i in range(csv_cols):
+                hdr_cells[i].text = csv_headers[i]
+
+            for row in csv_reader:
+                row_cells = table.add_row().cells
+                for i in range(csv_cols):
+                    row_cells[i].text = row[i]
+
+        doc.add_page_break()        
+        doc.save(filename[:-4]+".docx")
 
 
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):

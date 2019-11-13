@@ -4,14 +4,18 @@ from datetime import date
 import persistent
 from lib.constants import *
 from lib.hidden.constants import API_KEY
+from PyQt5 import QtCore
 from PyQt5.QtCore import QDate, QTime, QDateTime, Qt
 from sqlitedb import *
+import os
 
+from data.config import Config
+from lib.database import VariableManager
 from lib.osm import MapWidget
 from lib.gmaps import *
 from customWidgets import *
 
-#
+
 class Escola(persistent.Persistent):
     def __init__(self, nome="", endereco="", modalidade= "", lat=0, long = 0, series = "", id = 0):
         self.nomeEscola = nome
@@ -23,7 +27,7 @@ class Escola(persistent.Persistent):
         self.listaDeDados=[nome, self.endereco, lat, long]
         self.DB = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         self.DBSerie=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-        
+       
     @classmethod  
     def todasAsSeries(cls):
         db = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])       
@@ -36,6 +40,12 @@ class Escola(persistent.Persistent):
 
     def salvar(self):
         coordenadas = self.latLongEscola()
+        if not coordenadas:
+            if not hasattr(self,"center"):
+                self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
+                self.config=self.varManager.read(Config(),DB_CONFIG)  
+                self.center=[self.config.get().lat, self.config.get().lng]    
+            coordenadas = self.center
         self.lat = coordenadas[0]
         self.long = coordenadas[1]
         dicionarioDeDados = self.montarDicionario()

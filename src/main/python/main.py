@@ -693,7 +693,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.buscarAlunosThread()
     
     @nogui
-    def buscarAlunosThread(self):
+    def buscarAlunosThread(self, k=None):
         self.listViewBusca.overlay.started.emit()
         busca = self.lineEditAluno.text()
         try:

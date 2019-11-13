@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QFileDialog
 from pathlib import Path
 import docx
 
-
 from sqlitedb import DB
 from lib.constants import *
 from lib.database import VariableManager, QInterface
@@ -25,6 +24,34 @@ except:
 delimiter = CSV_SEPARATOR
 SEPARADOR_CSV=CSV_SEPARATOR
 types_of_encoding = ["utf-8", "cp1252"]
+
+class Runner(QtCore.QThread):    
+    def __init__(self, target, *args, **kwargs):
+        super().__init__()
+        self._target = target
+        self._args = args
+        self._kwargs = kwargs
+
+    def run(self):
+        if len(self._kwargs.keys())==0 and len(self._args)==0:
+            self._target()   
+        else:
+            self._target(*self._args, **self._kwargs)
+
+
+
+def nogui(func):
+    from functools import wraps
+    @wraps(func)
+    def async_func(*args, **kwargs):
+        runner = Runner(func, *args, **kwargs)
+        # Keep the runner somewhere or it will be destroyed
+        func.__runner = runner
+        runner.start()
+
+    return async_func
+ 
+
 
 def messageDialog(iface=None, title="Concluído", info="", message=""):
     msgBox = QtWidgets.QMessageBox(iface)
@@ -294,24 +321,28 @@ def exportCsv(listaDeAlunos):
             writer.writerow(r)
     
     if yesNoDialog(message="Criar tabela no word?"):
-        doc = docx.Document()
-        with open(filename, newline='') as f:
-            csv_reader = csv.reader(f) 
-            csv_headers = next(csv_reader)
-            csv_cols = len(csv_headers)
-            table = doc.add_table(rows=2, cols=csv_cols)
-            hdr_cells = table.rows[0].cells
+        exportDoc(filename)
+    
+@nogui
+def exportDoc(filename, k=None):
+    doc = docx.Document()
+    with open(filename, newline='') as f:
+        csv_reader = csv.reader(f) 
+        csv_headers = next(csv_reader)
+        csv_cols = len(csv_headers)
+        table = doc.add_table(rows=2, cols=csv_cols)
+        hdr_cells = table.rows[0].cells
 
+        for i in range(csv_cols):
+            hdr_cells[i].text = csv_headers[i]
+
+        for row in csv_reader:
+            row_cells = table.add_row().cells
             for i in range(csv_cols):
-                hdr_cells[i].text = csv_headers[i]
+                row_cells[i].text = row[i]
 
-            for row in csv_reader:
-                row_cells = table.add_row().cells
-                for i in range(csv_cols):
-                    row_cells[i].text = row[i]
-
-        doc.add_page_break()        
-        doc.save(filename[:-4]+".docx")
+    doc.add_page_break()        
+    doc.save(filename[:-4]+".docx")
 
 
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):

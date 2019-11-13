@@ -19,6 +19,17 @@ import customWidgets
 from data.config import *
 #cidade=Config.cidade()
 
+def nogui(func):
+    from functools import wraps
+    @wraps(func)
+    def async_func(*args, **kwargs):
+        runner = Runner(func, *args, **kwargs)
+        # Keep the runner somewhere or it will be destroyed
+        func.__runner = runner
+        runner.start()
+
+    return async_func
+ 
 class Aluno(persistent.Persistent):
     def __init__(self, name="", matricula="", dataDeNascimento="", RG = "", CPF = "", nomeMae="", nomePai="", telefone = "", endereco = "", serie = "", escola = "", idade = 0, lat=0, long = 0, id = 0):
         self.nome=name 

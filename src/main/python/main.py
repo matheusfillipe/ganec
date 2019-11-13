@@ -760,8 +760,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 self.listViewBusca.setItemWidget(itemN, widget)
                 d=deepcopy(e)  #remover coisas inúteis para csv
                 self.listaBusca.append(deepcopy(i))
-                d.pop("id")   
-                self.listaParaExportar.append(d)
+                d.pop("id")  
+                self.listaParaExportar.append({k:d[k] for k in ATRIBUTOS['aluno']})
                 j += 1
             if j==0:
                 self.listViewBusca.addItem("Nenhum aluno foi encontrado.")             

@@ -299,6 +299,8 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         del self.widgets[i]
 
     def setarEscola(self, i):
+        self.pushButtonEditar.setEnabled(True)
+        self.pushButtonExcluir.setEnabled(True)
         self.widgets = []
         self.escolaEscolhida=self.dbEscola.acharDado('nome', self.listViewEscolas.currentItem().text().split("\n\n")[0])
         self.seriesSelect = self.dbSeries.acharDado('idDaEscola',self.escolaEscolhida[0])
@@ -353,6 +355,8 @@ class editarEscolaDialog(QtWidgets.QDialog, EDITAR_ESCOLA):
         self.overlay.stoped.emit()
 
     def onGeolocate(self, preenchido, deuCerto, id):
+        self.pushButtonEditar.setEnabled(False)
+        self.pushButtonExcluir.setEnabled(False)
         if preenchido:
             x,y=self.iface.centro()
             self.iface.mapWidget.addMarker("escola",x,y)

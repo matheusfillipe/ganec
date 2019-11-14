@@ -135,6 +135,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButtonEditar">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Editar</string>
        </property>
@@ -142,6 +145,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButtonExcluir">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Excluir</string>
        </property>

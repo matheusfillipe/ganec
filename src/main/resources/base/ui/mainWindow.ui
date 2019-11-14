@@ -276,13 +276,6 @@
      <addaction name="actionAvan_ar_todos_os_alunos_em_um_ano"/>
      <addaction name="actionRetornar_todos_os_alunoes_um_ano"/>
     </widget>
-    <widget class="QMenu" name="menuExibir">
-     <property name="title">
-      <string>Exibir</string>
-     </property>
-     <addaction name="actionMostrar_Escolas"/>
-     <addaction name="actionMostar_Alunos"/>
-    </widget>
     <widget class="QMenu" name="menuExcluir">
      <property name="title">
       <string>Excluir</string>
@@ -301,9 +294,8 @@
     </widget>
     <addaction name="actionAlunos_4"/>
     <addaction name="actionEscolas_2"/>
-    <addaction name="menuExibir"/>
-    <addaction name="menuSelecionados"/>
     <addaction name="menuZonameanto"/>
+    <addaction name="menuSelecionados"/>
     <addaction name="menuExcluir"/>
     <addaction name="menuDeslocar_Turmas"/>
    </widget>
@@ -311,9 +303,17 @@
     <property name="title">
      <string>Ferramentas</string>
     </property>
-    <addaction name="actionAlunos_n_o_localizados"/>
+    <widget class="QMenu" name="menuExibir_2">
+     <property name="title">
+      <string>Exibir</string>
+     </property>
+     <addaction name="actionMostrar_Escolas"/>
+     <addaction name="actionMostar_Alunos"/>
+    </widget>
     <addaction name="actionRecalcular_Series"/>
+    <addaction name="actionAlunos_n_o_localizados"/>
     <addaction name="actionDist_ncia"/>
+    <addaction name="menuExibir_2"/>
    </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>

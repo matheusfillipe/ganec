@@ -54,6 +54,8 @@ class DB():
     def _salvarDado(self, dado):
             dado=self.toList(dado)
             self.cursor.execute("INSERT INTO "+self.tableName+" ("+str(self.dataNameList)[1:-1] +")VALUES (" + (len(self.dataNameList)*"?,")[:-1]+")", dado)		
+            id=copy(self.cursor.lastrowid)
+            return id
 
     def salvarDado(self, dado):
            # assert len(dado)==len(self.dataNameList), "ERRO: O dado deve ter o tamanho " + str(len(self.dataNameList))
@@ -66,8 +68,9 @@ class DB():
 
     def salvarDados(self, lista): 
             self.connect()
-            [self._salvarDado(dado) for dado in lista]
+            ids=[self._salvarDado(dado) for dado in lista]
             self.close()
+            return ids
 
     def _getDado(self, id):
             return self.toDict(list(list(self.cursor.execute("SELECT * FROM " + self.tableName + " WHERE id = ?", (id,)))[0])[1:])

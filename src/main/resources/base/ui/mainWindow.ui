@@ -229,6 +229,7 @@
     </widget>
     <addaction name="actionExportar_2"/>
     <addaction name="actionSalvar"/>
+    <addaction name="actionCarregar"/>
     <addaction name="actionSair"/>
    </widget>
    <widget class="QMenu" name="menuCadastrar">
@@ -239,13 +240,20 @@
      <property name="title">
       <string>&amp;Importar csv</string>
      </property>
-     <addaction name="actionAlunos_3"/>
      <addaction name="actionEscolar"/>
+     <addaction name="actionAlunos_3"/>
+    </widget>
+    <widget class="QMenu" name="menuImportar_docx_2">
+     <property name="title">
+      <string>Importar docx</string>
+     </property>
+     <addaction name="actionImportar_Alunos"/>
     </widget>
     <addaction name="actionEscolas"/>
     <addaction name="actionAlunos"/>
     <addaction name="actionModalidades"/>
     <addaction name="separator"/>
+    <addaction name="menuImportar_docx_2"/>
     <addaction name="menuImportar_arquivo"/>
    </widget>
    <widget class="QMenu" name="menuOp_es">
@@ -261,14 +269,6 @@
     <property name="title">
      <string>Editar</string>
     </property>
-    <widget class="QMenu" name="menuZonameanto">
-     <property name="title">
-      <string>Zonameanto</string>
-     </property>
-     <addaction name="actionCalcular_Rotas_2"/>
-     <addaction name="actionRecalcular_endere_os_de_alunos"/>
-     <addaction name="actionRecalcular_endere_os_de_escolas"/>
-    </widget>
     <widget class="QMenu" name="menuDeslocar_Turmas">
      <property name="title">
       <string>Turmas</string>
@@ -287,6 +287,8 @@
      <property name="title">
       <string>Busca</string>
      </property>
+     <addaction name="actionDefinir_Turma"/>
+     <addaction name="actionDefinir_Escola"/>
      <addaction name="actionRemover_todos"/>
      <addaction name="actionAvan_ar_uma_Turma"/>
      <addaction name="actionRetornar_uma_turma"/>
@@ -294,10 +296,9 @@
     </widget>
     <addaction name="actionAlunos_4"/>
     <addaction name="actionEscolas_2"/>
-    <addaction name="menuZonameanto"/>
     <addaction name="menuSelecionados"/>
-    <addaction name="menuExcluir"/>
     <addaction name="menuDeslocar_Turmas"/>
+    <addaction name="menuExcluir"/>
    </widget>
    <widget class="QMenu" name="menuFerramentas">
     <property name="title">
@@ -315,9 +316,18 @@
     <addaction name="actionDist_ncia"/>
     <addaction name="menuExibir_2"/>
    </widget>
+   <widget class="QMenu" name="menuZoneamento">
+    <property name="title">
+     <string>Zoneamento</string>
+    </property>
+    <addaction name="actionCalcular_Rotas_2"/>
+    <addaction name="actionRecalcular_endere_os_de_alunos"/>
+    <addaction name="actionRecalcular_endere_os_de_escolas"/>
+   </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
    <addaction name="menuComputar"/>
+   <addaction name="menuZoneamento"/>
    <addaction name="menuFerramentas"/>
    <addaction name="menuOp_es"/>
   </widget>
@@ -532,6 +542,26 @@
   <action name="actionEscolas_2">
    <property name="text">
     <string>Escolas</string>
+   </property>
+  </action>
+  <action name="actionImportar_Alunos">
+   <property name="text">
+    <string>Importar Alunos</string>
+   </property>
+  </action>
+  <action name="actionCarregar">
+   <property name="text">
+    <string>Carregar</string>
+   </property>
+  </action>
+  <action name="actionDefinir_Turma">
+   <property name="text">
+    <string>Definir Turma</string>
+   </property>
+  </action>
+  <action name="actionDefinir_Escola">
+   <property name="text">
+    <string>Definir Escola</string>
    </property>
   </action>
  </widget>

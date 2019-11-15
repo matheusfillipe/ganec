@@ -225,6 +225,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     operatonFinished=pyqtSignal()
     searchFinished=pyqtSignal(list, list)
     countChanged=pyqtSignal(int)
+    docxConvertionFinished=pyqtSignal(str)
 
     def __init__(self, app):         
         QtWidgets.QMainWindow.__init__(self)
@@ -296,12 +297,18 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionMostar_Alunos.triggered.connect(self.showAlunos)
         self.actionAlunos_4.triggered.connect(lambda: self.verificarOsm() and editarAlunoDialog(self).exec_())
         self.actionEscolas_2.triggered.connect(lambda: self.verificarOsm() and editarEscolaDialog(self).exec_())
+        self.actionImportar_Alunos.triggered.connect(self.importWord)
+        self.actionSalvar.triggered.connect(self.backup)
+        self.actionCarregar.triggered.connect(self.carregar)
+        self.actionDefinir_Turma.triggered.connect(self.definirTurma)
+        self.actionDefinir_Escola.triggered.connect(self.definirEscola)
 
         self.countChanged.connect(self.onCountChanged)
         self.listViewBusca.overlay=Overlay(self.listViewBusca, "")
         
 
         self.searchFinished.connect(self.onSearchFinished)        
+        self.docxConvertionFinished.connect(self.imporAlunoCsv)
         
         self.progressBar.hide() 
 
@@ -319,6 +326,45 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
          for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
 
         self.updateScreen() 
+
+
+
+
+
+
+    def carregar(self):
+        reply = yesNoDialog(iface=self, message="Isso destruirá os dados atuais, faça um backup or salve-os.", 
+        info="Tem certeza disso?")     
+        if reply:
+            filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de backup (*.zip)")[0]
+            if not filename: return
+            try:
+                self.iface.varManager.removeDatabase()
+            except:
+                pass
+            try:
+                shutil.rmtree(str(confPath()), ignore_errors=True)
+            except:
+                pass
+
+            z = zipfile.ZipFile(filename, "r") 
+            z.extractall(QtCore.QStandardPaths.standardLocations(QtCore.QStandardPaths.ConfigLocation)[0])
+           # messageDialog(self, message="O programa irá reiniciar")
+           # self.close()
+           # self.iface.restartProgram()               
+        self.updateScreen() 
+
+    def backup(self):
+        filename : str
+        filename = QtWidgets.QFileDialog.getSaveFileName(filter="Arquivo de backup (*.zip *.ZIP)")[0]
+        if filename in ['', None]: return
+        filename= filename if filename.endswith(".zip") else filename+".zip"
+        zip_file = zipfile.ZipFile(filename, 'w')
+        for path in confPath().rglob('*'):
+            path: Path
+            zip_file.write(str(path), str(Path(NAME)/path.relative_to(confPath())), zipfile.ZIP_DEFLATED)
+        zip_file.close()
+  
     
     def ajuda(self):
         import webbrowser
@@ -403,7 +449,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         file=QFileDialog.getSaveFileName(filter="Arquivo "+ filter +" (*."+filter+")")[0]
         file = file if file.endswith(filter) else file+"."+filter   
         return file if file else False
-
+    
+    def openFile(self, filter):
+        file=QFileDialog.getOpenFileName(filter="Arquivo "+ filter +" (*."+filter+")")[0]      
+        return file if file else False
+ 
     def serieRecalc(self):
         self.loadingLabel.setText("Recalculando número de alunos em cada série")   
         self.serieRecalcThread()
@@ -412,6 +462,20 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def serieRecalcThread(self):
         correctSeries(self.countChanged)
         self.operatonFinished.emit()
+
+    def definirTurma(self):
+        novo, ok=QtWidgets.QInputDialog.getItem(self, "Definir Turmas", "Turmas", SERIES, 0, False)
+        if not ok or not novo: return
+        for aluno in self.listaBusca:
+            self.dbAluno.update(aluno['id'], {"serie": novo})
+
+    def definirEscola(self):
+        novo, ok=QtWidgets.QInputDialog.getItem(self, "Definir Escolas", "Escolas", 
+        [e['nome'] for e in self.dbEscola.todosOsDados()], 0, False)
+        novo=[e['id'] for e in self.dbEscola.todosOsDadosComId() if e['nome']==novo][-1]
+        if not ok or not novo: return
+        for aluno in self.listaBusca:
+            self.dbAluno.update(aluno['id'], {"escola": novo})
 
     def SremoverEscola(self):
             for aluno in self.listaBusca:
@@ -608,12 +672,57 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.loadingLabel.setText("Computando localização das Escolas")     
         self.updateScreen()
 
-    def imporAlunoCsv(self):
+    def importWord(self):
         if not self.verificarOsm(): return
-        dialog=csvDialog(CSV_ALUNOS)
+        fileapth=self.openFile("docx")
+        if not fileapth: return
+        self.cleanProgress()
+        self.loadingLabel.setText("Convertendo arquivo  ")
+        self.docx2csvThread(fileapth)
+    
+    @nogui
+    def docx2csvThread(self,filepath, k=None):        
+        path=""
+        try:
+            from docx import Document
+            document = Document(filepath)                                         
+            t=document.tables[0]
+            import tempfile
+            path=tempfile.gettempdir()+"/zoneacsv.csv"
+            import csv
+            with open(path,"w",newline='') as f:
+                writer=csv.writer(f, delimiter=CSV_SEPARATOR)
+                j=1
+                for r in t.rows:
+                    row=[]   
+                    self.countChanged.emit(int(j/len(t.rows)*100))    
+                    for c in r.cells:
+                        row.append(c.text)
+                    diff=len(CSV_ALUNOS)-len(row)
+                    if diff>0:
+                        [row.append("_") for i in range(diff)]
+                    writer.writerow(row)
+                    j+=1             
+        except Exception as e:
+            print(str(traceback.format_exception(None, e, e.__traceback__)))
+        self.docxConvertionFinished.emit(path)
+               
+
+    def imporAlunoCsv(self, file=None):    
+        if not file is None: 
+            self.cleanProgress()    
+        if not self.verificarOsm(): return
+        if file=="": 
+            messageDialog(message="Erro no arquivo") 
+            return
+        dialog=csvDialog(CSV_ALUNOS, file=file)
         dialog.exec_()
         res=dialog.result
         if not res: return
+        self.listaBusca=[]
+        self.listaParaExportar=[]
+        IDS=[]
+        self.listViewBusca.clear()
         try:
             dados=deepcopy(res)
             a=Aluno()
@@ -621,14 +730,21 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 dados[i].update({"idade": a.calcularIdade(r['dataNasc'])})            
             db = self.dbAluno
             newDados=[]
+            naoPerguntar=[]
             for dado in dados:
+                if not dado['nome']:
+                    continue
                 dado[CSV_ALUNOS[8]]+=", "+Config.cidade()
                 ids=self.dbEscola.acharDado("nome", dado["escola"])
                 if dado['escola']:
                     if len(ids)==0:
-                        if yesNoDialog(message="A escola com nome: "+str(dado['escola']+" não está cadastrada, deseja cadastrar?")):
-                            eid=self.dbEscola.salvarDado({"nome": dado['escola'], "series": dado["serie"]})
-                            self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
+                        if not dado['escola'] in naoPerguntar:
+                            if yesNoDialog(message="A escola com nome: "+str(dado['escola']+" não está cadastrada, deseja cadastrar?")):
+                                eid=self.dbEscola.salvarDado({"nome": dado['escola'], "series": dado["serie"]})
+                                self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
+                            else:
+                                eid=""
+                                naoPerguntar.append(dado['escola'])
                     else:
                         eid=ids[-1]
                         try:
@@ -643,18 +759,17 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                           #      eid=ids[-1]
                           #      self.dbSeries.salvarDado({"serie": dado["serie"], "vagas":100, "nDeAlunos": 1, "idDaEscola": eid})
                           #  else:
-                                eid=ids[-1]
+                            eid=ids[-1]
                                 
                     dado['escola']=eid
                 else:
                     dado['escola']=""
                 newDados.append(dado)
-
-            db.salvarDados(newDados)   
+            IDS=db.salvarDados(newDados)
 
         except Exception as e:
             messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
-    
+        self.addAlunosBusca(IDS)
         self.calc = calcularAlunosThread(self)
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()   
@@ -665,7 +780,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def onCountChanged(self, value):
         self.progressBar.show()
         self.progressBar.setValue(value)
-
+        self.menuComputar.setEnabled(False)
+        self.menuCadastrar.setEnabled(False)
+        self.actionRecalcular_Series.setEnabled(False)
+        self.menuZoneamento.setEnabled(False)
+        if value>=99:
+            self.menuComputar.setEnabled(True)
+            self.menuCadastrar.setEnabled(True)
+            self.actionRecalcular_Series.setEnabled(True)
+            self.menuZoneamento.setEnabled(True)
 
     def imporEscolaCsv(self):
         if not self.verificarOsm(): return
@@ -702,6 +825,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.loadingLabel.setText("")
         self.progressBar.hide()
        #self.updateScreen()
+        self.menuComputar.setEnabled(True)
+        self.menuCadastrar.setEnabled(True)
+        self.actionRecalcular_Series.setEnabled(True)
+        self.menuZoneamento.setEnabled(True)
 
     def alunosNLocalizados(self):
         self.listViewBusca.clear()
@@ -713,7 +840,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         for aluno in self.dbAluno.todosOsDadosComId():
             if [float(aluno['lat']), float(aluno['long'])] == center:
                 ids.append(aluno['id'])
-            
+        self.addAlunosBusca(ids)
+
+    def addAlunosBusca(self, ids):
         resultado=self.dbAluno.getDadosComId(ids)                
         self.buscaResultado=resultado
         self.resultado=resultado
@@ -798,8 +927,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.listViewBusca.overlay.stoped.emit()
 
     def onSearchFinished(self, resultado, escolas):
+        self.listViewBusca.clear()
         if len(resultado)==1 and resultado[0]==-1:
-            itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi cadastrado até o momento ou houve um problema com o banco de dados")
+            itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi cadastrado até o momento ou houve um \nproblema com o banco de dados")
             itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
             self.listViewBusca.addItem(itemN)             
         else:            
@@ -998,6 +1128,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dropDownSeries.todos.setChecked(True)
         self.dropDownEscolas.todos.stateChanged.emit(2)
         self.dropDownSeries.todos.stateChanged.emit(2)        
+        self.menuComputar.setEnabled(True)
+        self.menuCadastrar.setEnabled(True)
+        self.actionRecalcular_Series.setEnabled(True)
+        self.menuZoneamento.setEnabled(True)
+
 
 def main(*args):
     global CONF_PATH

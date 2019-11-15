@@ -141,7 +141,7 @@ class dropDown(QtWidgets.QWidget):
        
 
 class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
-    def __init__(self, dataNamesList:list, parent=None):
+    def __init__(self, dataNamesList:list, parent=None, file=None):
         '''dataNamesList: lista de strings com os nomes dos possíveis atributos '''
         super().__init__(None)
         self.setupUi(self)
@@ -150,6 +150,7 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
         self.dataNamesList=dataNamesList         
         self.result=[]
         self.header=[]
+        self.defaultFile=file
 
         for i,dName in enumerate(dataNamesList):
             cb=QtWidgets.QComboBox()                       
@@ -244,7 +245,7 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
         return result  
 
     def openFile(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo/Planilha CSV (*.csv)")[0]
+        filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo/Planilha CSV (*.csv)")[0] if self.defaultFile is None else self.defaultFile
         if filename in ["", None]: return False
         self.filepath=filename
         self.tableWidget : QtWidgets.QTableWidget

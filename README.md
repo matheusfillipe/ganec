@@ -7,35 +7,19 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 <br>
 <br>
 
-## Cronograma
+## Uso Básico
 
-| Atividades      |   Mai. |	Jun. |	Jul. | Ago. |	Set. |        
-| ------------------------------- |:-----:| :-----:| :-----:| :-----:| -----:| 
-|Pesquisa/aprendizado do bolsista na linguagem de programação Python,  preparação do ambiente de desenvolvimento, seleção das ferramentas, bibliotecas a serem utilizadas e testes com elas. | **X** |  |  |  |  |
-| Desenvolvimento da interface gráfica base em QT (a partir de arquivos ui). Definição das janelas e widgets do programa e comportamento dos mesmos.  |  | **X** |  |  |  |
-|Desenvolvimento do algoritmo de cadastro básico de Escolas e alunos e modalidades.  |   |  |**X** |  |  |
-|Criação de Interfaces para a realização dos diversos cadastros.|  |  |  **X** |  |  |
-|  Implementação da interface utilizando a API do Google Maps para a realização da geolocalização dos dados cadastrados |  |  | **X**  |  |  |
-|Desenvolvimento do algoritmo de distribuição dos alunos, gerando mapas de rotas e tabelas de distribuição em função das escolas destino ou modalidades e do aluno.  |  |  |  | **X** |  |
-|  Função para a extração de dados de matrículas de alunos online e de diferentes formatos de mapa |  |  |  | **X** |  |
-|Implementação da função de filtragem para gerar diversas tabelas em função dos dados cadastrados de alunos e para realização de buscas.  |  |  |  |**X**  |  |
-| Sistema de Login (Com suporte para multiplos usuários online, caso seja possível) |  |  |  |  | X |
-| Correções |  |  |  |  |  X|
-| Conclusão |  |  |  |  |  X|
+1. Baixe o arquivo osm da área correspondente: https://www.openstreetmap.org/export#map=14/-19.0032/-46.2906
 
-<br>
+2. Adicione a cidade e o país no menu opções e o CEP opcionalmente. 
 
+3. Cadastre alunos e escolas pelo menu cadastrar. As posições podem ser editadas clicando em um aluno na lista de busca ou nos marcadores azuis no mapa, para escolas.
 
-### Legenda
+4. Edite as vagas das escolas pelo menu Editar->escolas.
 
-* **X** represenda concluído <br>
-* X representa mês previso de término da atividade
-<br><br>
-<br>
-<br>
+5. Confirme se tudo está correto. (Ferramentas->Exibir-> Mostrar Alunos )
 
-https://www.openstreetmap.org/export#map=14/-19.0032/-46.2906
-
+6. Zonemaneto->Calcular rotas. As turmas serão modificadas automaticamente na virada de ano e no zonemento. Caso houver algum problema com o número de alunos, eles podem ser recalculados em ferramentas-> Recalcular turmas. Isso é recomendado antes e depois de refazer um zoneamento.
 
 ## Fotos
 

@@ -21,6 +21,33 @@
     </sizepolicy>
    </property>
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLabel" name="loadingLabel">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>8</height>
+         </size>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="textVisible">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <property name="sizeConstraint">
@@ -164,33 +191,6 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QLabel" name="loadingLabel">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QProgressBar" name="progressBar">
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>8</height>
-         </size>
-        </property>
-        <property name="value">
-         <number>0</number>
-        </property>
-        <property name="textVisible">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -285,7 +285,7 @@
     </widget>
     <widget class="QMenu" name="menuSelecionados">
      <property name="title">
-      <string>Selecionados</string>
+      <string>Busca</string>
      </property>
      <addaction name="actionRemover_todos"/>
      <addaction name="actionAvan_ar_uma_Turma"/>
@@ -440,7 +440,7 @@
   </action>
   <action name="actionRetornar_todos_os_alunoes_um_ano">
    <property name="text">
-    <string>Retornar todos os alunos um ano</string>
+    <string>Retornar todos os alunos uma Turma</string>
    </property>
   </action>
   <action name="actionRecalcular_Series">

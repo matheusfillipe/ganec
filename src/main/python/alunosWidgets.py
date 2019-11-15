@@ -104,7 +104,8 @@ class NewAlunoDialog(QtWidgets.QDialog, NEW_ALUNO_WIDGET):
         #self.comboBoxEscolas : QtWidgets.QComboBox
         comboSeries=SERIES
         self.comboBoxSerie.addItems(comboSeries)
-
+        self.dateEditNascimento : QtWidgets.QDateEdit
+        self.dateEditNascimento.setMaximumDate(QDate.currentDate())
         self.pushButtonAdiconar.clicked.connect(self.salvarDados)
         self.toolButtonEditarAlunos.clicked.connect(self.editarAluno)
 
@@ -232,6 +233,8 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             return
         self.comboBoxEscola: QtWidgets.QComboBox
         self.comboBoxSerie.addItems(SERIES)
+        self.dateEdit.setMaximumDate(QDate.currentDate())
+
 
         '''#######################self.comboBoxEscola.addItems(todasEscolas)
         self.comboBoxEscola.currentTextChanged.connect(self.comboBoxSerie.clear)
@@ -642,14 +645,16 @@ def pular(PULO):
                 serie=series[nextSerieIndex]           
             if aluno['escola']:
                 escolaId=aluno['escola']
-                serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
-                serieDados=dbSeries.getDado(serieId)
-                escola=dbEscola.getDado(escolaId)
-                ## remove a vaga do aluno na tabela de series antiga
-                dbSeries.update(serieId,{"vagas": serieDados['vagas']-1}) 
-                novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)][-1]
-                novaSerieDados=dbSeries.getDado(novaSerieId)
-                dbSeries.update(novaSerieId,{"vagas": novaSerieDados['vagas']+1})  #Adiciona o aluno a nova vaga                                   
+                serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])]
+                if serieId:
+                    serieDados=dbSeries.getDado(serieId[-1])
+                    escola=dbEscola.getDado(escolaId)
+                    ## remove a vaga do aluno na tabela de series antiga
+                    dbSeries.update(serieId[-1],{"vagas": int(serieDados['vagas'])-1}) 
+                novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)]
+                if novaSerieId: #se a escola não tem a série, não muda
+                    novaSerieDados=dbSeries.getDado(novaSerieId[-1])
+                    dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                   
 
         dbAlunos.update(aluno['id'], {"serie":serie})
 

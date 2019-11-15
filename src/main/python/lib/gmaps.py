@@ -418,6 +418,7 @@ def basicWin(ptA, ptB, filepath):
 
     f=tempfile.gettempdir()
     w = QGoogleMap(api_key=API_KEY)
+    w.setWindowTitle("Mapa")
     w.show()
     w.resize(900, 720)
     w.waitUntilReady()

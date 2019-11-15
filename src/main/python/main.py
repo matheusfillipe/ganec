@@ -425,17 +425,25 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             if aluno['escola']:
                 from collections import OrderedDict
                 escola=self.dbEscola.getDadoComId(aluno['escola'])            
-                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
-                serie=self.dbSeries.getDadoComId(serieId)
-                self.dbSeries.update(serieId, {"nDeAlunos": serie["nDeAlunos"]-1})  #Achei a serie e remove a vaga
-                serie=serie['serie']
-            else:
+                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])]
+                if serieId:                    
+                    serie=self.dbSeries.getDadoComId(serieId[-1])
+                    self.dbSeries.update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga
+                    serie=serie['serie']
+                else:
+                    serie=aluno['serie']                   
                 serie=aluno['serie']
             if aluno["serie"]=="FORMADO":
                 nextSerieName="FORMADO"
             else:
-                n=series.index(serie)+1
+                n=series.index(aluno['serie'])+1
                 nextSerieName = "FORMADO" if n > len(series)-1 else series[n] #proxima serie
+            if aluno['escola']:
+                novaSerieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", nextSerieName)]
+                if novaSerieId: #se a escola não tem a série, não muda
+                    novaSerieDados=self.dbSeries.getDado(novaSerieId[-1])
+                    self.dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
+
             self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
             
 
@@ -445,10 +453,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             if aluno['escola']:
                 from collections import OrderedDict
                 escola=self.dbEscola.getDadoComId(aluno['escola'])            
-                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
-                serie=self.dbSeries.getDadoComId(serieId)
-                self.dbSeries.update(serieId, {"nDeAlunos": serie["nDeAlunos"]-1})  #Achei a serie e remove a vaga
-                serie=serie['serie']
+                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])]
+                if serieId:
+                    serie=self.dbSeries.getDadoComId(serieId[-1])
+                    self.dbSeries.update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga
+                    serie=serie['serie']
+                else:
+                    serie=aluno['serie']
             else:
                 serie=aluno['serie']
             if aluno["serie"]=="FORMADO":
@@ -456,8 +467,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             elif aluno['serie']==series[0]:
                 continue
             else: 
-                n=series.index(serie)-1
+                n=series.index(aluno['serie'])-1
                 nextSerieName = series[0] if n <=0  else series[n] #proxima serie
+            if aluno['escola']:
+                novaSerieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", nextSerieName)]
+                if novaSerieId: #se a escola não tem a série, não muda
+                    novaSerieDados=self.dbSeries.getDado(novaSerieId[-1])
+                    self.dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
+
             self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
 
     
@@ -739,16 +756,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             listaDeIdsEscola = []
             ids = []
             semEscola = False
-            series = []
-            for i in self.dropDownSeries.selectedTexts():
-                series.append(str(i))
-            
+            series = self.dropDownSeries.selectedTexts()            
             escolas = []
+            semEscola = False
             for i in self.dropDownEscolas.selectedTexts():
                 if i == "Sem Escola":
                     semEscola = True
-                else:
-                    semEscola = False
                 escolas.append(str(i))
             
             escolas = list(set(escolas))
@@ -757,11 +770,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             listaDeIdsNome = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
             for i in listaDeIdsNome:
                 aluno = self.dbAluno.getDadoComId(i)
-                if aluno['escola'] != "" and aluno['escola'] != None:
+                if aluno['escola']:
                     for j in escolas:
-                        if self.dbEscola.getDadoComId(aluno['escola'])['nome'] == j:
+                        if self.dbEscola.getDadoComId(aluno['escola'])['nome'] == j or self.dropDownEscolas.todos.isChecked():
                             for k in series:
-                                if aluno['serie'] == k:
+                                if aluno['serie'] == k or self.dropDownSeries.todos.isChecked():
                                     for l in range(self.spinBoxIdadeMinima.value(), self.spinBoxIdadeMaxima.value()+1):
                                         if aluno['idade'] == l:
                                             ids.append(i)

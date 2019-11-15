@@ -257,7 +257,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.pushButtonBusca.clicked.connect(self.buscarAluno)
         self.actionExportarBusca.triggered.connect(self.exportarBusca)
         self.listViewBusca.itemClicked.connect(self.setarEndereco)
-        rmfile=lambda path: path.unlink() and self.updateScreen() if path.is_file() else 0
+        rmfile=lambda path: (path.unlink() and self.updateScreen()) or True if path.is_file() else 1
         self.actionApagar_todas_Escolas.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['escola'])) 
         if yesNoDialog(message="Tem certeza que deseja apagar todos os escolas?") else lambda: 0)
         self.actionApagar_todos_Alunos.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['aluno'])) 
@@ -465,7 +465,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         for aluno in self.listaBusca:
             if "id" in aluno:
                 self.dbAluno.apagarDado(aluno['id'])
-                shutil.rmtree(str(confPath()/Path("alunos")/Path(aluno['id'])), ignore_errors=True)
+                shutil.rmtree(str(confPath()/Path("alunos")/Path(str(aluno['id']))), ignore_errors=True)
 
     
     def atualizarAno(self):
@@ -493,6 +493,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def addMarkerEscolas(self):
         #self.idEscolasMarker = []
+        self.hideEscolas()
         for i in self.dbEscola.todosOsDados():
             self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
             icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_blue.png",
@@ -716,7 +717,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             j += 1
 
         if j==0:
-            self.listViewBusca.addItem("Nenhum aluno foi encontrado")             
+            itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi encontrado") 
+            itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
+            self.listViewBusca.addItem(itemN)             
         
 
     def buscarAluno(self): 
@@ -783,7 +786,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def onSearchFinished(self, resultado, escolas):
         if len(resultado)==1 and resultado[0]==-1:
-            self.listViewBusca.addItem("Nenhum aluno foi cadastrado até o momento ou houve um problema com o banco de dados")
+            itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi cadastrado até o momento ou houve um problema com o banco de dados")
+            itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
+            self.listViewBusca.addItem(itemN)             
         else:            
             self.buscaResultado=resultado
             self.resultado=resultado
@@ -800,8 +805,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 self.listaParaExportar.append({k:d[k] for k in ATRIBUTOS['aluno']})
                 j += 1
             if j==0:
-                self.listViewBusca.addItem("Nenhum aluno foi encontrado.")             
-
+                itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi encontrado.")            
+                itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
+                self.listViewBusca.addItem(itemN)         
         
         #self.updateScreen()
             
@@ -965,6 +971,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def updateScreen(self):
         self.listViewBusca.clear()
+        self.mapWidget.deleteMarker("aluno")       
         escolas = []
         for i in Escola.todasAsEscolas():
             escolas.append(i)

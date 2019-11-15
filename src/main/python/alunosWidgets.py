@@ -336,7 +336,7 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         if not temEscola:
             j=-1
             self.comboBoxEscola.setCurrentIndex(len(ordemDasEscolas))
-            messageDialog(title="ERRO", message="Esse aluno ainda não tem uma escola\nCalcule as rotas novamente") # ??? aluno sem escola
+           # messageDialog(title="ERRO", message="Esse aluno ainda não tem uma escola\nCalcule as rotas novamente") # ??? aluno sem escola
         else:
             print(self.todasAsEscolas[j]['nome'])
             self.comboBoxEscola.setCurrentIndex(j)
@@ -551,7 +551,7 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         excluir_ = yesNoDialog(self, "Atenção", "Tem certeza que deseja fazer isso?", "Todos os dados desse aluno serão removidos!")
         if excluir_ :
             id=self.id
-            self.db.apagarDado(self.db.acharDadoExato('nome', self.nomeAntes)[-1])
+            self.db.apagarDado(self.id)
             self.listViewAlunos.clear() 
             self.lineEditNome.setText("")
             self.lineEditMatricula.setText("")
@@ -563,11 +563,9 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
             self.lineEditEndereco.setText("")
             self.labelId.setText("ID: ")
             import shutil
-            shutil.rmtree(str(confPath()/Path("alunos")/Path(self.id)), ignore_errors=True)
+            shutil.rmtree(str(confPath()/Path("alunos")/Path(str(self.id))), ignore_errors=True)
 
-        else :
-            messageDialog(self, "Não excluido", "", "Ok, o aluno nao foi excluido")
-
+     
     def closeEvent(self, QCloseEvent):
         self.iface.mapWidget.deleteMarker("alunoNovo") 
         return super().closeEvent(QCloseEvent)

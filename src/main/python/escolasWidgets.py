@@ -202,6 +202,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
             self.iface.escolaId=id
             self.clear()
             self.listWidget.clear()
+
         else:
             messageDialog(self, "Atenção", "", "Todos os campos Obrigatórios devem estar preenchidos.")
 
@@ -218,7 +219,7 @@ class NewEscolaWidget(QtWidgets.QWidget, NEW_ESCOLA_WIDGET):
         self.lineEditRua.setText("")
         self.lineEditNumero.setText("")
         self.lineEditBairro.setText("")
-
+        self.widgets=[]
 
 class NewEscolaDialog(QtWidgets.QDialog):
     def __init__(self, iface):

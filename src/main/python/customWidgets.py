@@ -315,7 +315,7 @@ def exportCsv(listaDeAlunos):
     if not filename: return
     filename = filename if filename.endswith(".csv") else filename+".csv"
     header=list(listaDeAlunos[0].keys())    
-    with open(filename, "w") as fo:
+    with open(filename, "w", encoding="utf-8") as fo:
         writer = csv.writer(fo, delimiter=CSV_SEPARATOR, dialect='excel')
         if type(header)==list:
             writer.writerow(header)

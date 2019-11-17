@@ -1,8 +1,8 @@
-# Gestão de Alunos nas escolas do Carmo
+# ZONEA
 
 Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefeitura de Carmo do Paranaíba, com o intuido de auxiliar na gestão e logística de distribuição dos alunos em função de seus respectivos endereços domiciliares, modalidade escolar e localização das escolas.
 
-* [Como usar](https://github.com/matheusfillipe/ganec/wiki/Como-Usar)
+[Wiki](https://github.com/matheusfillipe/ganec/wiki/Como-Usar)
 
 <br>
 <br>
@@ -29,7 +29,4 @@ Protótipo de Layout da janela principal:
  ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/2.png)
  ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/DOCS/main.png)
 
-
 <br><br>
-
-

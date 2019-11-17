@@ -2,8 +2,9 @@
 
 Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefeitura de Carmo do Paranaíba, com o intuido de auxiliar na gestão e logística de distribuição dos alunos em função de seus respectivos endereços domiciliares, modalidade escolar e localização das escolas.
 
-[Wiki](https://github.com/matheusfillipe/ganec/wiki/Como-Usar)
+* [Wiki](https://github.com/matheusfillipe/ganec/wiki/Como-Usar)
 
+* [Instaladores](https://github.com/matheusfillipe/ganec/releases)
 <br>
 <br>
 

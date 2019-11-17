@@ -1,4 +1,4 @@
-STEPS TO BUILD A INSTALLER (Tested on windows and Linux)
+STEPS TO BUILD AN INSTALLER (Tested on windows and Linux)
 
 1. Install python 3.6 or the currently supported version for fbs: https://build-system.fman.io/troubleshooting  (3.6 is the current)
 2. git clone https://github.com/matheusfillipe/ganec.git && pip install virtualenv   -- Python's default virtual env seems to have problems

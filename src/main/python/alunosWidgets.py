@@ -574,47 +574,47 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
         return super().closeEvent(QCloseEvent)
 
 
-def pular(PULO):
-    from collections import OrderedDict
-    dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-    dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-    series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
-    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
-    print("Series: ",series)
-    #PULO=1 #muda para -1 para descer de séries
-
-    for aluno in dbAlunos.todosOsDadosComId():
-        ## Move o aluno para a próxima serie
-        serie=aluno['serie']
-        if serie=="FORMADO":
-            continue
-        elif serie=="SEM_ESCOLA":
-            continue
-        else:
-            serieIndex=series.index(serie)
-            nextSerieIndex=serieIndex+PULO
-            escolaId=aluno['escola']
-            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
-            serieDados=dbSeries.getDado(serieId)
-            escola=dbEscola.getDado(escolaId)
-
-        if nextSerieIndex>=len(series): #ALUNO FORMOU
-            serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
-        elif nextSerieIndex<=0 or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
-            serie="SEM_ESCOLA"
-        else:
-            serie=series[nextSerieIndex]            
-            novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)][-1]
-            novaSerieDados=dbSeries.getDado(novaSerieId)
-            dbSeries.update(novaSerieId,{"vagas": novaSerieDados['vagas']+1})  #Adiciona o aluno a nova vaga
-
-        dbAlunos.update(aluno['id'], {"serie":serie})
-
-        ## remove a vaga do aluno na tabela de series antiga
-        dbSeries.update(serieId,{"vagas": serieDados['vagas']-1})
-    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
-    print("Series: ",series)
+#def pular(PULO):
+#    from collections import OrderedDict
+#    dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+#    dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+#    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+#    series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
+#    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+#    print("Series: ",series)
+#    #PULO=1 #muda para -1 para descer de séries
+#
+#    for aluno in dbAlunos.todosOsDadosComId():
+#        ## Move o aluno para a próxima serie
+#        serie=aluno['serie']
+#        if serie=="FORMADO":
+#            continue
+#        elif serie=="SEM_ESCOLA":
+#            continue
+#        else:
+#            serieIndex=series.index(serie)
+#            nextSerieIndex=serieIndex+PULO
+#            escolaId=aluno['escola']
+#            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
+#            serieDados=dbSeries.getDado(serieId)
+#            escola=dbEscola.getDado(escolaId)
+#
+#        if nextSerieIndex>=len(series): #ALUNO FORMOU
+#            serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
+#        elif nextSerieIndex<=0 or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
+#            serie="SEM_ESCOLA"
+#        else:
+#            serie=series[nextSerieIndex]            
+#            novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)][-1]
+#            novaSerieDados=dbSeries.getDado(novaSerieId)
+#            dbSeries.update(novaSerieId,{"vagas": novaSerieDados['vagas']+1})  #Adiciona o aluno a nova vaga
+#
+#        dbAlunos.update(aluno['id'], {"serie":serie})
+#
+#        ## remove a vaga do aluno na tabela de series antiga
+#        dbSeries.update(serieId,{"vagas": serieDados['vagas']-1})
+#    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+#    print("Series: ",series)
  
 def pular(PULO):
     from collections import OrderedDict

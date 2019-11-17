@@ -276,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.scrollAreaTeste : QtWidgets.QScrollArea
         self.addMap()
         self.dialog=[]
-        self.actionAlunos_3.triggered.connect(self.imporAlunoCsv)
+        self.actionAlunos_3.triggered.connect(lambda: self.imporAlunoCsv())
         self.actionEscolar.triggered.connect(self.imporEscolaCsv)
         self.actionCalcular_Rotas_2.triggered.connect(self.calcularRotas)
         self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)

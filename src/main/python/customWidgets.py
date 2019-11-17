@@ -326,7 +326,7 @@ def exportCsv(listaDeAlunos):
     if yesNoDialog(message="Criar tabela no word?"):
         exportDoc(filename)
     
-#@nogui
+@nogui
 def exportDoc(filename, k=None):
     try:
         I=0
@@ -346,6 +346,8 @@ def exportDoc(filename, k=None):
             hdr_cells[i].text = csv_headers[i]
         headers=len(next(csv_reader))
         for row in csv_reader:
+            if len(row) != headers:
+                continue
             row_cells = table.add_row().cells
             for i in range(headers):
                 if i in indexes:

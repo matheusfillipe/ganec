@@ -23,7 +23,7 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 
 ## Fotos
 
-Protótipo de Layout da janela principal:
+Janela principal:
 
  ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/1.png)
  ![alt text](https://raw.githubusercontent.com/matheusfillipe/ganec/master/src/main/resources/base/2.png)

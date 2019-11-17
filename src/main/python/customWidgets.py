@@ -338,7 +338,7 @@ def exportDoc(filename, k=None):
     with open(filename, newline='') as f:
         indexes = [0,2,5,6,7,8,9]
         csv_headers=["Nome", "Nascimento", "Mãe", "Pai", "Telefone", "Endereço", "Turma"]
-        csv_reader = csv.reader(f)       
+        csv_reader = csv.reader(f, delimiter=CSV_SEPARATOR)       
         csv_cols = len(csv_headers)
         table = doc.add_table(rows=2, cols=csv_cols)
         hdr_cells = table.rows[0].cells

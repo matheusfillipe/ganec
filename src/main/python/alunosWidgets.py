@@ -58,6 +58,7 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
         self.label : QtWidgets.QLabel
         self.parent=parent
         self.aluno=aluno
+        self.editar=True
        # self.pushButton : QtWidgets.QPushButton
        # self.pushButton.clicked.connect(self.editar)
         self.dbEscola = DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
@@ -68,12 +69,12 @@ class alunoBusca(QtWidgets.QDialog, ALUNO_BUSCA):
             strr+="--"
         self.label.setText(strr) 
 
-    def editar(self):
-        diag=editarAlunoDialog(self.parent, self.aluno['id'])
-        diag.exec_()        
+    #def editar(self):
+    #    diag=editarAlunoDialog(self.parent, self.aluno['id'])
+    #    diag.exec_()        
 
     def mouseDoubleClickEvent(self, QMouseEvent):
-        if QMouseEvent.button() == QtCore.Qt.LeftButton:
+        if QMouseEvent.button() == QtCore.Qt.LeftButton and self.editar:
             editarAlunoDialog(self.parent, self.aluno['id']).exec_()
         return super().mouseDoubleClickEvent(QMouseEvent)
 
@@ -572,95 +573,4 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
     def closeEvent(self, QCloseEvent):
         self.iface.mapWidget.deleteMarker("alunoNovo") 
         return super().closeEvent(QCloseEvent)
-
-
-#def pular(PULO):
-#    from collections import OrderedDict
-#    dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-#    dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-#    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-#    series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
-#    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
-#    print("Series: ",series)
-#    #PULO=1 #muda para -1 para descer de séries
-#
-#    for aluno in dbAlunos.todosOsDadosComId():
-#        ## Move o aluno para a próxima serie
-#        serie=aluno['serie']
-#        if serie=="FORMADO":
-#            continue
-#        elif serie=="SEM_ESCOLA":
-#            continue
-#        else:
-#            serieIndex=series.index(serie)
-#            nextSerieIndex=serieIndex+PULO
-#            escolaId=aluno['escola']
-#            serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])][-1]
-#            serieDados=dbSeries.getDado(serieId)
-#            escola=dbEscola.getDado(escolaId)
-#
-#        if nextSerieIndex>=len(series): #ALUNO FORMOU
-#            serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
-#        elif nextSerieIndex<=0 or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
-#            serie="SEM_ESCOLA"
-#        else:
-#            serie=series[nextSerieIndex]            
-#            novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)][-1]
-#            novaSerieDados=dbSeries.getDado(novaSerieId)
-#            dbSeries.update(novaSerieId,{"vagas": novaSerieDados['vagas']+1})  #Adiciona o aluno a nova vaga
-#
-#        dbAlunos.update(aluno['id'], {"serie":serie})
-#
-#        ## remove a vaga do aluno na tabela de series antiga
-#        dbSeries.update(serieId,{"vagas": serieDados['vagas']-1})
-#    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
-#    print("Series: ",series)
- 
-def pular(PULO):
-    from collections import OrderedDict
-    dbEscola=DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
-    dbAlunos=DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-    dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
-    series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
-    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
-    print("Series: ",series)
-    #PULO=1 #muda para -1 para descer de séries
-    #return
-
-    for aluno in dbAlunos.todosOsDadosComId():
-        ## Move o aluno para a próxima serie
-        serie=aluno['serie']
-        if serie=="FORMADO":
-            continue
-        elif serie==series[0]:        
-            continue
-        else:
-            serieIndex=series.index(serie)
-            nextSerieIndex=serieIndex+PULO
-            if nextSerieIndex>len(series)-1: #ALUNO FORMOU
-                serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
-            elif nextSerieIndex<=0: #or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
-                serie=series[0]
-            else:
-                serie=series[nextSerieIndex]           
-            if aluno['escola']:
-                escolaId=aluno['escola']
-                serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])]
-                if serieId:
-                    serieDados=dbSeries.getDado(serieId[-1])
-                    escola=dbEscola.getDado(escolaId)
-                    ## remove a vaga do aluno na tabela de series antiga
-                    dbSeries.update(serieId[-1],{"vagas": int(serieDados['vagas'])-1}) 
-                novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)]
-                if novaSerieId: #se a escola não tem a série, não muda
-                    novaSerieDados=dbSeries.getDado(novaSerieId[-1])
-                    dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                   
-
-        dbAlunos.update(aluno['id'], {"serie":serie})
-
-    print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
-    print("Series: ",series)
-
-if __name__=="__main__":
-    pular(1)
 

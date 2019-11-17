@@ -224,6 +224,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
 class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     operatonFinished=pyqtSignal()
     searchFinished=pyqtSignal(list, list)
+    progLabel=pyqtSignal(str)
     countChanged=pyqtSignal(int)
     docxConvertionFinished=pyqtSignal(str)
 
@@ -231,8 +232,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         QtWidgets.QMainWindow.__init__(self)
         MAIN_WINDOW.__init__(self)
         self.app : QtWidgets.QApplication
-        self.app=app 
-        self.operatonFinished.connect(self.cleanProgress)
+        self.app=app         
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         self.listaBusca=[]
         if RESET:
@@ -282,8 +282,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)
         self.actionRecalcular_endere_os_de_escolas.triggered.connect(self.recalcularEscolas)
         self.actionExportar_imagem.triggered.connect(lambda: self.exportImg(self.mapWidget))
-        self.actionAvan_ar_todos_os_alunos_em_um_ano.triggered.connect(lambda: pular(1))
-        self.actionRetornar_todos_os_alunoes_um_ano.triggered.connect(lambda: pular(-1))
+        self.actionAvan_ar_todos_os_alunos_em_um_ano.triggered.connect(lambda: self.pular(1))
+        self.actionRetornar_todos_os_alunoes_um_ano.triggered.connect(lambda: self.pular(-1))
         self.actionRemover_todos.triggered.connect(self.SremoverAlunos)
         self.actionAvan_ar_uma_Turma.triggered.connect(self.SacanvaTurma)
         self.actionRetornar_uma_turma.triggered.connect(self.SretornaTurma)
@@ -324,12 +324,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.dropDownEscolas.selected.connect(lambda indices:
          self.dropDownSeries.repopulate(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) 
          for i,escola in enumerate(self.dbEscola.todosOsDados()) if i in indices],[])))))
-
+        self.operatonFinished.connect(self.cleanProgress)
+        self.progLabel.connect(lambda txt: self.blockBusca() or self.loadingLabel.setText(txt))
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F5"), self)
+        shortcut.activated.connect(self.updateScreen)
         self.updateScreen() 
-
-
-
-
 
 
     def carregar(self):
@@ -456,6 +455,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
  
     def serieRecalc(self):
         self.loadingLabel.setText("Recalculando número de alunos em cada série")   
+        self.blockBusca()
         self.serieRecalcThread()
 
     @nogui
@@ -463,28 +463,50 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         correctSeries(self.countChanged)
         self.operatonFinished.emit()
 
+    
     def definirTurma(self):
         novo, ok=QtWidgets.QInputDialog.getItem(self, "Definir Turmas", "Turmas", SERIES, 0, False)
         if not ok or not novo: return
-        for aluno in self.listaBusca:
+        self.definirTurmasThread(novo)
+
+    @nogui
+    def definirTurmasThread(self, novo):
+        self.progLabel.emit("Definindo Turmas ")       
+        for i,aluno in enumerate(self.listaBusca):
+            self.countChanged.emit(int(i/len(self.listaBusca)*100))           
             self.dbAluno.update(aluno['id'], {"serie": novo})
+        self.operatonFinished.emit()
 
     def definirEscola(self):
         novo, ok=QtWidgets.QInputDialog.getItem(self, "Definir Escolas", "Escolas", 
         [e['nome'] for e in self.dbEscola.todosOsDados()], 0, False)
         novo=[e['id'] for e in self.dbEscola.todosOsDadosComId() if e['nome']==novo][-1]
         if not ok or not novo: return
-        for aluno in self.listaBusca:
-            self.dbAluno.update(aluno['id'], {"escola": novo})
+        self.definirEscolaThread(novo)
 
-    def SremoverEscola(self):
-            for aluno in self.listaBusca:
-                if aluno['escola'] != "" or aluno['escola'] != None:
-                    self.dbAluno.update(self.dbAluno.acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
-            self.updateScreen()
-                
-    def SacanvaTurma(self):
-        for aluno in self.listaBusca:
+    @nogui
+    def definirEscolaThread(self, novo):
+        self.progLabel.emit("Definindo Turmas ")       
+        for i,aluno in enumerate(self.listaBusca):
+            self.countChanged.emit(int(i/len(self.listaBusca)*100))           
+            self.dbAluno.update(aluno['id'], {"escola": novo})
+        self.operatonFinished.emit()
+
+    @nogui
+    def SremoverEscola(self, k=None):
+        self.progLabel.emit("Removendo Escolas ")       
+        for i,aluno in enumerate(self.listaBusca):
+            self.countChanged.emit(int(i/len(self.listaBusca)*100))           
+            if aluno['escola'] != "" or aluno['escola'] != None:
+                self.dbAluno.update(self.dbAluno.acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
+        self.operatonFinished.emit()
+      #  self.updateScreen()
+
+    @nogui            
+    def SacanvaTurma(self, k=None):
+        self.progLabel.emit("Avançando Turmas ")
+        for i,aluno in enumerate(self.listaBusca):
+            self.countChanged.emit(int(i/len(self.listaBusca)*100))
             series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
             if aluno['escola']:
                 from collections import OrderedDict
@@ -509,10 +531,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                     self.dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
 
             self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
-            
-
-    def SretornaTurma(self):
-        for aluno in self.listaBusca:
+        self.operatonFinished.emit()
+           
+    @nogui
+    def SretornaTurma(self, k=None):
+        self.progLabel.emit("Retornando Turmas ")
+        for i,aluno in enumerate(self.listaBusca):
+            self.countChanged.emit(int(i/len(self.listaBusca)*100))
             series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
             if aluno['escola']:
                 from collections import OrderedDict
@@ -540,14 +565,17 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                     self.dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
 
             self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
+        self.operatonFinished.emit()
 
-    
-    def SremoverAlunos(self):
-        for aluno in self.listaBusca:
+    @nogui 
+    def SremoverAlunos(self, k=None):
+        self.progLabel.emit("Removendo Alunos ")
+        for i,aluno in enumerate(self.listaBusca):
             if "id" in aluno:
+                self.countChanged.emit(int(i/len(self.listaBusca)*100))
                 self.dbAluno.apagarDado(aluno['id'])
                 shutil.rmtree(str(confPath()/Path("alunos")/Path(str(aluno['id']))), ignore_errors=True)
-
+        self.operatonFinished.emit()
     
     def atualizarAno(self):
         anoAtual=date.today().year
@@ -556,7 +584,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         anoAnterior = self.dbAno.getDado(1)['ano']
         if(anoAtual > anoAnterior):
             self.dbAno.update(1, {'ano':self.anoAtual})
-            pular(1)
+            self.pular(1)
             #print(list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for i,escola in  enumerate(self.dbEscola.todosOsDados())],[]))))
 
     def closeEvent(self, event):
@@ -635,6 +663,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         shutil.move(temp, filename)                
    
     def calcularRotas(self):
+        self.blockBusca()
         self.calc = calcularRotasThread()
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.error.connect(lambda: messageDialog(title="Erro", message="Por favor escolha o arquivo osm no menu configurações"))
@@ -644,6 +673,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.updateScreen()
    
     def recalcularAlunos(self):
+        self.blockBusca()
         db= self.dbAluno
         for aluno in db.todosOsDadosComId():
             aluno['lat']=''
@@ -659,6 +689,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
 
     def recalcularEscolas(self):
+        self.blockBusca()
         db= self.dbEscola
         for aluno in db.todosOsDadosComId():
             aluno['lat']=''
@@ -783,12 +814,22 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.menuComputar.setEnabled(False)
         self.menuCadastrar.setEnabled(False)
         self.actionRecalcular_Series.setEnabled(False)
-        self.menuZoneamento.setEnabled(False)
+        self.menuZoneamento.setEnabled(False)      
         if value>=99:
             self.menuComputar.setEnabled(True)
             self.menuCadastrar.setEnabled(True)
             self.actionRecalcular_Series.setEnabled(True)
             self.menuZoneamento.setEnabled(True)
+    
+    def blockBusca(self):       
+        for i in range(self.listViewBusca.count()):
+            w=self.listViewBusca.itemWidget(self.listViewBusca.item(i))
+            w.editar=False
+
+    def enableBusca(self):
+        for i in range(self.listViewBusca.count()):
+            w=self.listViewBusca.itemWidget(self.listViewBusca.item(i))
+            w.editar=True
 
     def imporEscolaCsv(self):
         if not self.verificarOsm(): return
@@ -829,6 +870,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.menuCadastrar.setEnabled(True)
         self.actionRecalcular_Series.setEnabled(True)
         self.menuZoneamento.setEnabled(True)
+        self.enableBusca()
 
     def alunosNLocalizados(self):
         self.listViewBusca.clear()
@@ -1132,6 +1174,55 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.menuCadastrar.setEnabled(True)
         self.actionRecalcular_Series.setEnabled(True)
         self.menuZoneamento.setEnabled(True)
+    
+    @nogui
+    def pular(self, PULO):
+        self.progLabel.emit("Avançando Turmas...")
+        from collections import OrderedDict
+        dbEscola=self.dbEscola#DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        dbAlunos=self.dbAluno#DB(str(confPath()/Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        dbSeries=self.dbSeries #DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])
+        series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in dbEscola.todosOsDados()],[])))
+        print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+        print("Series: ",series)
+        #PULO=1 #muda para -1 para descer de séries
+        #return
+        lista=dbAlunos.todosOsDadosComId()
+        for ci,aluno in enumerate(lista):
+            ## Move o aluno para a próxima serie
+            self.countChanged.emit(int(ci/len(lista)*100))
+            serie=aluno['serie']
+            if serie=="FORMADO":
+                continue
+            elif serie==series[0]:        
+                continue
+            else:
+                serieIndex=series.index(serie)
+                nextSerieIndex=serieIndex+PULO
+                if nextSerieIndex>len(series)-1: #ALUNO FORMOU
+                    serie="FORMADO"  #Serie para todos que formaram (Como isso não existe em nenhuma escola vai ser ignorado)
+                elif nextSerieIndex<=0: #or not serie in escola["series"].split(SEPARADOR_SERIES):  #Se a escola não te suporta mais
+                    serie=series[0]
+                else:
+                    serie=series[nextSerieIndex]           
+                if aluno['escola']:
+                    escolaId=aluno['escola']
+                    serieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", aluno['serie'])]
+                    if serieId:
+                        serieDados=dbSeries.getDado(serieId[-1])
+                        escola=dbEscola.getDado(escolaId)
+                        ## remove a vaga do aluno na tabela de series antiga
+                        dbSeries.update(serieId[-1],{"vagas": int(serieDados['vagas'])-1}) 
+                    novaSerieId=[id for id in dbSeries.acharDadoExato("idDaEscola", escolaId) if id in dbSeries.acharDadoExato("serie", serie)]
+                    if novaSerieId: #se a escola não tem a série, não muda
+                        novaSerieDados=dbSeries.getDado(novaSerieId[-1])
+                        dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                   
+
+            dbAlunos.update(aluno['id'], {"serie":serie})
+
+        print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
+        print("Series: ",series)
+        self.operatonFinished.emit()
 
 
 def main(*args):

@@ -5,7 +5,7 @@ UI_FILES_PATH="./src/main/python/ui/"
 CONF_PATH=''
 BASEPATHS=["./src/main/resources/base/", "./"]
 
-SERIES=['Berçário','Maternal','1º Periodo','2º Periodo',
+SERIES=['Berçário','Maternal','1º Período','2º Período',
 '1º Ano','2º Ano','3º Ano','4º Ano','5º Ano','6º Ano','7º Ano','8º Ano','9º Ano',
 '1M','2M','3M']
 

@@ -5,7 +5,7 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 * [Wiki](https://github.com/matheusfillipe/ganec/wiki/Como-Usar)
 
 * [Instaladores](https://github.com/matheusfillipe/ganec/releases)
-<br>
+
 <br>
 
 ## Uso Básico
@@ -21,6 +21,8 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 5. Confirme se tudo está correto. (Ferramentas->Exibir-> Mostrar Alunos )
 
 6. Zonemaneto->Calcular rotas. As turmas serão modificadas automaticamente na virada de ano e no zonemento. Caso houver algum problema com o número de alunos, eles podem ser recalculados em ferramentas-> Recalcular turmas. Isso é recomendado antes e depois de refazer um zoneamento.
+
+<br>
 
 ## Fotos
 

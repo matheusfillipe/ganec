@@ -305,7 +305,7 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
         super().resizeEvent(event)  # Restores the original behaviour of the resize event
 
 
-def exportCsv(listaDeAlunos):
+def exportCsv(listaDeAlunos, countChanged, finished):
     '''
     listaDeAlunos: lista de Dicionários de alunos
     filename: Caminho do arquivo csv a salvar
@@ -315,19 +315,22 @@ def exportCsv(listaDeAlunos):
     if not filename: return
     filename = filename if filename.endswith(".csv") else filename+".csv"
     header=list(listaDeAlunos[0].keys())    
-    with open(filename, "w", encoding="utf-8") as fo:
+    with open(filename, "w", encoding=types_of_encoding[1]) as fo:
         writer = csv.writer(fo, delimiter=CSV_SEPARATOR, dialect='excel')
         if type(header)==list:
             writer.writerow(header)
-        for dic in listaDeAlunos:
+        for i,dic in enumerate(listaDeAlunos):
+            countChanged.emit(int(i/len(listaDeAlunos)*100),"Exportando csv")
             r=list(dic.values())
             writer.writerow(r)
     
     if yesNoDialog(message="Criar tabela no word?"):
-        exportDoc(filename)
+        exportDoc(filename, countChanged, finished)
+    else:
+        finished.emit()
     
-@nogui
-def exportDoc(filename, k=None):
+@nogui  
+def exportDoc(filename, countChanged, finished, k=None):
     try:
         I=0
         doc = docx.Document(BASEPATHS[I]+"templates/default.docx")
@@ -335,7 +338,7 @@ def exportDoc(filename, k=None):
         I=1
         doc = docx.Document(BASEPATHS[I]+"templates/default.docx")
 
-    with open(filename, newline='') as f:
+    with open(filename, newline='',encoding=types_of_encoding[1]) as f:
         indexes = [0,2,5,6,7,8,9]
         csv_headers=["Nome", "Nascimento", "Mãe", "Pai", "Telefone", "Endereço", "Turma"]
         csv_reader = csv.reader(f, delimiter=CSV_SEPARATOR)       
@@ -345,7 +348,9 @@ def exportDoc(filename, k=None):
         for i in range(csv_cols):           
             hdr_cells[i].text = csv_headers[i]
         headers=len(next(csv_reader))
-        for row in csv_reader:
+        row_count = sum(1 for row in csv_reader) 
+        for i,row in enumerate(csv_reader):
+            countChanged.emit(int(i/len(row_count)*80),"Exportando docx")
             if len(row) != headers:
                 continue
             row_cells = table.add_row().cells
@@ -355,7 +360,8 @@ def exportDoc(filename, k=None):
 
         paragraph =hdr_cells[0].paragraphs[0]
         run = paragraph.runs
-        for row in table.rows:
+        for i,row in enumerate(table.rows):
+            countChanged.emit(int(i/len(table.rows)*20)+80,"Melhorando Layout")
             for cell in row.cells:
                 paragraphs = cell.paragraphs
                 for paragraph in paragraphs:
@@ -366,6 +372,7 @@ def exportDoc(filename, k=None):
 
     doc.add_page_break()        
     doc.save(filename[:-4]+".docx")
+    finished.emit()
 
 
 class NewModalidadeWidget(QtWidgets.QWidget, NEW_MODALIDADE_WIDGET):

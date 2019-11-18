@@ -226,6 +226,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     searchFinished=pyqtSignal(list, list)
     progLabel=pyqtSignal(str)
     countChanged=pyqtSignal(int)
+    countChangedBlockless=pyqtSignal(int, str)
     docxConvertionFinished=pyqtSignal(str)
 
     def __init__(self, app):         
@@ -304,8 +305,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionDefinir_Escola.triggered.connect(self.definirEscola)
 
         self.countChanged.connect(self.onCountChanged)
-        self.listViewBusca.overlay=Overlay(self.listViewBusca, "")
-        
+        self.countChangedBlockless.connect(lambda i, txt: self.progressBar.show() or self.progressBar.setValue(i) or self.loadingLabel.setText(txt))
+        self.listViewBusca.overlay=Overlay(self.listViewBusca, "")                
 
         self.searchFinished.connect(self.onSearchFinished)        
         self.docxConvertionFinished.connect(self.imporAlunoCsv)
@@ -998,7 +999,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             
     def exportarBusca(self):
         if hasattr(self, "listaParaExportar") and len(self.listaParaExportar)>0:
-            exportCsv(self.listaParaExportar)
+            exportCsv(self.listaParaExportar, self.countChangedBlockless, self.operatonFinished)
         else:
             messageDialog(self, "Problema ao salvar arquivo", "", "Nenhum aluno encontrado na lista de busca")
         

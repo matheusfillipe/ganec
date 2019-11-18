@@ -338,7 +338,7 @@ def exportDoc(filename, countChanged, finished, k=None):
         I=1
         doc = docx.Document(BASEPATHS[I]+"templates/default.docx")
 
-    with open(filename, newline='',encoding=types_of_encoding[1]) as f:
+    with open(filename, "r", newline='',encoding=types_of_encoding[1]) as f:
         indexes = [0,2,5,6,7,8,9]
         csv_headers=["Nome", "Nascimento", "Mãe", "Pai", "Telefone", "Endereço", "Turma"]
         csv_reader = csv.reader(f, delimiter=CSV_SEPARATOR)       
@@ -347,10 +347,11 @@ def exportDoc(filename, countChanged, finished, k=None):
         hdr_cells = table.rows[0].cells
         for i in range(csv_cols):           
             hdr_cells[i].text = csv_headers[i]
+        row_count = 1000
+        csv_reader = csv.reader(f, delimiter=CSV_SEPARATOR)       
         headers=len(next(csv_reader))
-        row_count = sum(1 for row in csv_reader) 
-        for i,row in enumerate(csv_reader):
-            countChanged.emit(int(i/len(row_count)*80),"Exportando docx")
+        for ci,row in enumerate(csv_reader):
+            countChanged.emit(int(ci/row_count*80),"Exportando docx")
             if len(row) != headers:
                 continue
             row_cells = table.add_row().cells
@@ -360,8 +361,8 @@ def exportDoc(filename, countChanged, finished, k=None):
 
         paragraph =hdr_cells[0].paragraphs[0]
         run = paragraph.runs
-        for i,row in enumerate(table.rows):
-            countChanged.emit(int(i/len(table.rows)*20)+80,"Melhorando Layout")
+        for ci,row in enumerate(table.rows):
+            countChanged.emit(int(ci/row_count*20)+80,"Melhorando Layout")
             for cell in row.cells:
                 paragraphs = cell.paragraphs
                 for paragraph in paragraphs:

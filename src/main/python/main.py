@@ -3,8 +3,7 @@
 """
 
 /**********************************************************************************
-GANEC = Gestor de Alunos Nas Escolas do Carmo 
-    
+ZONEA    
         
         begin                : 2019-15-097
         git sha              : $Format:%H$

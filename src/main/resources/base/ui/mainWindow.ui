@@ -310,6 +310,7 @@
      </property>
      <addaction name="actionMostrar_Escolas"/>
      <addaction name="actionMostar_Alunos"/>
+     <addaction name="actionMostrar_Alunos_da_Busca"/>
     </widget>
     <addaction name="actionRecalcular_Series"/>
     <addaction name="actionAlunos_n_o_localizados"/>
@@ -562,6 +563,11 @@
   <action name="actionDefinir_Escola">
    <property name="text">
     <string>Definir Escola</string>
+   </property>
+  </action>
+  <action name="actionMostrar_Alunos_da_Busca">
+   <property name="text">
+    <string>Mostrar Alunos da Busca</string>
    </property>
   </action>
  </widget>

@@ -125,6 +125,7 @@ class dropDown(QtWidgets.QWidget):
      
         for i in lista:            
             checkBox = QtWidgets.QCheckBox(str(i), self.toolmenu)
+            checkBox.setChecked(True)
             checkBox.stateChanged.connect(lambda: self.selected.emit(self.selectedIndexes()))
             checkableAction = QtWidgets.QWidgetAction(self.toolmenu)
             checkableAction.setDefaultWidget(checkBox)

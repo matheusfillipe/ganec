@@ -236,6 +236,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.app=app         
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         self.listaBusca=[]
+        self.alunosBuscaMarkers=[]
         if RESET:
             #self.varManager.removeDatabase()
             self.close()
@@ -303,6 +304,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionCarregar.triggered.connect(self.carregar)
         self.actionDefinir_Turma.triggered.connect(self.definirTurma)
         self.actionDefinir_Escola.triggered.connect(self.definirEscola)
+        self.actionMostrar_Alunos_da_Busca.triggered.connect(self.toggleBuscaMarkers)
 
         self.countChanged.connect(self.onCountChanged)
         self.countChangedBlockless.connect(lambda i, txt: self.progressBar.show() or self.progressBar.setValue(i) or self.loadingLabel.setText(txt))
@@ -330,7 +332,22 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F5"), self)
         shortcut.activated.connect(self.updateScreen)
         self.updateScreen() 
-
+    
+    def toggleBuscaMarkers(self):
+        if len(self.alunosBuscaMarkers)==0:
+            self.actionMostrar_Alunos_da_Busca.setText("Esconder Alunos da Busca")           
+            for i in self.listaBusca:
+                self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
+                icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+                draggable=True,
+                title=i['nome']
+                ))
+                self.alunosBuscaMarkers.append(i)
+        else:
+            self.actionMostrar_Alunos_da_Busca.setText("Mostrar Alunos da Busca")           
+            for i in self.alunosBuscaMarkers:
+                self.mapWidget.deleteMarker(i['nome']) 
+            self.alunosBuscaMarkers=[]
 
     def carregar(self):
         reply = yesNoDialog(iface=self, message="Isso destruirá os dados atuais, faça um backup or salve-os.", 
@@ -669,7 +686,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.blockBusca()
         self.calc = calcularRotasThread()
         self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.error.connect(lambda: messageDialog(title="Erro", message="Por favor escolha o arquivo osm no menu configurações"))
+        self.calc.error.connect(lambda: messageDialog(title="Erro", message="Erro ao zonear! Tente Ferramentas-> Recalcular turmas ou Verifique as vagas e número de alunos em Editar-> escolas e o arquivo osm no menu configurações"))
         self.calc.start()   
         self.loadingLabel.setText("Computando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   

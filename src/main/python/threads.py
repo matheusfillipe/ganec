@@ -72,11 +72,11 @@ def correctSeries(countChanged):
     series = dbSeries.todosOsDadosComId()
     alunos=dbAluno.todosOsDadosComId()
     for serie in series:
-        countChanged.emit(int(count/(len(alunos)+len(series))*100))
+        countChanged.emit(int(count/(len(alunos)+len(series))*50))
         dbSeries.update(serie["id"], {"nDeAlunos": 0})
         count+=1
     for aluno in alunos:
-        countChanged.emit(int(count/(len(alunos)+len(series))*100))
+        countChanged.emit(int(count/(len(alunos)+len(series))*50+50))
         id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
         if len(id)==0:
             print("Erro! Escola não consta na tabela de séries, id: " + str(aluno['escola']))
@@ -205,11 +205,12 @@ class calcularRotasThread(QtCore.QThread):
                     res.append([parts, dist, i])         
                 res.sort(key=lambda d: d[1])
                 count=False
-                for parts, dist, i in res:      #mínima --> salvar todos geojson com todas com cor variando, blue para a mais proxima    
+                for j, valorDados in enumerate(res):      #mínima --> salvar todos geojson com todas com cor variando, blue para a mais proxima    
+                    parts, dist, i = valorDados
                     escola=escolas[i]            
                     net.parts=parts
                     saveFile=alunoFolder / Path(str(escola['id'])+".geojson")            
-                    net.save_geojson(str(saveFile), COLORS[i if i < len(COLORS) else -1])
+                    net.save_geojson(str(saveFile), COLORS[j if j < len(COLORS) else -1])
 
                     if not count:            
                         try: #tentar remover a vaga

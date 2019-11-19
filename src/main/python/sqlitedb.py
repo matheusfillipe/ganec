@@ -48,7 +48,10 @@ class DB():
     
     def close(self):
             self.connection.commit()
-            self.connection.close()
+            try:
+                self.connection.close()
+            except:
+                print("Failed to close db connection... may cause problems (reinicie o programa)")                
             self.connected = False
     
     def _salvarDado(self, dado):

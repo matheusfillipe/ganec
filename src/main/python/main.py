@@ -604,7 +604,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     def addMarkerEscolas(self):
         #self.idEscolasMarker = []
-        self.hideEscolas()
+
+        for i in self.dbEscola.todosOsDados():
+            self.mapWidget.deleteMarker(i['nome']) 
         for i in self.dbEscola.todosOsDados():
             self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
             icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_blue.png",

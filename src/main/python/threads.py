@@ -309,8 +309,8 @@ class Overlay(QWidget):
                 
         self.hide()            
         self.N=N
-        self.stoped.connect(self.stop)
-        self.started.connect(self.start)
+        self.stoped.connect(self.onStop)
+        self.started.connect(self.onStart)
 
 
     def paintEvent(self, event):        
@@ -355,10 +355,10 @@ class Overlay(QWidget):
 
 #        if self.counter == 240:
 #            self.stop()
-    def start(self):
+    def onStart(self):
         self.show()
 
-    def stop(self):
+    def onStop(self):
         self.killTimer(self.timer)
         self.hide()
 

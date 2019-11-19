@@ -228,6 +228,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     countChanged=pyqtSignal(int)
     countChangedBlockless=pyqtSignal(int, str)
     docxConvertionFinished=pyqtSignal(str)
+    runfunc=pyqtSignal()
 
     def __init__(self, app):         
         QtWidgets.QMainWindow.__init__(self)
@@ -268,7 +269,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         
         self.idEscola = 0
 
-        self.latLongAns = ["a"]
+        self.latLongAns = []
         self.spinBoxIdadeMaxima.setValue(50)
         self.spinBoxIdadeMinima.setValue(0)
         self.comboBoxBusca.addItems(ATRIBUTOS['aluno'][:-2])        
@@ -675,12 +676,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
    
     def recalcularAlunos(self):
         self.blockBusca()
-        db= self.dbAluno
-        for aluno in db.todosOsDadosComId():
-            aluno['lat']=''
-            aluno['long']=''
-            db.update(aluno['id'], aluno)
-        
+        self.onCountChanged(0)
+        try:
+            self.runfunc.disconnect()
+        except:
+            pass
+        self.runfunc.connect(self.studentRecalc)
+        self.eraseAlunosAddrThread()   
+
+    def studentRecalc(self):
         self.calc = calcularAlunosThread(self)
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()   
@@ -688,21 +692,47 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.finished.connect(self.cleanProgress)   
         self.updateScreen()
 
-
-    def recalcularEscolas(self):
-        self.blockBusca()
-        db= self.dbEscola
-        for aluno in db.todosOsDadosComId():
+    @nogui
+    def eraseAlunosAddrThread(self):
+        db= self.dbAluno
+        lista=db.todosOsDadosComId()
+        for i,aluno in enumerate(lista):
+            self.countChangedBlockless.emit(int(i*100/len(lista)-10),"Apagando Endereços")
             aluno['lat']=''
             aluno['long']=''
             db.update(aluno['id'], aluno)
- 
+        self.runfunc.emit()
+
+    def recalcularEscolas(self):
+        self.blockBusca()
+        self.onCountChanged(0)
+        try:
+            self.runfunc.disconnect()
+        except:
+            pass
+        self.runfunc.connect(self.schoolRecalc)
+        self.eraseEscolasAddrThread()
+    
+    def schoolRecalc(self):
         self.calc = calcularEscolasThread(self)
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()         
         self.calc.finished.connect(self.cleanProgress)       
         self.loadingLabel.setText("Computando localização das Escolas")     
         self.updateScreen()
+
+
+    @nogui
+    def eraseEscolasAddrThread(self):
+        db= self.dbEscola
+        lista=db.todosOsDadosComId()
+        for i,aluno in enumerate(lista):
+            self.countChangedBlockless.emit(int(i*100/len(lista)-10),"Apagando Endereços")
+            aluno['lat']=''
+            aluno['long']=''
+            db.update(aluno['id'], aluno)
+        self.runfunc.emit()
+ 
 
     def importWord(self):
         if not self.verificarOsm(): return
@@ -1008,7 +1038,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         try:      
             self.mapWidget.deleteMarker("aluno")
             aluno=self.resultado[self.listViewBusca.currentRow()]
-            self.mapWidget.centerAt(aluno['lat'], aluno['long'])
+            aluno=self.dbAluno.getDadoComId(aluno['id'])
+            self.mapWidget.centerAt(float(aluno['lat']), float(aluno['long']))
             self.mapWidget.addMarker("aluno", aluno['lat'], aluno['long'], **dict(
             icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
             draggable=True,
@@ -1030,8 +1061,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             id = self.buscaResultado[self.listViewBusca.currentRow()]['id']        
             v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, id)
             v.salvarCoordenada()          
-            self.listViewBusca.clear()
-
+           # self.listViewBusca.clear()
             self.mapWidget.deleteMarker("aluno")
             aluno=self.resultado[self.listViewBusca.currentRow()]
             self.mapWidget.centerAt(lat, long)
@@ -1040,13 +1070,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             draggable=True,
             title=aluno['nome']
             ))
-
-            self.buscarAluno()  
+            #self.buscarAluno()  
         elif n=="alunoNovo":
             v = Aluno("", "", "", "", "", "", "", "", "", 0, 0, 0, lat, long, self.alunoId)
             v.salvarCoordenada()           
             self.listViewBusca.clear()
-
             self.mapWidget.deleteMarker("alunoNovo")
             aluno=self.resultado[self.listViewBusca.currentRow()]
             self.mapWidget.centerAt(lat, long)

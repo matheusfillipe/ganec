@@ -1,4 +1,4 @@
 fbs clean
-fbs freeze --debug
+fbs freeze
 fbs installer
 target\ZONEASetup.exe

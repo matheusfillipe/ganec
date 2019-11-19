@@ -198,16 +198,16 @@ class calcularRotasThread(QtCore.QThread):
                 alunoFolder.mkdir(parents=True, exist_ok=True)
                 escolas=[escola for escola in listaDeEscolas if aluno[SERIE] in escola[ESCOLA_SERIES].split(",") ]  #lista de posíveis escolas destino
                 ptA=[aluno['long'], aluno['lat']]
-                res=[] # resultado [[caminho, distancia], ..]
+                res=[] # resultado [[caminho, distancia, index], ..]
                 for i, escola in enumerate(escolas):
                     ptB=[escola['long'], escola['lat']]
                     parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno: "+str(aluno['id'])), target=net.addNode(ptB, "escola: "+str(escola['id'])))                
                     res.append([parts, dist, i])         
                 res.sort(key=lambda d: d[1])
                 count=False
-                for i, r in enumerate(res):      #mínima --> salvar todos geojson com todas com cor variando, blue para a mais proxima    
+                for parts, dist, i in res:      #mínima --> salvar todos geojson com todas com cor variando, blue para a mais proxima    
                     escola=escolas[i]            
-                    net.parts=r[0]
+                    net.parts=parts
                     saveFile=alunoFolder / Path(str(escola['id'])+".geojson")            
                     net.save_geojson(str(saveFile), COLORS[i if i < len(COLORS) else -1])
 
@@ -247,7 +247,7 @@ class calcularRotasThread(QtCore.QThread):
                             serie[SERIES_ATTR[3]]=str(int(serie[SERIES_ATTR[3]])+1)
                             dbSeries.update(id[-1], serie)
                             listaDeAlunos[j]['escola']=escola['id']
-                            dbA.update(aluno['id'],{'escola': listaDeAlunos[j]['escola']})
+                            dbA.update(aluno['id'],{'escola': str(escola['id'])})
 
                 print("ADICIONANDO  Aluno: " + str(aluno["nome"]))
                 print("Escola:   " + str(listaDeAlunos[j]['escola']))

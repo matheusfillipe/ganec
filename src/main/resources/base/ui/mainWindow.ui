@@ -73,7 +73,7 @@
           <height>16777215</height>
          </size>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0">
          <property name="sizeConstraint">
           <enum>QLayout::SetMinimumSize</enum>
          </property>
@@ -182,6 +182,13 @@
             </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="QLabel" name="resultsLbl">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QListWidget" name="listViewBusca"/>
@@ -304,18 +311,9 @@
     <property name="title">
      <string>Ferramentas</string>
     </property>
-    <widget class="QMenu" name="menuExibir_2">
-     <property name="title">
-      <string>Exibir</string>
-     </property>
-     <addaction name="actionMostrar_Escolas"/>
-     <addaction name="actionMostar_Alunos"/>
-     <addaction name="actionMostrar_Alunos_da_Busca"/>
-    </widget>
     <addaction name="actionRecalcular_Series"/>
     <addaction name="actionAlunos_n_o_localizados"/>
     <addaction name="actionDist_ncia"/>
-    <addaction name="menuExibir_2"/>
    </widget>
    <widget class="QMenu" name="menuZoneamento">
     <property name="title">
@@ -325,9 +323,18 @@
     <addaction name="actionRecalcular_endere_os_de_alunos"/>
     <addaction name="actionRecalcular_endere_os_de_escolas"/>
    </widget>
+   <widget class="QMenu" name="menuExibir">
+    <property name="title">
+     <string>Exibir</string>
+    </property>
+    <addaction name="actionMostrar_Escolas"/>
+    <addaction name="actionMostar_Alunos"/>
+    <addaction name="actionMostrar_Alunos_da_Busca"/>
+   </widget>
    <addaction name="menuArquivo"/>
    <addaction name="menuCadastrar"/>
    <addaction name="menuComputar"/>
+   <addaction name="menuExibir"/>
    <addaction name="menuZoneamento"/>
    <addaction name="menuFerramentas"/>
    <addaction name="menuOp_es"/>

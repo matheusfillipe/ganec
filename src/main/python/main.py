@@ -864,12 +864,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.menuCadastrar.setEnabled(False)
         self.actionRecalcular_Series.setEnabled(False)
         self.menuZoneamento.setEnabled(False)      
+        self.menuExibir.setEnabled(False)
         if value>=99:
             self.menuComputar.setEnabled(True)
             self.menuCadastrar.setEnabled(True)
             self.actionRecalcular_Series.setEnabled(True)
             self.menuZoneamento.setEnabled(True)
-    
+            self.menuExibir.setEnabled(True)
+   
     def blockBusca(self):       
         for i in range(self.listViewBusca.count()):
             w=self.listViewBusca.itemWidget(self.listViewBusca.item(i))
@@ -919,6 +921,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.menuCadastrar.setEnabled(True)
         self.actionRecalcular_Series.setEnabled(True)
         self.menuZoneamento.setEnabled(True)
+        self.menuExibir.setEnabled(True)
         self.enableBusca()
 
     def alunosNLocalizados(self):
@@ -929,9 +932,14 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         ids=[]
         center=[float(self.config.get().lat), float(self.config.get().lng)]
         for aluno in self.dbAluno.todosOsDadosComId():
-            if [float(aluno['lat']), float(aluno['long'])] == center:
+            try:
+                if [float(aluno['lat']), float(aluno['long'])] == center:
+                    ids.append(aluno['id'])
+            except:
                 ids.append(aluno['id'])
+               
         self.addAlunosBusca(ids)
+        self.resultsLbl.setText(str(len(ids))+" alunos encontrados" if len(ids) else "") 
 
     def addAlunosBusca(self, ids):
         resultado=self.dbAluno.getDadosComId(ids)                
@@ -952,12 +960,15 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 d['escola']=self.dbEscola.getDado(d['escola'])['nome']
             self.listaParaExportar.append(d)
             j += 1
-
+        
         if j==0:
             itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi encontrado") 
             itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
             self.listViewBusca.addItem(itemN)             
-        
+            self.resultsLbl.setText("")                     
+        else:
+            self.resultsLbl.setText(str(j)+" alunos encontrados")
+       
 
     def buscarAluno(self): 
         self.idadeMinima = self.spinBoxIdadeMinima.value()
@@ -1041,7 +1052,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             if j==0:
                 itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi encontrado.")            
                 itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
-                self.listViewBusca.addItem(itemN)         
+                self.listViewBusca.addItem(itemN)   
+                self.resultsLbl.setText("")                     
+            else:
+                self.resultsLbl.setText(str(j)+" alunos encontrados")
         
         #self.updateScreen()
             
@@ -1221,6 +1235,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.menuCadastrar.setEnabled(True)
         self.actionRecalcular_Series.setEnabled(True)
         self.menuZoneamento.setEnabled(True)
+        self.menuExibir.setEnabled(True)
     
     @nogui
     def pular(self, PULO):

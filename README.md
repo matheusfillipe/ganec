@@ -18,7 +18,7 @@ Projeto desenvolvido por alunos da UFV de Rio Paranaíba, financiado pela prefei
 
 4. Edite as vagas das escolas pelo menu Editar->escolas.
 
-5. Confirme se tudo está correto. (Ferramentas->Exibir-> Mostrar Alunos )
+5. Confirme se tudo está correto. (Exibir-> Mostrar Alunos )
 
 6. Zonemaneto->Calcular rotas. As turmas serão modificadas automaticamente na virada de ano e no zonemento. Caso houver algum problema com o número de alunos, eles podem ser recalculados em ferramentas-> Recalcular turmas. Isso é recomendado antes e depois de refazer um zoneamento.
 

@@ -344,9 +344,14 @@ class netHandler():
     def getLength(self, u, v, d=None):
         n1 = self.G.nodes[u]
         n2 = self.G.nodes[v]
-        p1 = np.array([float(n1["lon"]), float(n1["lat"])])
-        p2 = np.array([float(n2["lon"]), float(n2["lat"])])
-        return np.linalg.norm(p2-p1)*DISTANCE_CONVERT
+        try:
+            p1 = np.array([float(n1["lon"]), float(n1["lat"])])
+            p2 = np.array([float(n2["lon"]), float(n2["lat"])])
+            return np.linalg.norm(p2-p1)*DISTANCE_CONVERT
+        except ValueError as e:
+            #o que fazer quando o aluno ainda não foi georeferenciado?
+            #Mostrar erro, ou coloar um valor bem alto já que isso é usaod em outras funções além de zoneamento
+            return 100000
  
     def shortest_path(self, source, target):
         path=networkx.dijkstra_path(self.G, source=source, target=target, weight=lambda u,v,d: self.getLength(u,v,d))

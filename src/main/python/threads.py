@@ -62,7 +62,7 @@ def osmFilePath():
     try:
         return db.getDado(db.acharDado('nome','osmPath')[0])['string']
     except:
-        return False
+        return ""
 
 
 def correctSeries(countChanged):
@@ -71,10 +71,12 @@ def correctSeries(countChanged):
     count=0
     series = dbSeries.todosOsDadosComId()
     alunos=dbAluno.todosOsDadosComId()
+    dbSeries.connect()
     for serie in series:
         countChanged.emit(int(count/(len(alunos)+len(series))*50))
-        dbSeries.update(serie["id"], {"nDeAlunos": 0})
+        dbSeries._update(serie["id"], {"nDeAlunos": 0})
         count+=1
+    dbSeries.connect()
     for aluno in alunos:
         countChanged.emit(int(count/(len(alunos)+len(series))*50+50))
         id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
@@ -89,7 +91,6 @@ def correctSeries(countChanged):
         serie=dbSeries.getDadoComId(str(id[-1]))
         dbSeries.update(serie['id'], {"nDeAlunos":str(int(serie["nDeAlunos"])+1)})
         count+=1
-
 
 class imageThread(QtCore.QThread):
     def __init__(self, iface, filepath):
@@ -118,12 +119,14 @@ class calcularAlunosThread(QtCore.QThread):
         tdodd=[aluno for aluno in tdodd if not aluno['lat']]       
         config=self.iface.config
         centro=[config.get().lat, config.get().lng]
+        db.connect()
         for aluno in tdodd:
             self.countChanged.emit(int(count/len(tdodd)*100))
             cor=Aluno.getLatLong(aluno['endereco'])
             cor = cor if cor else centro
-            db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
+            db._update(aluno['id'], {'lat': cor[0],'long':cor[1]})
             count +=1          
+        db.close()
 
 class calcularEscolasThread(QtCore.QThread):
     """
@@ -141,12 +144,14 @@ class calcularEscolasThread(QtCore.QThread):
         tdodd=db.todosOsDadosComId()
         config=self.iface.config       
         centro=[config.get().lat, config.get().lng]
+        db.connect()
         for aluno in tdodd:
             self.countChanged.emit(int(count/len(tdodd)*100))
             cor=Aluno.getLatLong(aluno['endereco'])
             cor = cor if cor else centro
-            db.update(aluno['id'], {'lat': cor[0],'long':cor[1]})
-            count +=1          
+            db._update(aluno['id'], {'lat': cor[0],'long':cor[1]})
+            count +=1         
+        db.close()
 
 
 
@@ -182,7 +187,7 @@ class calcularRotasThread(QtCore.QThread):
             #sort alunos by age, menor para maior  #TODO calcular idade exata
             listaDeAlunos.sort(key=lambda d: d[IDADE])   
             net=netHandler(osmpath=osmpath)     #netHandler distancia até todas
-
+            dbA.connect()
             for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
                 self.countChanged.emit(int(j/len(listaDeAlunos)*100))
                 try:
@@ -235,7 +240,7 @@ class calcularRotasThread(QtCore.QThread):
     
                         id=dbSeries.acharDadoExato(SERIES_ATTR[0], escola['id'])
                         if len(id)==0:
-                            print("Erro! Escola não consta na tabela de séries, id: " + escola['id'])
+                            print("Erro! Escola não consta na tabela de séries, id: " + str(escola['id']))
                             continue
                         seriesDados=dbSeries.getDadosComId(id)
                         id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
@@ -248,13 +253,17 @@ class calcularRotasThread(QtCore.QThread):
                             serie[SERIES_ATTR[3]]=str(int(serie[SERIES_ATTR[3]])+1)
                             dbSeries.update(id[-1], serie)
                             listaDeAlunos[j]['escola']=escola['id']
-                            dbA.update(aluno['id'],{'escola': str(escola['id'])})
+                            dbA._update(aluno['id'],{'escola': str(escola['id'])})
 
-                print("ADICIONANDO  Aluno: " + str(aluno["nome"]))
-                print("Escola:   " + str(listaDeAlunos[j]['escola']))
-                print("Serie:    " + str(aluno['serie']))
-        except:
+            dbA.close()
+             #   print("ADICIONANDO  Aluno: " + str(aluno["nome"]))
+            #    print("Escola:   " + str(listaDeAlunos[j]['escola']))
+            #    print("Serie:    " + str(aluno['serie']))
+        except Exception as e:
+            import traceback
+            print("Erro: "+str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
             self.error.emit()
+            dbA.close()
             return
 
 

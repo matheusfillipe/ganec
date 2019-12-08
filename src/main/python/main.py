@@ -130,7 +130,6 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             self.db.salvarDado({'nome': 'cep', 'string': ''})
             self.ceptxt.setText("")
 
-
     def setOsm(self):
         db=self.db
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de mapa (*.osm)")[0]
@@ -237,6 +236,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.varManager=VariableManager(os.path.dirname(QtCore.QStandardPaths.writableLocation(QtCore.QStandardPaths.AppConfigLocation)))
         self.listaBusca=[]
         self.alunosBuscaMarkers=[]
+        self.shownAlunos=[]
+        self.shownEscolas=[]
         if RESET:
             #self.varManager.removeDatabase()
             self.close()
@@ -261,9 +262,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionExportarBusca.triggered.connect(self.exportarBusca)
         self.listViewBusca.itemClicked.connect(self.setarEndereco)
         rmfile=lambda path: (path.unlink() and self.updateScreen()) or True if path.is_file() else 1
-        self.actionApagar_todas_Escolas.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['escola'])) 
+        self.actionApagar_todas_Escolas.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['escola']) or self.updateScreen() ) 
         if yesNoDialog(message="Tem certeza que deseja apagar todos os escolas?") else lambda: 0)
-        self.actionApagar_todos_Alunos.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['aluno'])) 
+        self.actionApagar_todos_Alunos.triggered.connect(lambda: rmfile(confPath()/Path(CAMINHO['aluno']) or self.updateScreen() ) 
         and shutil.rmtree(str(confPath()/Path("alunos")), ignore_errors=True)
         if yesNoDialog(message="Tem certeza que deseja apagar todos os alunos?") else lambda: 0)
         
@@ -394,33 +395,49 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionMostrar_Escolas.triggered.disconnect()
         self.actionMostrar_Escolas.triggered.connect(self.hideEscolas)
         self.actionMostrar_Escolas.setText("Esconder Escolas")
-        self.addMarkerEscolas()       
+        try:
+            self.addMarkerEscolas()       
+        except:
+            messageDialog(message="Nao há escolas cadastradas! Tente reiniciar o programa se o erro persistir")           
 
 
     def hideEscolas(self):
         self.actionMostrar_Escolas.triggered.disconnect()
         self.actionMostrar_Escolas.triggered.connect(self.showEscolas)     
         self.actionMostrar_Escolas.setText("Mostrar Escolas")
-        for i in self.dbEscola.todosOsDados():
-            self.mapWidget.deleteMarker(i['nome']) 
+        try:
+            for i in self.shownEscolas:
+                self.mapWidget.deleteMarker(i) 
+            self.shownEscolas=[]
+        except:
+            messageDialog(message="Nao há escolas cadastradas! Tente reiniciar o programa se o erro persistir")
+
 
     def showAlunos(self):
         self.actionMostar_Alunos.triggered.disconnect()
         self.actionMostar_Alunos.triggered.connect(self.hideAlunos)
         self.actionMostar_Alunos.setText("Esconder Alunos")
-        for i in self.dbAluno.todosOsDados():
-            self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
-            icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
-            draggable=True,
-            title=i['nome']
-            ))
+        try:
+            for i in self.dbAluno.todosOsDados():
+                self.mapWidget.addMarker(i['nome'], i['lat'], i['long'], **dict(
+                icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_green.png",
+                draggable=True,
+                title=i['nome']
+                ))
+                self.shownAlunos.append(i['nome'])
+        except:
+            messageDialog(message="Nao há alunos cadastrados! Tente reiniciar o programa se o erro persistir")           
 
     def hideAlunos(self):
         self.actionMostar_Alunos.triggered.disconnect()
         self.actionMostar_Alunos.triggered.connect(self.showAlunos) 
         self.actionMostar_Alunos.setText("Mostrar Alunos")
-        for i in self.dbAluno.todosOsDados():
-            self.mapWidget.deleteMarker(i['nome']) 
+        try:
+            for i in self.shownAlunos:
+                self.mapWidget.deleteMarker(i) 
+            self.shownAlunos=[]
+        except:
+            messageDialog(message="Nao há alunos cadastrados! Tente reiniciar o programa se o erro persistir")           
 
 
     def distTool(self):
@@ -489,10 +506,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     @nogui
     def definirTurmasThread(self, novo):
-        self.progLabel.emit("Definindo Turmas ")       
+        self.progLabel.emit("Definindo Turmas ")
+        self.dbAluno.connect()       
         for i,aluno in enumerate(self.listaBusca):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))           
-            self.dbAluno.update(aluno['id'], {"serie": novo})
+            self.dbAluno._update(aluno['id'], {"serie": novo})
+        self.dbAluno.close()
         self.operatonFinished.emit()
 
     def definirEscola(self):
@@ -504,35 +523,40 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     @nogui
     def definirEscolaThread(self, novo):
-        self.progLabel.emit("Definindo Turmas ")       
+        self.progLabel.emit("Definindo Turmas ")   
+        self.dbAluno.connect()    
         for i,aluno in enumerate(self.listaBusca):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))           
-            self.dbAluno.update(aluno['id'], {"escola": novo})
+            self.dbAluno._update(aluno['id'], {"escola": novo})
+        self.dbAluno.close()
         self.operatonFinished.emit()
 
     @nogui
     def SremoverEscola(self, k=None):
-        self.progLabel.emit("Removendo Escolas ")       
+        self.progLabel.emit("Removendo Escolas ")  
+        self.dbAluno.connect()     
         for i,aluno in enumerate(self.listaBusca):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))           
             if aluno['escola'] != "" or aluno['escola'] != None:
-                self.dbAluno.update(self.dbAluno.acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
+                self.dbAluno._update(self.dbAluno._acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
+        self.dbAluno.close()
         self.operatonFinished.emit()
       #  self.updateScreen()
 
     @nogui            
     def SacanvaTurma(self, k=None):
         self.progLabel.emit("Avançando Turmas ")
+        self.dbAluno.connect()
+        self.dbSeries.connect()
         for i,aluno in enumerate(self.listaBusca):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))
-            series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
-            if aluno['escola']:
-                from collections import OrderedDict
+            series=SERIES
+            if aluno['escola']:            
                 escola=self.dbEscola.getDadoComId(aluno['escola'])            
-                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])]
+                serieId=[id for id in self.dbSeries._acharDadoExato("idDaEscola", aluno['escola']) if id in self._dbSeries.acharDadoExato("serie", aluno['serie'])]
                 if serieId:                    
-                    serie=self.dbSeries.getDadoComId(serieId[-1])
-                    self.dbSeries.update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga
+                    serie=self.dbSeries._getDadoComId(serieId[-1])
+                    self.dbSeries._update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga
                     serie=serie['serie']
                 else:
                     serie=aluno['serie']                   
@@ -543,27 +567,30 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 n=series.index(aluno['serie'])+1
                 nextSerieName = "FORMADO" if n > len(series)-1 else series[n] #proxima serie
             if aluno['escola']:
-                novaSerieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", nextSerieName)]
+                novaSerieId=[id for id in self.dbSeries._acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries._acharDadoExato("serie", nextSerieName)]
                 if novaSerieId: #se a escola não tem a série, não muda
                     novaSerieDados=self.dbSeries.getDado(novaSerieId[-1])
-                    self.dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
+                    self.dbSeries._update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
 
-            self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
+            self.dbAluno._update(aluno['id'], {"serie": nextSerieName})
+        self.dbAluno.close()
+        self.dbSeries.close()
         self.operatonFinished.emit()
            
     @nogui
     def SretornaTurma(self, k=None):
         self.progLabel.emit("Retornando Turmas ")
+        self.dbAluno.connect()
+        self.dbSeries.connect()
         for i,aluno in enumerate(self.listaBusca):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))
-            series=SERIES #list(OrderedDict.fromkeys(sum([escola["series"].split(SEPARADOR_SERIES) for escola in self.dbEscola.todosOsDados()],[])))
+            series=SERIES 
             if aluno['escola']:
-                from collections import OrderedDict
                 escola=self.dbEscola.getDadoComId(aluno['escola'])            
-                serieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", aluno['serie'])]
+                serieId=[id for id in self.dbSeries._acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries._acharDadoExato("serie", aluno['serie'])]
                 if serieId:
-                    serie=self.dbSeries.getDadoComId(serieId[-1])
-                    self.dbSeries.update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga
+                    serie=self.dbSeries._getDadoComId(serieId[-1])
+                    self.dbSeries._update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga
                     serie=serie['serie']
                 else:
                     serie=aluno['serie']
@@ -577,22 +604,26 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 n=series.index(aluno['serie'])-1
                 nextSerieName = series[0] if n <=0  else series[n] #proxima serie
             if aluno['escola']:
-                novaSerieId=[id for id in self.dbSeries.acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries.acharDadoExato("serie", nextSerieName)]
+                novaSerieId=[id for id in self.dbSeries._acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries._acharDadoExato("serie", nextSerieName)]
                 if novaSerieId: #se a escola não tem a série, não muda
-                    novaSerieDados=self.dbSeries.getDado(novaSerieId[-1])
-                    self.dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
+                    novaSerieDados=self.dbSeries._getDado(novaSerieId[-1])
+                    self.dbSeries._update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                               else:
 
-            self.dbAluno.update(aluno['id'], {"serie": nextSerieName})
+            self.dbAluno._update(aluno['id'], {"serie": nextSerieName})
+        self.dbAluno.close()
+        self.dbSeries.close()
         self.operatonFinished.emit()
 
     @nogui 
     def SremoverAlunos(self, k=None):
         self.progLabel.emit("Removendo Alunos ")
+        self.dbAluno.connect()
         for i,aluno in enumerate(self.listaBusca):
             if "id" in aluno:
                 self.countChanged.emit(int(i/len(self.listaBusca)*100))
-                self.dbAluno.apagarDado(aluno['id'])
+                self.dbAluno._apagarDado(aluno['id'])
                 shutil.rmtree(str(confPath()/Path("alunos")/Path(str(aluno['id']))), ignore_errors=True)
+        self.dbAluno.close()
         self.operatonFinished.emit()
     
     def atualizarAno(self):
@@ -629,6 +660,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             draggable=True,
             title=i['nome']
             ))
+            self.shownEscolas.append(i['nome'])
+
     
     def verificarOsm(self):
         osmpath=osmFilePath()  #???
@@ -678,7 +711,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         import tempfile
         temp=tempfile.gettempdir() + "/" "temp"
         w.saveImage(temp)                
-        filename=self.saveFile("jpg")
+        filename=self.saveFile("png")
         if not filename: return      
         shutil.move(temp, filename)                
    
@@ -714,11 +747,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def eraseAlunosAddrThread(self):
         db= self.dbAluno
         lista=db.todosOsDadosComId()
+        db.connect()
         for i,aluno in enumerate(lista):
             self.countChangedBlockless.emit(int(i*100/len(lista)-10),"Apagando Endereços")
             aluno['lat']=''
             aluno['long']=''
-            db.update(aluno['id'], aluno)
+            db._update(aluno['id'], aluno)
+        db.close()
         self.runfunc.emit()
 
     def recalcularEscolas(self):
@@ -744,11 +779,13 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def eraseEscolasAddrThread(self):
         db= self.dbEscola
         lista=db.todosOsDadosComId()
+        db.connect()
         for i,aluno in enumerate(lista):
             self.countChangedBlockless.emit(int(i*100/len(lista)-10),"Apagando Endereços")
             aluno['lat']=''
             aluno['long']=''
-            db.update(aluno['id'], aluno)
+            db._update(aluno['id'], aluno)
+        db.close()
         self.runfunc.emit()
  
 
@@ -880,7 +917,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def enableBusca(self):
         for i in range(self.listViewBusca.count()):
             w=self.listViewBusca.itemWidget(self.listViewBusca.item(i))
-            w.editar=True
+            try:
+                w.editar=True
+            except:
+                pass
 
     def imporEscolaCsv(self):
         if not self.verificarOsm(): return
@@ -994,26 +1034,26 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 if i == "Sem Escola":
                     semEscola = True
                 escolas.append(str(i))
-            
+
             escolas = list(set(escolas))
             series  = list(set(series ))
             
             listaDeIdsNome = self.dbAluno.acharDado(self.comboBoxBusca.currentText(), busca)
+            self.dbAluno.connect()
+            self.dbEscola.connect()
             for i in listaDeIdsNome:
-                aluno = self.dbAluno.getDadoComId(i)
+                aluno = self.dbAluno._getDadoComId(i)
                 if aluno['escola']:
-                    for j in escolas:
-                        if self.dbEscola.getDadoComId(aluno['escola'])['nome'] == j or self.dropDownEscolas.todos.isChecked():
-                            for k in series:
-                                if aluno['serie'] == k or self.dropDownSeries.todos.isChecked():
-                                    for l in range(self.spinBoxIdadeMinima.value(), self.spinBoxIdadeMaxima.value()+1):
-                                        if aluno['idade'] == l:
-                                            ids.append(i)
-                                            break
-                                    break
-                            break
+                    if self.dbEscola._getDadoComId(aluno['escola'])['nome'] in escolas or self.dropDownEscolas.todos.isChecked():
+                        if aluno['serie'] in series or self.dropDownSeries.todos.isChecked():
+                            if self.spinBoxIdadeMinima.value()<=int(aluno['idade'])<=self.spinBoxIdadeMaxima.value():
+                                ids.append(i)
                 elif semEscola:
-                    ids.append(i)
+                    if aluno['serie'] in series or self.dropDownSeries.todos.isChecked():
+                        if self.spinBoxIdadeMinima.value()<=int(aluno['idade'])<=self.spinBoxIdadeMaxima.value():
+                            ids.append(i)
+            self.dbAluno.close()
+            self.dbEscola.close()
             resultado=self.dbAluno.getDadosComId(ids)  
             escolas=[]              
             for i in resultado:
@@ -1142,7 +1182,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             dialog=NewAlunoDialog(self)             
             #dialog.setModal(True)
             self.dialog.append(dialog)
-            dialog.show()
+         #   dialog.show()
             dialog.exec_()
             self.updateScreen()
         else:
@@ -1154,8 +1194,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
            # self.escola=self.varManager.read(Escola(), DB_ADD_ESCOLA) 
             dialog=NewEscolaDialog(self)             
             #dialog.setModal(True)
-            self.dialog.append(dialog)
-            dialog.show()
+            self.dialog.append(dialog)        
             dialog.exec_()
             self.updateScreen()
         else:
@@ -1165,7 +1204,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         dialog=SettingsDialog(self)
        # dialog.setModal(True)
         self.dialog.append(dialog)
-        dialog.show()
         dialog.exec_()
         self.updateScreen()
 
@@ -1191,7 +1229,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         #dialog.setModal(True)
         dialog.accepted.connect(self.modalidades.save)
         self.dialog.append(dialog)
-        dialog.show()
+      #  dialog.show()
         dialog.exec_()
         self.updateScreen()
 
@@ -1236,7 +1274,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionRecalcular_Series.setEnabled(True)
         self.menuZoneamento.setEnabled(True)
         self.menuExibir.setEnabled(True)
-    
+        self.resultsLbl.clear()
+
     @nogui
     def pular(self, PULO):
         self.progLabel.emit("Avançando Turmas...")
@@ -1250,6 +1289,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         #PULO=1 #muda para -1 para descer de séries
         #return
         lista=dbAlunos.todosOsDadosComId()
+        dbAlunos.connect()
         for ci,aluno in enumerate(lista):
             ## Move o aluno para a próxima serie
             self.countChanged.emit(int(ci/len(lista)*100))
@@ -1280,7 +1320,8 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                         novaSerieDados=dbSeries.getDado(novaSerieId[-1])
                         dbSeries.update(novaSerieId[-1],{"vagas": int(novaSerieDados['vagas'])+1})  #Adiciona o aluno a nova vaga                                   
 
-            dbAlunos.update(aluno['id'], {"serie":serie})
+            dbAlunos._update(aluno['id'], {"serie":serie})
+        dbAlunos.close()
 
         print("Alunos: ",[aluno['serie'] for aluno in dbAlunos.todosOsDados()])
         print("Series: ",series)

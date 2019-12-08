@@ -1,6 +1,8 @@
 import json
 
 from PyQt5 import QtCore, QtWidgets, QtWebEngineWidgets, QtWebChannel, QtNetwork, QtGui, QtCore
+from PyQt5.QtGui import QImage, QPainter
+from PyQt5.QtCore import QTimer
 from lib.hidden.constants import API_KEY
 
 JS = '''
@@ -122,6 +124,31 @@ function gmap_changeMarker(key, extras) {
     markers[key].setOptions(extras);
 }
 
+
+function saveImage(filename) {
+    html2canvas(document.querySelector('#map_canvas')).then(function(canvas) {
+        console.log("Saving canvas: "+canvas);
+        saveAs(canvas.toDataURL(), filename);
+    });
+    return filename
+}
+
+function saveAs(uri, filename) {
+    console.log("Running fakery to download this")
+    var link = document.createElement('a');
+    if (typeof link.download === 'string') {
+        link.href = uri;
+        link.download = filename;
+        //Firefox requires the link to be in the body
+        document.body.appendChild(link);
+        //simulate click
+        link.click();
+        //remove the link when done
+        document.body.removeChild(link);
+    } else {
+        window.open(uri);
+    } 
+}
 '''
 
 HTML = '''
@@ -142,6 +169,7 @@ HTML = '''
             height: 100%
         }
     </style>
+    <script type="text/javascript" src="https://html2canvas.hertzen.com/dist/html2canvas.js"></script>
     <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
     <script async defer
             src="https://maps.googleapis.com/maps/api/js?key=API_KEY"
@@ -251,8 +279,27 @@ class QGoogleMap(QtWebEngineWidgets.QWebEngineView):
         return super().closeEvent(CloseEvent)
 
     def saveImage(self, filepath):
-        p = QtGui.QGuiApplication.primaryScreen()
-        p.grabWindow(self.winId()).save(filepath, 'jpg')
+        #1 geito
+        #p = QtGui.QGuiApplication.primaryScreen()
+        #p.grabWindow(self.winId()).save(filepath, 'jpg')
+
+        #2 geito-- incompleto mas o melhor
+        #self.runScript("saveImage({});".format(filepath))
+        
+        #3 geito -- bugado
+        #image=QImage(self.width(), self.height(), QImage.Format_ARGB32)
+        #painter = QPainter(image)
+        #self.render(painter)
+        #image.save(filepath)
+
+        #4 geito -- funciona
+        # Create hidden QWebEngineView
+
+        def take_screenshot():
+            self.grab().save(filepath, b'PNG')
+        size = self.page().contentsSize().toSize()
+        self.resize(size)
+        QTimer.singleShot(1000, take_screenshot)                
         return filepath
 
     def show(self):
@@ -460,7 +507,7 @@ def basicWin(ptA, ptB, filepath):
       #  print(geo)
         w.addPath(geo)
        # net.save_kml("/home/matheus/test.kml")
-       # w.saveImage("/home/matheus/test.jpg")
+
         #return ptAg, ptBg
 
     w.mapMoved.connect(print)

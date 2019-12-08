@@ -84,6 +84,11 @@ class DB():
             self.close()
             return dado
 
+    def _getDadoComId(self, id):        
+            dado=self._getDado(id)
+            dado.update({"id": id})
+            return dado
+
     def getDadoComId(self, id):
             self.connect()
             dado=self._getDado(id)
@@ -103,6 +108,34 @@ class DB():
             self.close()
             return dados
         
+
+                    
+    def _acharDado(self, key, nome): 
+            func=str
+            try:
+                float(nome)
+                func=float
+            except:
+                pass           
+ 
+            if type(nome)==str:
+                key=key
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if nome.lower() in str(self.toDict(list(dado)[1:])[key]).lower()]
+            else:
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if str(nome) == str(self.toDict(list(dado)[1:])[key])]
+     
+            try:
+                return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
+            except ValueError as e:
+                return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
+
+
+
+
 
                     
     def acharDado(self, key, nome): 
@@ -126,6 +159,31 @@ class DB():
             try:
                 return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
             except ValueError as e:
+                return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
+
+
+
+    def _acharDadoExato(self, key, nome):
+        func=str
+        try:
+                float(nome)
+                func=float
+        except:
+                pass           
+       
+        if type(nome)==str:
+                key=key
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if nome.lower() == str(self.toDict(list(dado)[1:])[key]).lower()]
+        else:
+                idList=[[list(dado)[0], self.toDict(list(dado)[1:])[key]] 
+                        for dado in list(self.cursor.execute("SELECT * FROM "+self.tableName)) 
+                        if str(nome) == str(self.toDict(list(dado)[1:])[key])]
+    
+        try:
+                return [x[0] for x in sorted(idList, key=lambda x: func(x[1]))]
+        except ValueError as e:
                 return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
 
 
@@ -189,11 +247,14 @@ class DB():
     def acharDadosMenoresQue(self,key,valor):
         return sorted(self.getDados(self.acharMenorQue(key, valor)), key=lambda x: x[key])
    
+    def _apagarDado(self, id):
+        id=str(id)
+        self.cursor.execute("DELETE FROM "+ self.tableName +" WHERE ID = ?", (id,))		
+ 
     def apagarDado(self, id):
-            self.connect()
-            id=str(id)
-            self.cursor.execute("DELETE FROM "+ self.tableName +" WHERE ID = ?", (id,))		
-            self.close()			
+           self.connect()
+           self._apagarDado(id)
+           self.close()			
 
     def update(self, id, dado):
         '''
@@ -207,6 +268,19 @@ class DB():
         self.cursor.execute("UPDATE "+ self.tableName +" SET " + " = ?,".join(self.dataNameList) +"= ? WHERE id= ?",
                 (d+[id]))
         self.close()
+
+    def _update(self, id, dado):
+        '''
+        id do dado a se modificar
+        dado: pode ser um dicionário só com as modificações
+        '''     
+        d=self._getDado(id)
+        d.update(dado)
+        d=self.toList(d)       
+        self.cursor.execute("UPDATE "+ self.tableName +" SET " + " = ?,".join(self.dataNameList) +"= ? WHERE id= ?",
+                (d+[id]))
+
+
 
     def apagarTabela(self):
             self.connect()

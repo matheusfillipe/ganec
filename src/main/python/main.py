@@ -282,6 +282,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.actionAlunos_3.triggered.connect(lambda: self.imporAlunoCsv())
         self.actionEscolar.triggered.connect(self.imporEscolaCsv)
         self.actionCalcular_Rotas_2.triggered.connect(self.calcularRotas)
+        self.actionZonear_Busca.triggered.connect(self.calcularBusca)
         self.actionRecalcular_endere_os_de_alunos.triggered.connect(self.recalcularAlunos)
         self.actionRecalcular_endere_os_de_escolas.triggered.connect(self.recalcularEscolas)
         self.actionExportar_imagem.triggered.connect(lambda: self.exportImg(self.mapWidget))
@@ -715,6 +716,16 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         if not filename: return      
         shutil.move(temp, filename)                
    
+    def calcularBusca(self):
+        self.blockBusca()
+        self.calc = calcularRotasThread(alunos=self.listaBusca)
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.error.connect(lambda: messageDialog(title="Erro", message="Erro ao zonear! Tente Ferramentas-> Recalcular turmas ou Verifique as vagas e número de alunos em Editar-> escolas e o arquivo osm no menu configurações"))
+        self.calc.start()   
+        self.loadingLabel.setText("Computando rotas ")   
+        self.calc.finished.connect(self.cleanProgress)   
+        self.updateScreen()
+ 
     def calcularRotas(self):
         self.blockBusca()
         self.calc = calcularRotasThread()

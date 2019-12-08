@@ -161,13 +161,19 @@ class calcularRotasThread(QtCore.QThread):
     """
     countChanged = pyqtSignal(int)
     error = pyqtSignal()
+    def __init__(self, alunos=None, parent=None):
+        QtCore.QThread.__init__(self, parent)
+        self.alunos = alunos
 
     def run(self):
         count = 0
         dbE= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         listaDeEscolas=dbE.todosOsDadosComId()
         dbA= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
-        listaDeAlunos=dbA.todosOsDadosComId()
+        if self.alunos is None:
+            listaDeAlunos=dbA.todosOsDadosComId()
+        else:
+            listaDeAlunos=self.alunos
         dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])        
         configFolder=confPath()
         osmpath=osmFilePath()  #???

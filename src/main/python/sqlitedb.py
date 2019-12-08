@@ -46,9 +46,9 @@ class DB():
             self.cursor = self.connection.cursor()
             self.connected = True
     
-    def close(self):
-            self.connection.commit()
+    def close(self):        
             try:
+                self.connection.commit()
                 self.connection.close()
             except:
                 print("Failed to close db connection... may cause problems (reinicie o programa)")                

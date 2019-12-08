@@ -554,7 +554,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             series=SERIES
             if aluno['escola']:            
                 escola=self.dbEscola.getDadoComId(aluno['escola'])            
-                serieId=[id for id in self.dbSeries._acharDadoExato("idDaEscola", aluno['escola']) if id in self._dbSeries.acharDadoExato("serie", aluno['serie'])]
+                serieId=[id for id in self.dbSeries._acharDadoExato("idDaEscola", aluno['escola']) if id in self.dbSeries._dbSeries.acharDadoExato("serie", aluno['serie'])]
                 if serieId:                    
                     serie=self.dbSeries._getDadoComId(serieId[-1])
                     self.dbSeries._update(serieId[-1], {"nDeAlunos": int(serie["nDeAlunos"])-1})  #Achei a serie e remove a vaga

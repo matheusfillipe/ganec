@@ -138,8 +138,6 @@ class DB():
 
 
 
-
-
                     
     def acharDado(self, key, nome): 
             func=str
@@ -214,14 +212,15 @@ class DB():
                 return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
 
 
-
-
-
     def getDados(self, listaDeIds):
             return [self.getDado(id) for id in listaDeIds]
 
     def getDadosComId(self, listaDeIds):
             return [self.getDadoComId(id) for id in listaDeIds]
+
+    def _getDadosComId(self, listaDeIds):
+            return [self._getDadoComId(id) for id in listaDeIds]
+ 
     
     def acharDados(self, key, nome):
             return sorted(self.getDados(self.acharDado(key, nome)), key=lambda x: x[key])

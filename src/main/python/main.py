@@ -933,7 +933,10 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def blockBusca(self):       
         for i in range(self.listViewBusca.count()):
             w=self.listViewBusca.itemWidget(self.listViewBusca.item(i))
-            w.editar=False
+            try:
+                w.editar=False
+            except:
+                pass
 
     def enableBusca(self):
         for i in range(self.listViewBusca.count()):
@@ -1095,6 +1098,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             itemN = QtWidgets.QListWidgetItem("Nenhum aluno foi cadastrado até o momento ou houve um \nproblema com o banco de dados")
             itemN.setFlags(itemN.flags() & ~QtCore.Qt.ItemIsEnabled);
             self.listViewBusca.addItem(itemN)             
+            self.resultsLbl.clear()
         else:            
             self.buscaResultado=resultado
             self.resultado=resultado

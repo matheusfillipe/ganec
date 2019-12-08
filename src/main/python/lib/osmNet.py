@@ -274,6 +274,7 @@ class netHandler():
      
     def getPart(self, name):
         node=self.G.node[name]       
+   #     print( [node['lon'], node['lat']] )
         return [float(node['lon']), float(node['lat'])]       
         
     def getCloserNodes(self, name):   

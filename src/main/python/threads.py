@@ -182,6 +182,7 @@ class calcularRotasThread(QtCore.QThread):
         zonearReto=bool(db.getDado(db.acharDado("nome","zonearReto")[-1])['string'])
         if not Path(osmpath).is_file():
             self.error.emit()
+            dbE.close()
             return
         try:
             #def gerarDistAlunos(listaDeEscolas, listaDeAlunos, configFolder, osmpath='/home/matheus/map.osm'):
@@ -200,7 +201,7 @@ class calcularRotasThread(QtCore.QThread):
             for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
                 self.countChanged.emit(int(j/len(listaDeAlunos)*100))
                 try:
-                    if aluno['escola'] and aluno['serie'] in dbE.getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola o suporta, ignora
+                    if aluno['escola'] and aluno['serie'] in dbE._getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola o suporta, ignora
                         continue
                 except Exception as e:
                     import traceback     
@@ -214,9 +215,12 @@ class calcularRotasThread(QtCore.QThread):
                 ptA=[aluno['long'], aluno['lat']]
                 res=[] # resultado [[caminho, distancia, index], ..]
                 for i, escola in enumerate(escolas):
-                    ptB=[escola['long'], escola['lat']]
-                    parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno: "+str(aluno['id'])), target=net.addNode(ptB, "escola: "+str(escola['id'])))                
-                    res.append([parts, dist, i])         
+                    ptB=[escola['long'], escola['lat']]     
+                    try:               
+                        parts, dist = net.shortest_path(source=net.addNode(ptA, "aluno: "+str(aluno['id'])), target=net.addNode(ptB, "escola: "+str(escola['id'])))                
+                        res.append([parts, dist, i])         
+                    except:
+                        print("Escola: "+escola['nome']+" não encrontada!!!")                        
                 res.sort(key=lambda d: d[1])
                 count=False
                 for j, valorDados in enumerate(res):      #mínima --> salvar todos geojson com todas com cor variando, blue para a mais proxima    
@@ -228,39 +232,39 @@ class calcularRotasThread(QtCore.QThread):
 
                     if not count:            
                         try: #tentar remover a vaga
-                            if aluno['escola'] and not aluno['serie'] in dbE.getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola não o suporta mais
+                            if aluno['escola'] and not aluno['serie'] in dbE._getDado(aluno['escola'])["series"].split(SEPARADOR_SERIES): #Se o aluno esta matriculado e a escola não o suporta mais
                                 #remover aluno da série antiga:
-                                id=dbSeries.acharDadoExato(SERIES_ATTR[0], aluno['escola'])
+                                id=dbSeries._acharDadoExato(SERIES_ATTR[0], aluno['escola'])
                                 if len(id)==0:
                                     print("Erro! Escola não consta na tabela de séries, id: " + aluno['escola'])   
                                 else:                             
-                                    seriesDados=dbSeries.getDadosComId(id)
+                                    seriesDados=dbSeries._getDadosComId(id)
                                     id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
                                     if len(id)==0:
                                         print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(aluno['escola']))                                
                                     else:
-                                        serie=dbSeries.getDadoComId(str(id[-1]))
-                                        dbSeries.update(serie['id'], {"nDeAlunos":serie["nDeAlunos"]-1})
+                                        serie=dbSeries._getDadoComId(str(id[-1]))
+                                        dbSeries._update(serie['id'], {"nDeAlunos":serie["nDeAlunos"]-1})
 
                         except Exception as e:
                             import traceback     
                             print("Erro: "+str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
                             print("ALUNO: "+str(aluno))        
     
-                        id=dbSeries.acharDadoExato(SERIES_ATTR[0], escola['id'])
+                        id=dbSeries._acharDadoExato(SERIES_ATTR[0], escola['id'])
                         if len(id)==0:
                             print("Erro! Escola não consta na tabela de séries, id: " + str(escola['id']))
                             continue
-                        seriesDados=dbSeries.getDadosComId(id)
+                        seriesDados=dbSeries._getDadosComId(id)
                         id=[serie['id'] for serie in seriesDados if serie['serie']==aluno['serie'] ]   
                         if len(id)==0:
                             print("Erro! A série "+aluno['serie']+" não pertence a escola de id"+str(escola['id']))
                             continue
-                        serie=dbSeries.getDadoComId(str(id[-1]))
+                        serie=dbSeries._getDadoComId(str(id[-1]))
                         if int(serie[SERIES_ATTR[3]]) < int(serie[SERIES_ATTR[2]]): #salvar mais proxima no dicionário do aluno
                             count=True
                             serie[SERIES_ATTR[3]]=str(int(serie[SERIES_ATTR[3]])+1)
-                            dbSeries.update(id[-1], serie)
+                            dbSeries._update(id[-1], serie)
                             listaDeAlunos[j]['escola']=escola['id']
                             dbA._update(aluno['id'],{'escola': str(escola['id'])})
 
@@ -269,11 +273,19 @@ class calcularRotasThread(QtCore.QThread):
             #    print("Escola:   " + str(listaDeAlunos[j]['escola']))
             #    print("Serie:    " + str(aluno['serie']))
             dbA.close()
+            dbE.close()
         except Exception as e:
             import traceback
             print("Erro: "+str(traceback.format_exception(None, e, e.__traceback__))[1:-1])
             self.error.emit()
-            dbA.close()
+            try:
+                dbA.close()
+            except:
+                print("Failed to close Alunos DB")
+            try:
+                dbE.close()
+            except:
+                print("Failed to close Escola DB")
             return
 
 

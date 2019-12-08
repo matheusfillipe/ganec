@@ -349,23 +349,26 @@ class editarAlunoDialog(QtWidgets.QDialog, EDITAR_ALUNO):
 
         data = aluno['dataNasc']
         data_ = data.split(' ')
-        if len(data_) < 3:
-            data_ = data.split('/')
-            mes=0
-            try:
-                mes=int(data_[1])            
-            except:
-                mes=dataEmNumero[data_[1]]
-            self.dateEdit.setDate(QDate(int(data_[2]), mes, int(data_[0])))        
+        try:
+            if len(data_) < 3:
+                data_ = data.split('/')
+                mes=0
+                try:
+                    mes=int(data_[1])            
+                except:            
+                    mes=dataEmNumero[data_[1]]
+                self.dateEdit.setDate(QDate(int(data_[2]), mes, int(data_[0])))        
 
-        else:
-            mes=0
-            try:
-                mes=int(data_[1])            
-            except:
-                mes=dataEmNumero[data_[1]]
-            self.dateEdit.setDate(QDate(int(data_[3]), mes, int(data_[2])))
-        
+            else:
+                mes=0
+                try:
+                    mes=int(data_[1])            
+                except:
+                    mes=dataEmNumero[data_[1]]
+                self.dateEdit.setDate(QDate(int(data_[3]), mes, int(data_[2])))
+        except: #data padrão em caso de errro
+            self.dateEdit.setDate(QDate(1,1,2000))
+                       
         self.lineEditRG.setText(aluno['RG'])
         self.lineEditCPF.setText(aluno['CPF'])
         self.lineEditMae.setText(aluno['nomeDaMae'])

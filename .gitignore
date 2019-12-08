@@ -5,3 +5,5 @@ venv/*
 src/main/python/lib/hidden/constants.py
 test*
 .env
+target/
+target/*

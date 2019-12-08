@@ -220,6 +220,10 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
             messageDialog(title="Atenção!", message="Por favor selectione o mesmo número de colunas que de campos necessários \n Você seleciou "+str(len(columnIndexes))+", mas são necessários "+str(len(self.dataNamesList)))
             return False
         import codecs
+        import chardet
+        rawdata = open(self.filepath, 'rb').read()
+        result = chardet.detect(rawdata)
+        enc = result['encoding']        
         for encoding_type in types_of_encoding: 
             try:
                 result=[]
@@ -248,11 +252,15 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
     def openFile(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo/Planilha CSV (*.csv)")[0] if self.defaultFile is None else self.defaultFile
         if filename in ["", None]: return False
+        import chardet  
+        import codecs
         self.filepath=filename
         self.tableWidget : QtWidgets.QTableWidget
-        import codecs
-        for encoding_type in types_of_encoding:    
-            try:
+        rawdata = open(self.filepath, 'rb').read()
+        result = chardet.detect(rawdata)
+        enc = result['encoding']       
+        for encoding_type in [enc]+types_of_encoding:    
+            try:                
                 with codecs.open(self.filepath, 'r', encoding= encoding_type, errors ='replace') as fi:
                     for i,r in enumerate(csv.reader(fi, delimiter=delimiter)):        
                         for j,field in enumerate(r):

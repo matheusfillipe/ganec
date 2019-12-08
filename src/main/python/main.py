@@ -732,7 +732,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.error.connect(lambda: messageDialog(title="Erro", message="Erro ao zonear! Tente Ferramentas-> Recalcular turmas ou Verifique as vagas e número de alunos em Editar-> escolas e o arquivo osm no menu configurações"))
         self.calc.start()   
-        self.loadingLabel.setText("Computando rotas ")   
+        self.loadingLabel.setText("Calculando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   
         self.updateScreen()
  
@@ -742,7 +742,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.error.connect(lambda: messageDialog(title="Erro", message="Erro ao zonear! Tente Ferramentas-> Recalcular turmas ou Verifique as vagas e número de alunos em Editar-> escolas e o arquivo osm no menu configurações"))
         self.calc.start()   
-        self.loadingLabel.setText("Computando rotas ")   
+        self.loadingLabel.setText("Calculando rotas ")   
         self.calc.finished.connect(self.cleanProgress)   
         self.updateScreen()
    
@@ -818,7 +818,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.loadingLabel.setText("Convertendo arquivo  ")
         self.docx2csvThread(fileapth)
     
-    @nogui
+  #  @nogui
     def docx2csvThread(self,filepath, k=None):        
         path=""
         import codecs
@@ -827,29 +827,24 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         t=document.tables[0]
         import tempfile
         path=tempfile.gettempdir()+"/zoneacsv.csv"
-        import csv
-        types_of_encoding = ["utf-8", "cp1252"]
-        for encoding_type in types_of_encoding: 
-            try:        
-                try:
-                   with codecs.open(path,"w",newline='', encoding= encoding_type) as f:
-                        writer=csv.writer(f, delimiter=CSV_SEPARATOR)
-                        j=1
-                        for r in t.rows:
-                            row=[]   
-                            self.countChanged.emit(int(j/len(t.rows)*100))    
-                            for c in r.cells:
-                                row.append(c.text)
-                            diff=len(CSV_ALUNOS)-len(row)
-                            if diff>0:
-                                [row.append("_") for i in range(diff)]
-                            writer.writerow(row)
-                            j+=1             
-                except Exception as e:
-                    print(str(traceback.format_exception(None, e, e.__traceback__)))
-            except:
-                continue
-
+        import csv        
+        try:
+            with codecs.open(path,"w", encoding="utf-8") as f:
+                writer=csv.writer(f, delimiter=CSV_SEPARATOR)
+                j=1
+                for r in t.rows:
+                    row=[]   
+                    self.countChanged.emit(int(j/len(t.rows)*100))    
+                    for c in r.cells:
+                        row.append(c.text)
+                    diff=len(CSV_ALUNOS)-len(row)
+                    if diff>0:
+                        [row.append("_") for i in range(diff)]
+                    writer.writerow(row)
+                    j+=1             
+        except Exception as e:
+            print(str(traceback.format_exception(None, e, e.__traceback__)))
+    
         self.docxConvertionFinished.emit(path)
                
 
@@ -1077,11 +1072,11 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 if aluno['escola']:
                     if self.dbEscola._getDadoComId(aluno['escola'])['nome'] in escolas or self.dropDownEscolas.todos.isChecked():
                         if aluno['serie'] in series or self.dropDownSeries.todos.isChecked():
-                            if self.spinBoxIdadeMinima.value()<=int(aluno['idade'])<=self.spinBoxIdadeMaxima.value():
+                            if self.spinBoxIdadeMinima.value()<=int(aluno['idade'])<=self.spinBoxIdadeMaxima.value() or self.spinBoxIdadeMaxima.value()>=50:
                                 ids.append(i)
                 elif semEscola:
                     if aluno['serie'] in series or self.dropDownSeries.todos.isChecked():
-                        if self.spinBoxIdadeMinima.value()<=int(aluno['idade'])<=self.spinBoxIdadeMaxima.value():
+                        if self.spinBoxIdadeMinima.value()<=int(aluno['idade'])<=self.spinBoxIdadeMaxima.value() or self.spinBoxIdadeMaxima.value()>=50:
                             ids.append(i)
             self.dbAluno.close()
             self.dbEscola.close()
@@ -1092,7 +1087,9 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
                 if i['escola']:         
                     e['escola']=self.dbEscola.getDado(i['escola'])['nome']                
                 escolas.append(e)            
-        except:           
+        except Exception as e:           
+            import traceback
+            print(str(traceback.format_exception(None, e, e.__traceback__)))
             resultado=[-1]
             escolas=[]            
 

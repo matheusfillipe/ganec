@@ -220,7 +220,7 @@ class csvDialog(QtWidgets.QDialog, CSV_DIALOG):
             messageDialog(title="Atenção!", message="Por favor selectione o mesmo número de colunas que de campos necessários \n Você seleciou "+str(len(columnIndexes))+", mas são necessários "+str(len(self.dataNamesList)))
             return False
         import codecs
-        for encoding_type in types_of_encoding:
+        for encoding_type in types_of_encoding: 
             try:
                 result=[]
                 with codecs.open(self.filepath, 'r',  encoding= encoding_type, errors ='replace') as fi:

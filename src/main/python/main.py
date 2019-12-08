@@ -821,28 +821,35 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     @nogui
     def docx2csvThread(self,filepath, k=None):        
         path=""
-        try:
-            from docx import Document
-            document = Document(filepath)                                         
-            t=document.tables[0]
-            import tempfile
-            path=tempfile.gettempdir()+"/zoneacsv.csv"
-            import csv
-            with open(path,"w",newline='') as f:
-                writer=csv.writer(f, delimiter=CSV_SEPARATOR)
-                j=1
-                for r in t.rows:
-                    row=[]   
-                    self.countChanged.emit(int(j/len(t.rows)*100))    
-                    for c in r.cells:
-                        row.append(c.text)
-                    diff=len(CSV_ALUNOS)-len(row)
-                    if diff>0:
-                        [row.append("_") for i in range(diff)]
-                    writer.writerow(row)
-                    j+=1             
-        except Exception as e:
-            print(str(traceback.format_exception(None, e, e.__traceback__)))
+        import codecs
+        from docx import Document
+        document = Document(filepath)                                         
+        t=document.tables[0]
+        import tempfile
+        path=tempfile.gettempdir()+"/zoneacsv.csv"
+        import csv
+        types_of_encoding = ["utf-8", "cp1252"]
+        for encoding_type in types_of_encoding: 
+            try:        
+                try:
+                   with codecs.open(path,"w",newline='', encoding= encoding_type) as f:
+                        writer=csv.writer(f, delimiter=CSV_SEPARATOR)
+                        j=1
+                        for r in t.rows:
+                            row=[]   
+                            self.countChanged.emit(int(j/len(t.rows)*100))    
+                            for c in r.cells:
+                                row.append(c.text)
+                            diff=len(CSV_ALUNOS)-len(row)
+                            if diff>0:
+                                [row.append("_") for i in range(diff)]
+                            writer.writerow(row)
+                            j+=1             
+                except Exception as e:
+                    print(str(traceback.format_exception(None, e, e.__traceback__)))
+            except:
+                continue
+
         self.docxConvertionFinished.emit(path)
                
 

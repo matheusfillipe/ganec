@@ -167,16 +167,19 @@ class calcularRotasThread(QtCore.QThread):
 
     def run(self):
         count = 0
-        dbE= DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
+        dbE=DB(str(confPath() /Path(CAMINHO['escola'])), TABLE_NAME['escola'], ATRIBUTOS['escola'])
         listaDeEscolas=dbE.todosOsDadosComId()
-        dbA= DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
+        dbE.connect()
+        dbA=DB(str(confPath() /Path(CAMINHO['aluno'])), TABLE_NAME['aluno'], ATRIBUTOS['aluno'])
         if self.alunos is None:
             listaDeAlunos=dbA.todosOsDadosComId()
         else:
             listaDeAlunos=self.alunos
-        dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'])        
+        dbSeries =  DB(str(confPath()/Path(CAMINHO['escola'])), TABLE_NAME['series'], ATRIBUTOS['series'], connection=dbE.connection)        
         configFolder=confPath()
         osmpath=osmFilePath()  #???
+        db=DB(str(confPath()/Path('settings.db')),"strings", ['nome', 'string'])
+        zonearReto=bool(db.getDado(db.acharDado("nome","zonearReto")[-1])['string'])
         if not Path(osmpath).is_file():
             self.error.emit()
             return
@@ -192,7 +195,7 @@ class calcularRotasThread(QtCore.QThread):
             alunosFolder.mkdir(parents=True, exist_ok=True)
             #sort alunos by age, menor para maior  #TODO calcular idade exata
             listaDeAlunos.sort(key=lambda d: d[IDADE])   
-            net=netHandler(osmpath=osmpath)     #netHandler distancia até todas
+            net=netHandler(osmpath=osmpath, linha_reta=zonearReto)   #netHandler distancia até todas
             dbA.connect()
             for j, aluno in enumerate(listaDeAlunos):   #para cada aluno na lista
                 self.countChanged.emit(int(j/len(listaDeAlunos)*100))
@@ -261,10 +264,11 @@ class calcularRotasThread(QtCore.QThread):
                             listaDeAlunos[j]['escola']=escola['id']
                             dbA._update(aluno['id'],{'escola': str(escola['id'])})
 
-            dbA.close()
+
              #   print("ADICIONANDO  Aluno: " + str(aluno["nome"]))
             #    print("Escola:   " + str(listaDeAlunos[j]['escola']))
             #    print("Serie:    " + str(aluno['serie']))
+            dbA.close()
         except Exception as e:
             import traceback
             print("Erro: "+str(traceback.format_exception(None, e, e.__traceback__))[1:-1])

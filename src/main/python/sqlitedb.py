@@ -3,7 +3,7 @@ from pathlib import Path
 from copy import copy
 
 class DB():
-    def __init__(self, caminhoDoArquivo, tableName, dataNameList):    
+    def __init__(self, caminhoDoArquivo, tableName, dataNameList, connection=None):    
             '''caminhoDoArquivo: String com o caminho do arquivo
                tableName: String com o nome da tabela
                dataNameList: Lista de strings com  os nomes de cada atributo
@@ -12,7 +12,10 @@ class DB():
             self.tableName=tableName
             self.dataNameList=dataNameList
             self.checkIfExistsIfNotCreate()
-
+            if connection:
+                self.cursor = connection.cursor()
+                             
+        
     def toDict(self, data):        
             return {n : data[i] for i, n in enumerate(self.dataNameList)}
 

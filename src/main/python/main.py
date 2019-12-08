@@ -92,6 +92,7 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
         self.restaurarBtn : QtWidgets.QPushButton
         self.lineEdit_2 : QtWidgets.QLineEdit
         self.ceptxt : QtWidgets.QLineEdit
+        self.zonearRetoCb : QtWidgets.QCheckBox
 
         self.backupBtn.clicked.connect(self.backup)
         self.restaurarBtn.clicked.connect(self.importar)
@@ -130,6 +131,12 @@ class SettingsDialog(QtWidgets.QDialog, SETTINGS_DIALOG):
             self.db.salvarDado({'nome': 'cep', 'string': ''})
             self.ceptxt.setText("")
 
+        try:
+            self.zonearRetoCb.setChecked(bool(db.getDado(db.acharDado("nome","zonearReto")[-1])['string']))
+        except:
+            self.db.salvarDado({"nome": "zonearReto", "string": ''})
+            self.zonearRetoCb.setChecked(False)
+        
     def setOsm(self):
         db=self.db
         filename = QtWidgets.QFileDialog.getOpenFileName(filter="Arquivo de mapa (*.osm)")[0]
@@ -534,13 +541,16 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
 
     @nogui
     def SremoverEscola(self, k=None):
-        self.progLabel.emit("Removendo Escolas ")  
+        import shutil
+        self.progLabel.emit("Removendo Escolas ")          
         self.dbAluno.connect()     
         for i,aluno in enumerate(self.listaBusca):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))           
             if aluno['escola'] != "" or aluno['escola'] != None:
                 self.dbAluno._update(self.dbAluno._acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
+            shutil.rmtree(str(confPath()/Path("alunos")/Path(str(aluno['id']))), ignore_errors=True)
         self.dbAluno.close()
+        self.serieRecalc()
         self.operatonFinished.emit()
       #  self.updateScreen()
 
@@ -1226,6 +1236,12 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         except:
             pass
         cfg=self.config.get()
+
+        if self.dialog[-1].zonearRetoCb.isChecked():
+            self.dialog[-1].db.salvarDado({"nome": "zonearReto", "string": '1'})
+        else:
+             self.dialog[-1].db.salvarDado({"nome": "zonearReto", "string": ''})
+
         if not cfg.isApplied:      
             self.config.get().apply()
             self.config.save("config")
@@ -1252,7 +1268,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             if f.is_file():
                 with open(f, 'r') as file:
                     geo = file.read().replace("\"","\'")    
-                self.mapWidget.addPath(geo)
+                self.mapWidget.addPath(geo, self.dbEscola.getDado(f.stem)['nome'])
 
     def adicionarTodosCaminhos(self,aluno):
         self.mapWidget.clearPaths()

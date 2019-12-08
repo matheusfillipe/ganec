@@ -320,6 +320,7 @@
      <string>Zoneamento</string>
     </property>
     <addaction name="actionCalcular_Rotas_2"/>
+    <addaction name="actionZonear_Busca"/>
     <addaction name="actionRecalcular_endere_os_de_alunos"/>
     <addaction name="actionRecalcular_endere_os_de_escolas"/>
    </widget>
@@ -448,7 +449,7 @@
   </action>
   <action name="actionCalcular_Rotas_2">
    <property name="text">
-    <string>Calcular Rotas</string>
+    <string>Zonear Todos</string>
    </property>
   </action>
   <action name="actionAvan_ar_todos_os_alunos_em_um_ano">
@@ -575,6 +576,11 @@
   <action name="actionMostrar_Alunos_da_Busca">
    <property name="text">
     <string>Mostrar Alunos da Busca</string>
+   </property>
+  </action>
+  <action name="actionZonear_Busca">
+   <property name="text">
+    <string>Zonear Busca</string>
    </property>
   </action>
  </widget>

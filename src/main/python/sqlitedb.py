@@ -3,7 +3,7 @@ from pathlib import Path
 from copy import copy
 
 class DB():
-    def __init__(self, caminhoDoArquivo, tableName, dataNameList):    
+    def __init__(self, caminhoDoArquivo, tableName, dataNameList, connection=None):    
             '''caminhoDoArquivo: String com o caminho do arquivo
                tableName: String com o nome da tabela
                dataNameList: Lista de strings com  os nomes de cada atributo
@@ -12,7 +12,10 @@ class DB():
             self.tableName=tableName
             self.dataNameList=dataNameList
             self.checkIfExistsIfNotCreate()
-
+            if connection:
+                self.cursor = connection.cursor()
+                             
+        
     def toDict(self, data):        
             return {n : data[i] for i, n in enumerate(self.dataNameList)}
 
@@ -46,9 +49,9 @@ class DB():
             self.cursor = self.connection.cursor()
             self.connected = True
     
-    def close(self):
-            self.connection.commit()
+    def close(self):        
             try:
+                self.connection.commit()
                 self.connection.close()
             except:
                 print("Failed to close db connection... may cause problems (reinicie o programa)")                
@@ -135,8 +138,6 @@ class DB():
 
 
 
-
-
                     
     def acharDado(self, key, nome): 
             func=str
@@ -211,14 +212,15 @@ class DB():
                 return [x[0] for x in sorted(idList, key=lambda x: str(x[1]))]
 
 
-
-
-
     def getDados(self, listaDeIds):
             return [self.getDado(id) for id in listaDeIds]
 
     def getDadosComId(self, listaDeIds):
             return [self.getDadoComId(id) for id in listaDeIds]
+
+    def _getDadosComId(self, listaDeIds):
+            return [self._getDadoComId(id) for id in listaDeIds]
+ 
     
     def acharDados(self, key, nome):
             return sorted(self.getDados(self.acharDado(key, nome)), key=lambda x: x[key])

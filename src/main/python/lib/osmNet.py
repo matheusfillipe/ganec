@@ -191,7 +191,8 @@ class OSM:
 
 
 class netHandler():   
-    def __init__(self, osmpath=None, path=None, only_roads=True):   
+    def __init__(self, osmpath=None, path=None, only_roads=True, linha_reta=False):   
+        self.linha_reta=linha_reta
         if osmpath is not None:
             self.read_osm(osmpath, only_roads)
         if path is not None:
@@ -273,6 +274,7 @@ class netHandler():
      
     def getPart(self, name):
         node=self.G.node[name]       
+   #     print( [node['lon'], node['lat']] )
         return [float(node['lon']), float(node['lat'])]       
         
     def getCloserNodes(self, name):   
@@ -354,15 +356,21 @@ class netHandler():
             return 100000
  
     def shortest_path(self, source, target):
-        path=networkx.dijkstra_path(self.G, source=source, target=target, weight=lambda u,v,d: self.getLength(u,v,d))
-        if path:
-            parts=self.getParts(path)       
-            self.parts=parts
-            self.path=path
-            return parts, self.get_dist()
+        if not self.linha_reta:
+            path=networkx.dijkstra_path(self.G, source=source, target=target, weight=lambda u,v,d: self.getLength(u,v,d))
+            if path:
+                parts=self.getParts(path)       
+                self.parts=parts
+                self.path=path
+                return parts, self.get_dist()
+            else:
+                return False
         else:
-            return False
-        
+            self.parts=parts=[[self.G.node[source]["lon"], self.G.node[source]["lat"]],
+                    [self.G.node[target]["lon"], self.G.node[target]["lat"]]]
+            return parts, self.get_dist()
+
+            
     def save(self, path):
         networkx.write_gpickle(self.G, path)
     

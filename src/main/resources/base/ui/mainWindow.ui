@@ -206,7 +206,7 @@
      <x>0</x>
      <y>0</y>
      <width>1256</width>
-     <height>32</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuArquivo">
@@ -507,7 +507,7 @@
   </action>
   <action name="actionMostar_Alunos">
    <property name="text">
-    <string>Mostar Alunos</string>
+    <string>Mostrar Alunos</string>
    </property>
    <property name="toolTip">
     <string>Mostar Todos Alunos no mapa</string>

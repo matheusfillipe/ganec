@@ -548,11 +548,16 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.countChanged.emit(int(i/len(self.listaBusca)*100))           
             if aluno['escola'] != "" or aluno['escola'] != None:
                 self.dbAluno._update(self.dbAluno._acharDadoExato('nome',aluno['nome'])[0] , {"escola": ""})
-            shutil.rmtree(str(confPath()/Path("alunos")/Path(str(aluno['id']))), ignore_errors=True)
+            self.rmfile(str(confPath()/Path("alunos")/Path(str(aluno['id']))))
+#            shutil.rmtree(str(confPath()/Path("alunos")/Path(str(aluno['id']))), ignore_errors=True)
         self.dbAluno.close()
         self.serieRecalc()
         self.operatonFinished.emit()
       #  self.updateScreen()
+    
+  #  @nogui 
+    def rmfile(self, path):
+        shutil.rmtree(str(path), ignore_errors=True)
 
     @nogui            
     def SacanvaTurma(self, k=None):
@@ -586,7 +591,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
             self.dbAluno._update(aluno['id'], {"serie": nextSerieName})
         self.dbAluno.close()
         self.dbSeries.close()
-        self.operatonFinished.emit()
+        self.operatonFinished.emit(i)
            
     @nogui
     def SretornaTurma(self, k=None):
@@ -677,7 +682,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
     def verificarOsm(self):
         osmpath=osmFilePath()  #???
         if not Path(osmpath).is_file() or Path(osmpath).suffix!=".osm":
-            messageDialog(self, message="Aruivo de mapa  (.osm) não foi configurado!")
+            messageDialog(self, message="Arquivo de mapa  (.osm) não foi configurado!")
             return False
         else:
             return True
@@ -818,7 +823,7 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         self.loadingLabel.setText("Convertendo arquivo  ")
         self.docx2csvThread(fileapth)
     
-  #  @nogui
+    @nogui
     def docx2csvThread(self,filepath, k=None):        
         path=""
         import codecs
@@ -1011,7 +1016,6 @@ class MainWindow(QtWidgets.QMainWindow, MAIN_WINDOW):
         resultado=self.dbAluno.getDadosComId(ids)                
         self.buscaResultado=resultado
         self.resultado=resultado
-
         j = 0
         for i in resultado:
             itemN = QtWidgets.QListWidgetItem() 
@@ -1380,7 +1384,7 @@ def main(*args):
             if not app.restart:
                 break        
         except Exception as e:
-            messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1], info="O programa irá reiniciar")
+            messageDialog(title="Erro", message=str(traceback.format_exception(None, e, e.__traceback__))[1:-1], info="O programa tentará reiniciar")
             print(str(traceback.format_exception(None, e, e.__traceback__)))
             currentExitCode=-13
     return currentExitCode   

@@ -79,6 +79,7 @@ class DB():
             return ids
 
     def _getDado(self, id):
+            id=str(id)
             return self.toDict(list(list(self.cursor.execute("SELECT * FROM " + self.tableName + " WHERE id = ?", (id,)))[0])[1:])
                                 
     def getDado(self, id):
@@ -100,17 +101,27 @@ class DB():
             return dado
 
     def todosOsDados(self):
-            self.connect()
-            dados = [self.toDict(row[1:]) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
-            self.close()
-            return dados
+            try:
+                self.connect()
+                dados = [self.toDict(row[1:]) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
+                self.close()
+                return dados
+            except Exception as e:
+                import traceback
+                print(str(traceback.format_exception(None, e, e.__traceback__)))
+                return []               
+
 
     def todosOsDadosComId(self):
-            self.connect()
-            dados = [self.toDictComId(row) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
-            self.close()
-            return dados
-        
+            try:
+                self.connect()
+                dados = [self.toDictComId(row) for row in self.cursor.execute("SELECT * FROM "+ self.tableName)]
+                self.close()
+                return dados
+            except Exception as e:
+                import traceback
+                print(str(traceback.format_exception(None, e, e.__traceback__)))
+                return []               
 
                     
     def _acharDado(self, key, nome): 
